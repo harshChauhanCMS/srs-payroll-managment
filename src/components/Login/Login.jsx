@@ -3,10 +3,11 @@
 import toast from "react-hot-toast";
 import usePostQuery from "@/hooks/postQuery.hook";
 
+import { useState } from "react";
 import { apiUrls } from "@/apis";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Email, Lock } from "@mui/icons-material";
 import { setUser } from "@/helpers/slices/userSlice";
 import { setAuthTokens, setUserData } from "@/utils/storage";
 import {
@@ -14,12 +15,10 @@ import {
   Button,
   Card,
   CardContent,
-  Container,
   TextField,
   Typography,
   InputAdornment,
 } from "@mui/material";
-import { Phone, Lock } from "@mui/icons-material";
 
 const Login = () => {
   const { postQuery, loading } = usePostQuery();
@@ -28,12 +27,12 @@ const Login = () => {
 
   // Local state for form values
   const [formData, setFormData] = useState({
-    mobileNumber: "",
+    email: "",
     password: "",
   });
 
   const [errors, setErrors] = useState({
-    mobileNumber: "",
+    email: "",
     password: "",
   });
 
@@ -56,11 +55,13 @@ const Login = () => {
     let isValid = true;
     const newErrors = { ...errors };
 
-    if (!formData.mobileNumber) {
-      newErrors.mobileNumber = "Please enter your mobile number";
+    if (!formData.email) {
+      newErrors.email = "Please enter your email";
       isValid = false;
-    } else if (!/^[6-9]\d{9}$/.test(formData.mobileNumber)) {
-      newErrors.mobileNumber = "Please enter a valid 10-digit mobile number";
+    } else if (
+      !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)
+    ) {
+      newErrors.email = "Please enter a valid email address";
       isValid = false;
     }
 
@@ -78,13 +79,9 @@ const Login = () => {
 
     if (!validate()) return;
 
-    // Add +91 prefix to mobile number
-    const mobileNumberWithPrefix = `+91${formData.mobileNumber}`;
-
     const payload = {
-      mobileNumber: mobileNumberWithPrefix,
+      email: formData.email,
       password: formData.password,
-      role: "admin",
     };
 
     postQuery({
@@ -94,7 +91,7 @@ const Login = () => {
         "Content-Type": "application/json",
       },
       onSuccess: (res) => {
-        const { token, admin } = res;
+        const { token, admin } = res.data;
 
         dispatch(
           setUser({
@@ -154,25 +151,24 @@ const Login = () => {
               margin="normal"
               required
               fullWidth
-              id="mobileNumber"
-              label="Mobile Number"
-              name="mobileNumber"
-              placeholder="9699554545"
+              id="email"
+              label="Email Address"
+              name="email"
+              placeholder="admin@example.com"
               autoFocus
-              value={formData.mobileNumber}
+              value={formData.email}
               onChange={handleChange}
-              error={!!errors.mobileNumber}
-              helperText={errors.mobileNumber}
+              error={!!errors.email}
+              helperText={errors.email}
               slotProps={{
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Phone color="action" />
+                      <Email color="action" />
                     </InputAdornment>
                   ),
                 },
               }}
-              inputProps={{ maxLength: 10 }}
             />
             <TextField
               margin="normal"
