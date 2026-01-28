@@ -8,16 +8,33 @@ import { useAuth } from "@/hooks/useAuth";
 import { clearAuthData } from "@/utils/storage";
 
 import { images } from "@/assets/images";
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getSidebarItems, sidebarHeading } from "@/constants/sidebarItems";
 import {
-  LogoutOutlined,
-  ArrowLeftOutlined,
-  ArrowRightOutlined,
-  CaretDownOutlined,
-  CaretRightOutlined,
-} from "@ant-design/icons";
+  Logout,
+  ArrowBack,
+  ArrowForward,
+  ExpandLess,
+  ExpandMore,
+  MenuOpen,
+} from "@mui/icons-material";
+import {
+  Box,
+  Collapse,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  Tooltip,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 
 export default function Sidebar({
   sidebarOpen,
@@ -27,8 +44,10 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const sidebar = useRef(null);
   const { logout, user } = useAuth();
+  const theme = useTheme();
+  // We use this to detect mobile screens
+  const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
   // Get sidebar items based on user role
   const sidebarNavItems = getSidebarItems(user?.role || "customer");
@@ -46,8 +65,6 @@ export default function Sidebar({
     }
   };
 
-  // Collapse state is managed by parent and passed via props
-
   const isActive = (item) => {
     const childRoutes = (item.children || []).map((c) => c.link);
     const routesToMatch = [
@@ -58,34 +75,7 @@ export default function Sidebar({
     return routesToMatch.some((route) => pathname.startsWith(route));
   };
 
-  const [openMenus, setOpenMenus] = useState({});
-
-  const toggleMenu = (name) => {
-    setOpenMenus((prev) => ({ ...prev, [name]: !prev[name] }));
-  };
-
-  const handleLogout = () => {
-    logout();
-
-    clearAuthData();
-
-    toast.success("Logged out successfully");
-    router.push("/");
-  };
-
-  useEffect(() => {
-    const clickHandler = ({ target }) => {
-      if (!sidebar.current) return;
-      if (!sidebarOpen) return;
-      if (sidebar.current.contains(target)) return;
-      setSidebarOpen(false);
-    };
-    document.addEventListener("click", clickHandler);
-    return () => document.removeEventListener("click", clickHandler);
-  }, [sidebarOpen, setSidebarOpen]);
-
-  useEffect(() => {
-    // Auto-open any parent with an active child
+  const [openMenus, setOpenMenus] = useState(() => {
     const initialOpen = {};
     sidebarNavItems.forEach((item) => {
       if (
@@ -95,169 +85,382 @@ export default function Sidebar({
         initialOpen[item.name] = true;
       }
     });
-    setOpenMenus((prev) => ({ ...prev, ...initialOpen }));
-  }, [pathname]);
+    return initialOpen;
+  });
+
+  const openMenusRef = useRef(openMenus);
+  useEffect(() => {
+    openMenusRef.current = openMenus;
+  }, [openMenus]);
+
+  const toggleMenu = (name) => {
+    setOpenMenus((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  const handleLogout = () => {
+    logout();
+    clearAuthData();
+    toast.success("Logged out successfully");
+    router.push("/");
+  };
+
+  useEffect(() => {
+    // Auto-open any parent with an active child
+    const itemsToOpen = {};
+    let foundActive = false;
+
+    sidebarNavItems.forEach((item) => {
+      if (
+        item.children &&
+        item.children.some((c) => pathname.startsWith(c.link))
+      ) {
+        itemsToOpen[item.name] = true;
+        foundActive = true;
+      }
+    });
+
+    if (foundActive) {
+      const currentOpen = openMenusRef.current;
+      const needsUpdate = Object.keys(itemsToOpen).some(
+        (key) => !currentOpen[key],
+      );
+
+      if (needsUpdate) {
+        // eslint-disable-next-line
+        setOpenMenus((prev) => ({ ...prev, ...itemsToOpen }));
+      }
+    }
+  }, [pathname, sidebarNavItems]);
+
+  const sidebarContent = (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        bgcolor: "#1E3A5F",
+        color: "white",
+        overflow: "hidden",
+      }}
+    >
+      {/* Header / Logo Area */}
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 1,
+          position: "relative",
+        }}
+      >
+        {!isMobile && (
+          <IconButton
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            sx={{
+              position: "absolute",
+              top: 20,
+              right: -12,
+              width: 24,
+              height: 24,
+              bgcolor: "white",
+              color: "#C2A368",
+              boxShadow: 2,
+              "&:hover": { bgcolor: "#f5f5f5" },
+              zIndex: 1200,
+            }}
+            size="small"
+          >
+            {isCollapsed ? (
+              <ArrowForward fontSize="small" />
+            ) : (
+              <ArrowBack fontSize="small" />
+            )}
+          </IconButton>
+        )}
+
+        {/* <Image
+          src={images.vakeelLogo}
+          alt="Vakeel At Home"
+          width={isCollapsed ? 60 : 120}
+          height={isCollapsed ? 60 : 120}
+          onClick={() => router.push(getDashboardLink())}
+          style={{ cursor: "pointer", transition: "all 0.3s" }}
+        /> */}
+        {!isCollapsed && (
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: "bold", color: "#C2A368", cursor: "pointer" }}
+            onClick={() => router.push(getDashboardLink())}
+          >
+            {sidebarHeading}
+          </Typography>
+        )}
+      </Box>
+
+      {/* Navigation Items */}
+      <List
+        component="nav"
+        sx={{
+          flex: 1,
+          px: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          "&::-webkit-scrollbar": { width: 4 },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "rgba(255,255,255,0.2)",
+            borderRadius: 2,
+          },
+        }}
+      >
+        {sidebarNavItems.map((item) => {
+          const hasChildren =
+            Array.isArray(item.children) && item.children.length > 0;
+          const active = isActive(item);
+          const isOpen = openMenus[item.name];
+          const itemIcon = <item.icon />;
+
+          if (!hasChildren) {
+            return (
+              <Tooltip
+                key={item.name}
+                title={isCollapsed ? item.name : ""}
+                placement="right"
+                arrow
+              >
+                <ListItem disablePadding sx={{ display: "block", mb: 0.5 }}>
+                  <Link href={item.link} passHref legacyBehavior>
+                    <ListItemButton
+                      selected={active}
+                      onClick={() => {
+                        if (isMobile) setSidebarOpen(false);
+                      }}
+                      sx={{
+                        minHeight: 48,
+                        justifyContent: isCollapsed ? "center" : "initial",
+                        px: 2.5,
+                        borderRadius: 1,
+                        "&.Mui-selected": {
+                          bgcolor: "rgba(148, 163, 184, 0.4)", // bg-slate-400 equivalent opacity
+                          "&:hover": {
+                            bgcolor: "rgba(148, 163, 184, 0.5)",
+                          },
+                        },
+                        "&:hover": {
+                          bgcolor: "rgba(255, 255, 255, 0.08)",
+                        },
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: isCollapsed ? 0 : 2,
+                          justifyContent: "center",
+                          color: active ? "white" : "rgba(255, 255, 255, 0.7)",
+                        }}
+                      >
+                        {itemIcon}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.name}
+                        sx={{
+                          opacity: isCollapsed ? 0 : 1,
+                          ".MuiTypography-root": {
+                            color: "white",
+                            fontWeight: active ? 600 : 400,
+                          },
+                        }}
+                      />
+                    </ListItemButton>
+                  </Link>
+                </ListItem>
+              </Tooltip>
+            );
+          }
+
+          // Parent with children
+          return (
+            <Box key={item.name} sx={{ display: "block", mb: 0.5 }}>
+              <Tooltip
+                title={isCollapsed ? item.name : ""}
+                placement="right"
+                arrow
+              >
+                <ListItemButton
+                  selected={active}
+                  onClick={() => {
+                    if (isCollapsed) {
+                      router.push(item.link);
+                      if (isMobile) setSidebarOpen(false);
+                      return;
+                    }
+                    toggleMenu(item.name);
+                  }}
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: isCollapsed ? "center" : "initial",
+                    px: 2.5,
+                    borderRadius: 1,
+                    "&.Mui-selected": {
+                      bgcolor: "rgba(148, 163, 184, 0.4)",
+                    },
+                    "&:hover": {
+                      bgcolor: "rgba(255, 255, 255, 0.08)",
+                    },
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      mr: isCollapsed ? 0 : 2,
+                      justifyContent: "center",
+                      color: active ? "white" : "rgba(255, 255, 255, 0.7)",
+                    }}
+                  >
+                    {itemIcon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.name}
+                    sx={{
+                      opacity: isCollapsed ? 0 : 1,
+                      ".MuiTypography-root": { color: "white" },
+                    }}
+                  />
+                  {!isCollapsed &&
+                    (isOpen ? (
+                      <ExpandLess sx={{ color: "white" }} />
+                    ) : (
+                      <ExpandMore sx={{ color: "white" }} />
+                    ))}
+                </ListItemButton>
+              </Tooltip>
+
+              <Collapse
+                in={isOpen && !isCollapsed}
+                timeout="auto"
+                unmountOnExit
+              >
+                <List component="div" disablePadding>
+                  {item.children.map((child) => {
+                    const childActive = pathname.startsWith(child.link);
+                    return (
+                      <ListItemButton
+                        key={child.name}
+                        sx={{
+                          pl: 4,
+                          py: 0.5,
+                          borderRadius: 1,
+                          "&:hover": { bgcolor: "rgba(255, 255, 255, 0.05)" },
+                        }}
+                        onClick={() => {
+                          router.push(child.link);
+                          if (isMobile) setSidebarOpen(false);
+                        }}
+                      >
+                        <ListItemText
+                          primary={`• ${child.name}`}
+                          sx={{
+                            ".MuiTypography-root": {
+                              fontSize: "0.875rem",
+                              color: childActive
+                                ? "white"
+                                : "rgba(255, 255, 255, 0.7)",
+                              fontWeight: childActive ? 600 : 400,
+                            },
+                          }}
+                        />
+                      </ListItemButton>
+                    );
+                  })}
+                </List>
+              </Collapse>
+            </Box>
+          );
+        })}
+      </List>
+
+      {/* Footer / Logout */}
+      <Box sx={{ p: 2 }}>
+        <Divider sx={{ bgcolor: "rgba(255,255,255,0.2)", mb: 2 }} />
+        <ListItemButton
+          onClick={handleLogout}
+          sx={{
+            justifyContent: isCollapsed ? "center" : "flex-start",
+            borderRadius: 1,
+            color: "white",
+            "&:hover": {
+              bgcolor: "transparent",
+              color: "#ff8a80", // Light red hover
+            },
+          }}
+        >
+          <ListItemIcon
+            sx={{
+              minWidth: 0,
+              mr: isCollapsed ? 0 : 2,
+              justifyContent: "center",
+              color: "inherit",
+            }}
+          >
+            <Logout />
+          </ListItemIcon>
+          <ListItemText
+            primary="Log Out"
+            sx={{
+              opacity: isCollapsed ? 0 : 1,
+              whiteSpace: "nowrap",
+            }}
+          />
+        </ListItemButton>
+      </Box>
+    </Box>
+  );
 
   return (
-    <>
-      <aside
-        ref={sidebar}
-        className={`fixed left-0 top-0 h-screen shadow-lg transition-all duration-300 ${
-          isCollapsed ? "w-20" : "w-64"
-        } bg-[#1E3A5F] ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 flex flex-col z-40`}
+    <Box
+      component="nav"
+      sx={{
+        width: { lg: isCollapsed ? 80 : 256 },
+        flexShrink: { lg: 0 },
+        transition: "width 0.3s",
+      }}
+      aria-label="mailbox folders"
+    >
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: "block", lg: "none" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: 256,
+            border: "none",
+          },
+        }}
       >
-        <div className="flex-1 min-h-0 flex flex-col">
-          <div className="p-4 flex flex-col items-center gap-2 relative">
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 bg-white rounded-full items-center justify-center text-[#C2A368] shadow-md cursor-pointer"
-            >
-              {isCollapsed ? <ArrowRightOutlined /> : <ArrowLeftOutlined />}
-            </button>
+        {sidebarContent}
+      </Drawer>
 
-            <Image
-              src={images.vakeelLogo}
-              alt="Vakeel At Home"
-              width={120}
-              height={120}
-              onClick={() => router.push(getDashboardLink())}
-              className="cursor-pointer"
-            />
-            {!isCollapsed && (
-              <span
-                className="font-bold text-lg text-[#C2A368] cursor-pointer"
-                onClick={() => router.push(getDashboardLink())}
-              >
-                {sidebarHeading}
-              </span>
-            )}
-          </div>
-
-          <nav className="p-4 space-y-2 overflow-y-auto overflow-x-hidden sidebar-scroll">
-            {sidebarNavItems.map((item) => {
-              const hasChildren =
-                Array.isArray(item.children) && item.children.length > 0;
-              const active = isActive(item);
-              const isOpen = openMenus[item.name];
-
-              if (!hasChildren) {
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.link}
-                    prefetch={false}
-                    title={isCollapsed ? item.name : undefined}
-                    aria-label={isCollapsed ? item.name : undefined}
-                    onClick={() => {
-                      if (window.innerWidth < 1024) setSidebarOpen(false);
-                    }}
-                    className={`relative group flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-200 ${
-                      active
-                        ? "bg-slate-400 text-white shadow-lg"
-                        : "text-white hover:bg-slate-600"
-                    } ${isCollapsed && "justify-center"}`}
-                  >
-                    <item.icon />
-                    {!isCollapsed && <span>{item.name}</span>}
-                    {isCollapsed && (
-                      <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-md bg-white/95 text-gray-900 shadow-lg px-3 py-1.5 text-sm ring-1 ring-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
-                        {item.name}
-                      </span>
-                    )}
-                  </Link>
-                );
-              }
-
-              return (
-                <div key={item.name} className="w-full">
-                  <button
-                    type="button"
-                    title={isCollapsed ? item.name : undefined}
-                    aria-label={isCollapsed ? item.name : undefined}
-                    onClick={() => {
-                      if (isCollapsed) {
-                        router.push(item.link);
-                        if (window.innerWidth < 1024) setSidebarOpen(false);
-                        return;
-                      }
-                      toggleMenu(item.name);
-                    }}
-                    className={`relative group w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-200 ${
-                      active
-                        ? "bg-slate-400 text-white shadow-lg"
-                        : "text-white hover:bg-slate-600"
-                    } ${isCollapsed && "justify-center"}`}
-                  >
-                    <item.icon />
-                    {!isCollapsed && (
-                      <span className="flex-1">{item.name}</span>
-                    )}
-                    {!isCollapsed && hasChildren && (
-                      <span className="ml-auto text-white/80">
-                        {isOpen ? (
-                          <CaretDownOutlined />
-                        ) : (
-                          <CaretRightOutlined />
-                        )}
-                      </span>
-                    )}
-                    {isCollapsed && (
-                      <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-md bg-white/95 text-gray-900 shadow-lg px-3 py-1.5 text-sm ring-1 ring-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
-                        {item.name}
-                      </span>
-                    )}
-                  </button>
-
-                  {isOpen && !isCollapsed && (
-                    <div className="mt-1 ml-8 space-y-1">
-                      {item.children.map((child) => {
-                        const childActive = pathname.startsWith(child.link);
-                        return (
-                          <Link
-                            key={child.name}
-                            href={child.link}
-                            prefetch={false}
-                            onClick={() => {
-                              if (window.innerWidth < 1024)
-                                setSidebarOpen(false);
-                            }}
-                            className={`block px-3 py-1.5 rounded-md text-sm ${
-                              childActive
-                                ? "bg-white/20 text-white"
-                                : "text-white/80 hover:bg-white/10 hover:text-white"
-                            }`}
-                          >
-                            <span>• {child.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="mt-auto p-4">
-          <div
-            className={`h-px bg-white mx-auto mb-4 ${
-              isCollapsed ? "w-4/5" : "w-11/12"
-            }`}
-          ></div>
-          <button
-            onClick={handleLogout}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-white hover:text-red-400 transition-colors duration-200 cursor-pointer ${
-              isCollapsed ? "justify-center" : "justify-center"
-            }`}
-          >
-            <LogoutOutlined className="text-xl" />
-            {!isCollapsed && "Log Out"}
-          </button>
-        </div>
-      </aside>
-    </>
+      {/* Desktop Persistent Drawer */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: "none", lg: "block" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: isCollapsed ? 80 : 256,
+            transition: "width 0.3s",
+            border: "none",
+            overflow: "visible", // For the collapse button
+          },
+        }}
+        open
+      >
+        {sidebarContent}
+      </Drawer>
+    </Box>
   );
 }

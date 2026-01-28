@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "antd";
 import { useRouter } from "next/navigation";
+import { Box, Typography, Button } from "@mui/material";
 
 const Title = ({ title, buttonText, destination, onButtonClick }) => {
   const router = useRouter();
@@ -15,17 +15,39 @@ const Title = ({ title, buttonText, destination, onButtonClick }) => {
   };
 
   return (
-    <div className="flex justify-between">
-      <h1 className="text-[#2E2E2E] text-xl" style={{ fontWeight: 600 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        mb: 3,
+      }}
+    >
+      <Typography
+        variant="h5"
+        component="h1"
+        sx={{
+          color: "#2E2E2E",
+          fontWeight: 600,
+        }}
+      >
         {title}
-      </h1>
+      </Typography>
 
       {buttonText && (
-        <Button className="simple-button" onClick={handleDestination}>
+        <Button
+          variant="contained"
+          onClick={handleDestination}
+          sx={{
+            textTransform: "none",
+            borderRadius: 20,
+            px: 3,
+          }}
+        >
           {buttonText}
         </Button>
       )}
-    </div>
+    </Box>
   );
 };
 

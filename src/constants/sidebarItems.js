@@ -1,11 +1,4 @@
-
-import {
-
-  LayoutDashboard,
-
-  Users,
-
-} from "lucide-react";
+import { Dashboard, People } from "@mui/icons-material";
 
 export const sidebarHeading = "SRS";
 
@@ -13,12 +6,12 @@ export const adminSidebarItems = [
   {
     name: "Dashboard",
     link: "/admin/dashboard",
-    icon: LayoutDashboard,
+    icon: Dashboard,
   },
   {
     name: "All Users",
     link: "/admin/all",
-    icon: Users,
+    icon: People,
   },
   // {
   //   name: "Subscription Management",

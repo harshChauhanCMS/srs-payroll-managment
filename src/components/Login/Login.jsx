@@ -6,27 +6,84 @@ import usePostQuery from "@/hooks/postQuery.hook";
 import { apiUrls } from "@/apis";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-import { Fragment } from "react";
+import { useState } from "react";
 import { setUser } from "@/helpers/slices/userSlice";
 import { setAuthTokens, setUserData } from "@/utils/storage";
-import { Form, Input, Button, Typography } from "antd";
-import { LockOutlined, PhoneOutlined } from "@ant-design/icons";
-
-const { Title, Text } = Typography;
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Container,
+  TextField,
+  Typography,
+  InputAdornment,
+} from "@mui/material";
+import { Phone, Lock } from "@mui/icons-material";
 
 const Login = () => {
-  const [form] = Form.useForm();
   const { postQuery, loading } = usePostQuery();
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const handleLogin = (values) => {
+  // Local state for form values
+  const [formData, setFormData] = useState({
+    mobileNumber: "",
+    password: "",
+  });
+
+  const [errors, setErrors] = useState({
+    mobileNumber: "",
+    password: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validate = () => {
+    let isValid = true;
+    const newErrors = { ...errors };
+
+    if (!formData.mobileNumber) {
+      newErrors.mobileNumber = "Please enter your mobile number";
+      isValid = false;
+    } else if (!/^[6-9]\d{9}$/.test(formData.mobileNumber)) {
+      newErrors.mobileNumber = "Please enter a valid 10-digit mobile number";
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Please enter your password";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+
+    if (!validate()) return;
+
     // Add +91 prefix to mobile number
-    const mobileNumberWithPrefix = `+91${values.mobileNumber}`;
+    const mobileNumberWithPrefix = `+91${formData.mobileNumber}`;
 
     const payload = {
       mobileNumber: mobileNumberWithPrefix,
-      password: values.password,
+      password: formData.password,
       role: "admin",
     };
 
@@ -43,7 +100,7 @@ const Login = () => {
           setUser({
             user: admin,
             tokens: { accessToken: token },
-          })
+          }),
         );
 
         setAuthTokens({ accessToken: token });
@@ -61,90 +118,106 @@ const Login = () => {
   };
 
   return (
-    <Fragment>
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#f5f7fa",
-          padding: "24px",
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#f5f7fa",
+        p: 3,
+      }}
+    >
+      <Card
+        sx={{
+          maxWidth: 400,
+          width: "100%",
+          borderRadius: 4,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         }}
       >
-        <div
-          style={{
-            width: 400,
-            padding: 32,
-            borderRadius: 16,
-            backgroundColor: "#fff",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-          }}
-        >
-          <Title
-            level={3}
-            style={{
-              textAlign: "center",
+        <CardContent sx={{ p: 4 }}>
+          <Typography
+            variant="h5"
+            component="h1"
+            align="center"
+            sx={{
               color: "#1E3A5F",
-              marginBottom: 24,
+              fontWeight: 600,
+              mb: 3,
             }}
           >
             Admin Login
-          </Title>
-
-          <Form form={form} layout="vertical" onFinish={handleLogin}>
-            <Form.Item
+          </Typography>
+          <Box component="form" onSubmit={handleLogin} noValidate>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="mobileNumber"
               label="Mobile Number"
               name="mobileNumber"
-              rules={[
-                { required: true, message: "Please enter your mobile number" },
-                {
-                  pattern: /^[6-9]\d{9}$/,
-                  message: "Please enter a valid 10-digit mobile number",
+              placeholder="9699554545"
+              autoFocus
+              value={formData.mobileNumber}
+              onChange={handleChange}
+              error={!!errors.mobileNumber}
+              helperText={errors.mobileNumber}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Phone color="action" />
+                    </InputAdornment>
+                  ),
                 },
-              ]}
-            >
-              <Input
-                prefix={<PhoneOutlined />}
-                size="large"
-                placeholder="9699554545"
-                maxLength={10}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Password"
+              }}
+              inputProps={{ maxLength: 10 }}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
               name="password"
-              rules={[
-                { required: true, message: "Please enter your password" },
-              ]}
+              label="Password"
+              type="password"
+              id="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              error={!!errors.password}
+              helperText={errors.password}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Lock color="action" />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={loading}
+              sx={{
+                mt: 3,
+                mb: 2,
+                borderRadius: 20,
+                py: 1.5,
+                textTransform: "none",
+                fontSize: "1rem",
+              }}
             >
-              <Input.Password
-                prefix={<LockOutlined />}
-                size="large"
-                placeholder="Enter your password"
-              />
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="large"
-                loading={loading}
-                block
-                className="simple-button"
-                style={{
-                  borderRadius: 20,
-                }}
-              >
-                Log In
-              </Button>
-            </Form.Item>
-          </Form>
-        </div>
-      </div>
-    </Fragment>
+              {loading ? "Logging in..." : "Log In"}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

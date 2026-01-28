@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
-
 import { images } from "@/assets/images";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { Box, Typography, Button, Avatar } from "@mui/material";
 
 const Header = () => {
   const router = useRouter();
@@ -13,39 +12,94 @@ const Header = () => {
   const handleLoginClick = () => router.push("/");
 
   return (
-    <div className="w-full mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 lg:gap-6">
+    <Box
+      sx={{
+        width: "100%",
+        mx: "auto",
+        display: "flex",
+        flexDirection: { xs: "column", lg: "row" },
+        alignItems: { xs: "flex-start", lg: "center" },
+        justifyContent: "space-between",
+        gap: { xs: 1.5, lg: 3 },
+      }}
+    >
       {/* Greeting */}
-      <h1 className="text-base sm:text-lg lg:text-xl font-semibold text-[#C2A368] leading-snug">
+      <Typography
+        variant="h6"
+        component="h1"
+        sx={{
+          color: "#C2A368",
+          fontWeight: 600,
+          lineHeight: 1.3,
+          fontSize: { xs: "1rem", sm: "1.125rem", lg: "1.25rem" },
+        }}
+      >
         Hi, {user?.fullName || "User"}
-      </h1>
+      </Typography>
 
       {/* Actions */}
-      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: { xs: 1.5, sm: 2 },
+        }}
+      >
         {isAuthenticated ? (
-          <div className="flex items-center gap-2 cursor-pointer">
-            <div className="h-8 w-8 rounded-full bg-slate-200 overflow-hidden ring-2 ring-slate-100">
-              <Image
-                src={user?.profilePicture || images.userProfile}
-                alt="Profile"
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <span className="font-medium text-sm sm:text-base text-slate-800">
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              cursor: "pointer",
+            }}
+          >
+            <Avatar
+              src={user?.profilePicture || images.userProfile}
+              alt="Profile"
+              sx={{
+                width: 32,
+                height: 32,
+                border: "2px solid #f1f5f9",
+                bgcolor: "#e2e8f0",
+              }}
+            />
+            <Typography
+              sx={{
+                fontWeight: 500,
+                fontSize: { xs: "0.875rem", sm: "1rem" },
+                color: "#1e293b",
+              }}
+            >
               {user?.fullName || "User"}
-            </span>
-          </div>
+            </Typography>
+          </Box>
         ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              className="simple-button text-sm px-3 py-1 sm:px-4 sm:py-2"
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <Button
+              variant="contained"
               onClick={handleLoginClick}
+              size="small"
+              sx={{
+                textTransform: "none",
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 0.5, sm: 1 },
+              }}
             >
               Login
-            </button>
-          </div>
+            </Button>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 
