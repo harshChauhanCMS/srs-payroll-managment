@@ -56,7 +56,7 @@ const Header = () => {
             }}
           >
             <Avatar
-              src={user?.profilePicture || images.userProfile}
+              src={user?.profile || images.profile}
               alt="Profile"
               sx={{
                 width: 32,

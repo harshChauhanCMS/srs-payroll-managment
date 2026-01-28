@@ -3,12 +3,15 @@
 import moment from "moment";
 import toast from "react-hot-toast";
 import Title from "@/components/Title/Title";
+import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import usePatchQuery from "@/hooks/patchQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
-import Loader from "@/components/Loader/Loader";
 import EnhancedTable from "@/components/Table/EnhancedTable";
 
+import { apiUrls } from "@/apis";
+import { useEffect, useState } from "react";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import {
   Select,
   MenuItem,
@@ -22,9 +25,6 @@ import {
   Box,
   Typography,
 } from "@mui/material";
-import { apiUrls } from "@/apis";
-import { useEffect, useState } from "react";
-import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
 const Blogs = () => {
   const router = useRouter();
