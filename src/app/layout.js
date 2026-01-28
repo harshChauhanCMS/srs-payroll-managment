@@ -3,6 +3,8 @@ import "./globals.css";
 import ReduxProvider from "@/components/ReduxProvider/ReduxProvider";
 import { Toaster } from "react-hot-toast";
 
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+
 const poppins = Poppins({ weight: "400", subsets: ["latin"] });
 
 export const metadata = {
@@ -19,13 +21,15 @@ export default function RootLayout({ children }) {
     >
       <body className={poppins.className}>
         <ReduxProvider>
-          {children}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-            }}
-          />
+          <ThemeRegistry>
+            {children}
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+              }}
+            />
+          </ThemeRegistry>
         </ReduxProvider>
       </body>
     </html>
