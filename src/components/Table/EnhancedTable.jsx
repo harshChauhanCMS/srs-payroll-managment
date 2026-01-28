@@ -1,31 +1,35 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
+"use client";
 import moment from "moment";
-
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 import {
-  EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  LeftCircleOutlined,
-  RightCircleOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+  Visibility,
+  Edit,
+  Delete,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+} from "@mui/icons-material";
 import {
   Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
   Select,
-  Typography,
+  MenuItem,
+  TextField,
   Button,
-  Input,
-  Row,
-  Col,
-  Space,
-  DatePicker,
-} from "antd";
-
-const { Option } = Select;
-const { RangePicker } = DatePicker;
+  IconButton,
+  Box,
+  Stack,
+  Typography,
+  InputAdornment,
+  TableSortLabel,
+  Grid,
+} from "@mui/material";
 
 const EnhancedTable = ({
   columns,
@@ -46,7 +50,9 @@ const EnhancedTable = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterValues, setFilterValues] = useState({});
-  const [dateRange, setDateRange] = useState([]);
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [order, setOrder] = useState("asc");
+  const [orderBy, setOrderBy] = useState("");
   const navigate = useRouter();
 
   const handleView = (item) => {
@@ -74,54 +80,18 @@ const EnhancedTable = ({
     }
   };
 
-  const actionColumn = {
-    title: "Actions",
-    dataIndex: "actions",
-    key: "actions",
-    width: 150,
-    render: (_, row) => (
-      <Space>
-        {onView && (
-          <Button
-            type="link"
-            icon={<EyeOutlined style={{ color: "blue", fontSize: "16px" }} />}
-            onClick={() => handleView(row)}
-          />
-        )}
-        {onEdit && (
-          <Button
-            type="link"
-            icon={
-              <EditOutlined style={{ color: "#c9c740", fontSize: "16px" }} />
-            }
-            onClick={() => handleEdit(row)}
-          />
-        )}
-        {onDelete && (
-          <Button
-            type="link"
-            icon={<DeleteOutlined style={{ color: "red", fontSize: "16px" }} />}
-            onClick={() => handleDelete(row)}
-          />
-        )}
-      </Space>
-    ),
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
   };
 
-  const handleFilterChange = (column, value) => {
+  const handleFilterChange = (accessor, value) => {
     setFilterValues((prev) => ({
       ...prev,
-      [column.accessor]: value === "" ? undefined : value,
+      [accessor]: value === "" ? undefined : value,
     }));
   };
-
-  const enhancedColumns = useMemo(() => {
-    let baseColumns = columns;
-    if (showActions) {
-      baseColumns = [...columns, actionColumn];
-    }
-    return baseColumns;
-  }, [columns, showActions, onView, onEdit, onDelete]);
 
   const filteredData = useMemo(() => {
     if (!data) return [];
@@ -135,19 +105,19 @@ const EnhancedTable = ({
             return value.toString().includes(searchQuery);
           }
           return false;
-        })
+        }),
       )
       .filter((row) =>
         Object.entries(filterValues).every(([key, value]) => {
           if (value === undefined) return true;
           return row[key] === value;
-        })
+        }),
       )
       .filter((row) => {
-        if (dateRange.length === 2) {
-          const [start, end] = dateRange;
-          const startDate = moment(start.toDate()).startOf("day");
-          const endDate = moment(end.toDate()).endOf("day");
+        const [start, end] = dateRange;
+        if (start && end) {
+          const startDate = moment(start).startOf("day");
+          const endDate = moment(end).endOf("day");
           const dateValue = moment(row.updatedAt);
           if (!dateValue.isValid()) return false;
           return dateValue.isBetween(startDate, endDate, "day", "[]");
@@ -156,146 +126,271 @@ const EnhancedTable = ({
       });
   }, [data, searchQuery, filterValues, dateRange]);
 
-  const antColumns = enhancedColumns.map((column) => ({
-    title: (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          width: "100%",
-        }}
-      >
-        <Typography.Text strong style={{ textAlign: "left" }}>
-          {column.title || column.Header}
-        </Typography.Text>
-        {filterColumns?.includes(column.accessor) && (
-          <Select
-            placeholder={`Filter by ${column.Header}`}
-            value={filterValues[column.accessor] || ""}
-            onChange={(value) => handleFilterChange(column, value)}
-            style={{ width: "60%", minWidth: 120 }}
-            dropdownStyle={{ backgroundColor: "#f9f9f9" }}
-          >
-            <Option value="">All</Option>
-            {[...new Set(data.map((row) => row[column.accessor]))].map(
-              (value, index) => (
-                <Option key={index} value={value}>
-                  {value}
-                </Option>
-              )
-            )}
-          </Select>
-        )}
-      </div>
-    ),
-    dataIndex: column.accessor || column.dataIndex,
-    key: column.accessor || column.key,
-    width: column.width,
-    sorter: (a, b) =>
-      a[column.accessor || column.dataIndex] >
-      b[column.accessor || column.dataIndex]
-        ? 1
-        : a[column.accessor || column.dataIndex] <
-          b[column.accessor || column.dataIndex]
-        ? -1
-        : 0,
-    render: column.Cell || column.render || ((value, record, index) => value),
-  }));
-
-  const paginatedData = filteredData;
+  const sortedData = useMemo(() => {
+    if (!orderBy) return filteredData;
+    return [...filteredData].sort((a, b) => {
+      const aValue = a[orderBy];
+      const bValue = b[orderBy];
+      if (bValue < aValue) {
+        return order === "asc" ? -1 : 1;
+      }
+      if (bValue > aValue) {
+        return order === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [filteredData, order, orderBy]);
 
   const totalPages = Math.ceil(totalDocuments / pageLimit);
 
-  return (
-    <>
-      <Space direction="vertical" style={{ width: "100%" }}>
-        <Typography.Text
-          type="secondary"
-          style={{
-            fontSize: "16px",
-            fontWeight: "bold",
-            color: "#1E3A5F",
-            float: "right",
-          }}
-        >
-          {entryText}
-        </Typography.Text>
+  // Helper to render cell content
+  const renderCell = (column, row, index) => {
+    if (column.Cell) return column.Cell(row[column.accessor], row, index);
+    if (column.render) return column.render(row[column.accessor], row, index);
+    return row[column.accessor];
+  };
 
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={12}>
-            <Input
+  return (
+    <Box sx={{ width: "100%" }}>
+      <Stack direction="column" spacing={2}>
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <Typography
+            variant="subtitle1"
+            color="textSecondary"
+            fontWeight="bold"
+            sx={{ color: "#1E3A5F" }}
+          >
+            {entryText}
+          </Typography>
+        </Box>
+
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
               placeholder="Search..."
-              prefix={<SearchOutlined />}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ borderColor: "#1E3A5F", borderWidth: 1 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderColor: "#1E3A5F",
+                },
+              }}
+              size="small"
             />
-          </Col>
-          <Col xs={24} md={12}>
+          </Grid>
+          <Grid item xs={12} md={6}>
             {showDate && (
-              <RangePicker
-                value={dateRange}
-                onChange={(dates) => setDateRange(dates || [])}
-                format="DD-MM-YYYY"
-                style={{ width: "100%", borderColor: "#1E3A5F" }}
-                allowClear
-              />
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  type="date"
+                  fullWidth
+                  size="small"
+                  onChange={(e) => {
+                    const val = e.target.value ? moment(e.target.value) : null;
+                    setDateRange((prev) => [val, prev[1]]);
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  type="date"
+                  fullWidth
+                  size="small"
+                  onChange={(e) => {
+                    const val = e.target.value ? moment(e.target.value) : null;
+                    setDateRange((prev) => [prev[0], val]);
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Stack>
             )}
-          </Col>
-        </Row>
+          </Grid>
+        </Grid>
 
-        <Table
-          columns={antColumns}
-          dataSource={paginatedData}
-          pagination={false}
-          rowKey={(record) =>
-            record._id || record.id || record.key || JSON.stringify(record)
-          }
-          bordered
-          scroll={{ x: "max-content" }}
-          className="custom-table"
-        />
+        <TableContainer
+          component={Paper}
+          variant="outlined"
+          sx={{ overflowX: "auto" }}
+        >
+          <Table stickyHeader className="custom-table">
+            <TableHead>
+              <TableRow>
+                {columns.map((column) => (
+                  <TableCell
+                    key={column.accessor || column.Header}
+                    width={column.width}
+                    sx={{ fontWeight: "bold", backgroundColor: "#fafafa" }}
+                  >
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      spacing={1}
+                    >
+                      <TableSortLabel
+                        active={orderBy === column.accessor}
+                        direction={orderBy === column.accessor ? order : "asc"}
+                        onClick={() => handleRequestSort(column.accessor)}
+                      >
+                        {column.Header}
+                      </TableSortLabel>
 
-        <Row justify="space-between" align="middle">
-          <Col className="flex">
-            <Button
-              type="text"
-              icon={<LeftCircleOutlined />}
-              disabled={currentPage === 1}
+                      {filterColumns?.includes(column.accessor) && (
+                        <Select
+                          value={filterValues[column.accessor] || ""}
+                          onChange={(e) =>
+                            handleFilterChange(column.accessor, e.target.value)
+                          }
+                          displayEmpty
+                          variant="standard"
+                          disableUnderline
+                          sx={{
+                            minWidth: 100,
+                            fontSize: "0.875rem",
+                            "& .MuiSelect-select": {
+                              paddingRight: 2,
+                            },
+                          }}
+                        >
+                          <MenuItem value="">All</MenuItem>
+                          {[
+                            ...new Set(data.map((row) => row[column.accessor])),
+                          ].map((value, index) => (
+                            <MenuItem key={index} value={value}>
+                              {value}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      )}
+                    </Stack>
+                  </TableCell>
+                ))}
+                {showActions && (
+                  <TableCell
+                    key="actions"
+                    width={150}
+                    sx={{ fontWeight: "bold", backgroundColor: "#fafafa" }}
+                  >
+                    Actions
+                  </TableCell>
+                )}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sortedData.map((row, index) => (
+                <TableRow
+                  key={
+                    row._id || row.id || row.key || JSON.stringify(row) || index
+                  }
+                  hover
+                >
+                  {columns.map((column) => (
+                    <TableCell key={column.accessor || column.Header}>
+                      {renderCell(column, row, index)}
+                    </TableCell>
+                  ))}
+                  {showActions && (
+                    <TableCell>
+                      <Stack direction="row" spacing={1}>
+                        {onView && (
+                          <IconButton
+                            size="small"
+                            onClick={() => handleView(row)}
+                            sx={{ color: "blue" }}
+                          >
+                            <Visibility fontSize="small" />
+                          </IconButton>
+                        )}
+                        {onEdit && (
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEdit(row)}
+                            sx={{ color: "#c9c740" }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        )}
+                        {onDelete && (
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete(row)}
+                            sx={{ color: "red" }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+              {sortedData.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length + (showActions ? 1 : 0)}
+                    align="center"
+                  >
+                    No data found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ pt: 2 }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <IconButton
               onClick={() => onPageChange(currentPage - 1)}
-              className="pt-2"
-            />
-            <p
-              style={{ color: "#1E3A5F", fontWeight: "bold", marginTop: "6px" }}
+              disabled={currentPage === 1}
             >
-              Page {currentPage} of {totalPages}
-            </p>
-            <Button
-              type="text"
-              icon={<RightCircleOutlined />}
-              disabled={currentPage >= totalPages}
+              <ChevronLeft />
+            </IconButton>
+            <Typography
+              sx={{
+                color: "#1E3A5F",
+                fontWeight: "bold",
+                fontSize: "0.875rem",
+              }}
+            >
+              Page {currentPage} of {totalPages || 1}
+            </Typography>
+            <IconButton
               onClick={() => onPageChange(currentPage + 1)}
-              className="pt-2"
-            />
-          </Col>
-          <Col>
-            <Space>
-              <Typography.Text>Rows per page:</Typography.Text>
-              <Select
-                value={pageLimit}
-                onChange={onLimitChange}
-                style={{ width: 80, borderColor: "#1E3A5F" }}
-              >
-                <Option value={10}>10</Option>
-                <Option value={20}>20</Option>
-                <Option value={50}>50</Option>
-              </Select>
-            </Space>
-          </Col>
-        </Row>
-      </Space>
-    </>
+              disabled={currentPage >= totalPages}
+            >
+              <ChevronRight />
+            </IconButton>
+          </Stack>
+
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Typography variant="body2">Rows per page:</Typography>
+            <Select
+              value={pageLimit}
+              onChange={onLimitChange}
+              size="small"
+              sx={{ minWidth: 70 }}
+            >
+              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={20}>20</MenuItem>
+              <MenuItem value={50}>50</MenuItem>
+            </Select>
+          </Stack>
+        </Stack>
+      </Stack>
+    </Box>
   );
 };
 

@@ -9,7 +9,19 @@ import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import Loader from "@/components/Loader/Loader";
 import EnhancedTable from "@/components/Table/EnhancedTable";
 
-import { Select, Modal } from "antd";
+import {
+  Select,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  CircularProgress,
+  Box,
+  Typography,
+} from "@mui/material";
 import { apiUrls } from "@/apis";
 import { useEffect, useState } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
@@ -32,6 +44,7 @@ const Blogs = () => {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   const fetchData = () => {
     getQuery({
       url: `${apiUrls?.blogs?.getAllBlogs}?page=${page}&limit=${limit}`,
@@ -67,8 +80,10 @@ const Blogs = () => {
         toast.success("Blog verification status updated successfully");
         setTableData((prevData) =>
           prevData.map((item) =>
-            item._id === blogId ? { ...item, isVerified: !currentStatus } : item
-          )
+            item._id === blogId
+              ? { ...item, isVerified: !currentStatus }
+              : item,
+          ),
         );
         setTogglingId(null);
       },
@@ -93,7 +108,7 @@ const Blogs = () => {
       onSuccess: (response) => {
         toast.success("Blog deleted successfully");
         setTableData((prevData) =>
-          prevData.filter((item) => item._id !== blogToDelete._id)
+          prevData.filter((item) => item._id !== blogToDelete._id),
         );
         setTotalDocuments((prev) => prev - 1);
         setDeleteModalVisible(false);
@@ -137,27 +152,26 @@ const Blogs = () => {
         return (
           <Select
             value={value ? "verified" : "not_verified"}
-            onChange={(newValue) => {
+            onChange={(e) => {
               handleToggleVerification(record._id, value);
             }}
-            loading={togglingId === record._id}
             disabled={togglingId === record._id}
-            style={{ width: "100%", minWidth: "160px" }}
+            sx={{ width: "100%", minWidth: "160px" }}
             size="small"
-            className="verification-status-select"
+            variant="outlined"
           >
-            <Select.Option value="not_verified">
+            <MenuItem value="not_verified">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                 <span>Not Verified</span>
               </div>
-            </Select.Option>
-            <Select.Option value="verified">
+            </MenuItem>
+            <MenuItem value="verified">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span>Verified</span>
               </div>
-            </Select.Option>
+            </MenuItem>
           </Select>
         );
       },
@@ -210,41 +224,59 @@ const Blogs = () => {
             totalPages={Math.ceil(totalDocuments / limit)}
             pageLimit={limit}
             onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
+            onLimitChange={(e) => handleLimitChange(e.target.value)}
             totalDocuments={totalDocuments}
           />
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        title="Delete Blog"
+      {/* Delete Confirmation Dialog */}
+      <Dialog
         open={deleteModalVisible}
-        onOk={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
-        okText="Delete"
-        cancelText="Cancel"
-        okButtonProps={{
-          danger: true,
-          loading: deleteLoading,
-        }}
-        cancelButtonProps={{ disabled: deleteLoading }}
+        onClose={handleDeleteCancel}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
       >
-        <div className="py-4">
-          <p className="text-gray-600 mb-4">
+        <DialogTitle id="alert-dialog-title">Delete Blog</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
             Are you sure you want to delete this blog? This action cannot be
             undone.
-          </p>
+          </DialogContentText>
           {blogToDelete && (
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="font-medium text-gray-800">Blog Title:</p>
-              <p className="text-gray-600">{blogToDelete.title}</p>
-              <p className="font-medium text-gray-800 mt-2">Author:</p>
-              <p className="text-gray-600">{blogToDelete.authorName}</p>
-            </div>
+            <Box sx={{ mt: 2, bgcolor: "#f9fafb", p: 2, borderRadius: 1 }}>
+              <Typography variant="subtitle2" fontWeight="bold">
+                Blog Title:
+              </Typography>
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                {blogToDelete.title}
+              </Typography>
+              <Typography variant="subtitle2" fontWeight="bold">
+                Author:
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {blogToDelete.authorName}
+              </Typography>
+            </Box>
           )}
-        </div>
-      </Modal>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} disabled={deleteLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            disabled={deleteLoading}
+            autoFocus
+            startIcon={
+              deleteLoading ? <CircularProgress size={20} /> : undefined
+            }
+          >
+            {deleteLoading ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

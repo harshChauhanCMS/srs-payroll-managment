@@ -4,26 +4,35 @@ import moment from "moment";
 import toast from "react-hot-toast";
 import Title from "@/components/Title/Title";
 import useGetQuery from "@/hooks/getQuery.hook";
-import usePatchQuery from "@/hooks/patchQuery.hook";
 import Loader from "@/components/Loader/Loader";
-
-import { Card, Button, Tag, Space, Typography, Image, Divider } from "antd";
-import {
-  UserOutlined,
-  CalendarOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons";
-import { apiUrls } from "@/apis";
-import { useEffect, useState } from "react";
-import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import usePatchQuery from "@/hooks/patchQuery.hook";
 import BackHeader from "@/components/BackHeader/BackHeader";
 
-const { Text, Paragraph, Title: AntTitle } = Typography;
+import { apiUrls } from "@/apis";
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Button,
+  Chip,
+  Stack,
+  Typography,
+  Divider,
+  Grid,
+  Box,
+  CircularProgress,
+} from "@mui/material";
+import {
+  Person as UserIcon,
+  CalendarToday as CalendarIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CloseCircleIcon,
+} from "@mui/icons-material";
 
 const BlogDetail = ({ params }) => {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const { getQuery, loading } = useGetQuery();
@@ -71,13 +80,8 @@ const BlogDetail = ({ params }) => {
     if (blogId) {
       fetchBlogData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blogId]);
-
-  const handleBack = () => {
-    const page = searchParams.get("page") || "1";
-    const limit = searchParams.get("limit") || "10";
-    router.push(`/admin/blogs?page=${page}&limit=${limit}`);
-  };
 
   if (loading) {
     return (
@@ -90,7 +94,7 @@ const BlogDetail = ({ params }) => {
   if (!blogData) {
     return (
       <div className="text-center py-8">
-        <Text type="secondary">Blog not found</Text>
+        <Typography color="textSecondary">Blog not found</Typography>
       </div>
     );
   }
@@ -101,146 +105,196 @@ const BlogDetail = ({ params }) => {
 
       <Title title={`Blog: ${blogData.title}`} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6">
+      <Grid container spacing={3} sx={{ pt: 3 }}>
         {/* Main Content */}
-        <div className="lg:col-span-2">
+        <Grid item xs={12} lg={8}>
           <Card>
-            <div className="mb-6">
-              <AntTitle level={2} className="mb-4">
-                {blogData.title}
-              </AntTitle>
+            <CardContent>
+              <Box mb={3}>
+                <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  {blogData.title}
+                </Typography>
 
-              <div className="mb-4">
-                <Space>
-                  <Tag
-                    color={blogData.isVerified ? "green" : "red"}
-                    icon={
-                      blogData.isVerified ? (
-                        <CheckCircleOutlined />
-                      ) : (
-                        <CloseCircleOutlined />
-                      )
-                    }
-                  >
-                    {blogData.isVerified ? "Verified" : "Not Verified"}
-                  </Tag>
-                  <Text type="secondary">
-                    <CalendarOutlined className="mr-1" />
-                    {moment(blogData.createdAt).format("MMM DD, YYYY h:mm A")}
-                  </Text>
-                </Space>
-              </div>
-
-              <Paragraph className="text-lg leading-relaxed">
-                {blogData.description}
-              </Paragraph>
-            </div>
-
-            {/* Images */}
-            {blogData.images && blogData.images.length > 0 && (
-              <div className="mb-6">
-                <AntTitle level={4} className="mb-4">
-                  Images
-                </AntTitle>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {blogData.images.map((image, index) => (
-                    <Image
-                      key={index}
-                      src={image}
-                      alt={`Blog image ${index + 1}`}
-                      className="rounded-lg"
-                      style={{ width: "100%", height: "auto" }}
+                <Box mb={2}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Chip
+                      label={blogData.isVerified ? "Verified" : "Not Verified"}
+                      color={blogData.isVerified ? "success" : "error"}
+                      icon={
+                        blogData.isVerified ? (
+                          <CheckCircleIcon />
+                        ) : (
+                          <CloseCircleIcon />
+                        )
+                      }
+                      size="small"
+                      variant="filled"
+                      sx={{ color: "white" }}
                     />
-                  ))}
-                </div>
-              </div>
-            )}
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={0.5}
+                      color="text.secondary"
+                    >
+                      <CalendarIcon fontSize="small" />
+                      <Typography variant="body2">
+                        {moment(blogData.createdAt).format(
+                          "MMM DD, YYYY h:mm A",
+                        )}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Box>
+
+                <Typography
+                  variant="body1"
+                  fontSize="1.125rem"
+                  sx={{ lineHeight: 1.7 }}
+                >
+                  {blogData.description}
+                </Typography>
+              </Box>
+
+              {/* Images */}
+              {blogData.images && blogData.images.length > 0 && (
+                <Box mb={3}>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    Images
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {blogData.images.map((image, index) => (
+                      <Grid item xs={12} md={6} key={index}>
+                        <Box
+                          component="img"
+                          src={image}
+                          alt={`Blog image ${index + 1}`}
+                          sx={{
+                            width: "100%",
+                            height: "auto",
+                            borderRadius: 2,
+                            display: "block",
+                          }}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+            </CardContent>
           </Card>
-        </div>
+        </Grid>
 
         {/* Sidebar */}
-        <div className="lg:col-span-1">
-          <Card title="Blog Information" className="mb-6">
-            <div className="space-y-4">
-              <div>
-                <Text strong>Author</Text>
-                <div className="flex items-center mt-2">
-                  <UserOutlined className="mr-2 text-blue-500" />
-                  <div>
-                    <div className="font-medium">
-                      {blogData.author.fullName}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {blogData.author.email}
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <Grid item xs={12} lg={4}>
+          <Card sx={{ mb: 3 }}>
+            <CardHeader
+              title={<Typography variant="h6">Blog Information</Typography>}
+            />
+            <Divider />
+            <CardContent>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Author
+                  </Typography>
+                  <Stack direction="row" alignItems="center" spacing={1} mt={1}>
+                    <UserIcon sx={{ color: "primary.main" }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight="medium">
+                        {blogData.author.fullName}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {blogData.author.email}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
 
-              <Divider />
+                <Divider />
 
-              <div>
-                <Text strong>Verification Status</Text>
-                <div className="mt-2">
-                  <Tag
-                    color={blogData.isVerified ? "green" : "red"}
-                    icon={
-                      blogData.isVerified ? (
-                        <CheckCircleOutlined />
-                      ) : (
-                        <CloseCircleOutlined />
-                      )
-                    }
-                    className="text-sm"
-                  >
-                    {blogData.isVerified ? "Verified" : "Not Verified"}
-                  </Tag>
-                </div>
-              </div>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Verification Status
+                  </Typography>
+                  <Box mt={1}>
+                    <Chip
+                      label={blogData.isVerified ? "Verified" : "Not Verified"}
+                      color={blogData.isVerified ? "success" : "error"}
+                      icon={
+                        blogData.isVerified ? (
+                          <CheckCircleIcon />
+                        ) : (
+                          <CloseCircleIcon />
+                        )
+                      }
+                      size="small"
+                      variant="filled" // Updated
+                      sx={{ color: "white" }}
+                    />
+                  </Box>
+                </Box>
 
-              <Divider />
+                <Divider />
 
-              <div>
-                <Text strong>Created</Text>
-                <div className="mt-2 text-sm text-gray-600">
-                  {moment(blogData.createdAt).format("MMM DD, YYYY h:mm A")}
-                </div>
-              </div>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Created
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" mt={0.5}>
+                    {moment(blogData.createdAt).format("MMM DD, YYYY h:mm A")}
+                  </Typography>
+                </Box>
 
-              <div>
-                <Text strong>Last Updated</Text>
-                <div className="mt-2 text-sm text-gray-600">
-                  {moment(blogData.updatedAt).format("MMM DD, YYYY h:mm A")}
-                </div>
-              </div>
-            </div>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight="bold">
+                    Last Updated
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" mt={0.5}>
+                    {moment(blogData.updatedAt).format("MMM DD, YYYY h:mm A")}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
           </Card>
 
-          <Card title="Actions">
-            <div className="space-y-3">
+          <Card>
+            <CardHeader title={<Typography variant="h6">Actions</Typography>} />
+            <Divider />
+            <CardContent>
               <Button
-                type={blogData.isVerified ? "default" : "primary"}
-                danger={blogData.isVerified}
-                icon={
+                variant="contained"
+                color={blogData.isVerified ? "inherit" : "primary"}
+                fullWidth
+                startIcon={
                   blogData.isVerified ? (
-                    <CloseCircleOutlined />
+                    <CloseCircleIcon />
                   ) : (
-                    <CheckCircleOutlined />
+                    <CheckCircleIcon />
                   )
                 }
                 onClick={handleToggleVerification}
-                loading={toggling}
                 disabled={toggling}
-                block
+                sx={{
+                  bgcolor: blogData.isVerified ? "grey.300" : undefined,
+                  color: blogData.isVerified ? "text.primary" : undefined,
+                  "&:hover": {
+                    bgcolor: blogData.isVerified ? "grey.400" : undefined,
+                  },
+                }}
               >
-                {blogData.isVerified
-                  ? "Mark as Not Verified"
-                  : "Mark as Verified"}
+                {toggling ? (
+                  <CircularProgress size={24} />
+                ) : blogData.isVerified ? (
+                  "Mark as Not Verified"
+                ) : (
+                  "Mark as Verified"
+                )}
               </Button>
-            </div>
+            </CardContent>
           </Card>
-        </div>
-      </div>
+        </Grid>
+      </Grid>
     </>
   );
 };

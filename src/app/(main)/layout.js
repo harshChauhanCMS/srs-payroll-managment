@@ -7,7 +7,7 @@ import Sidebar from "@/components/Sidebar/Sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CloseOutlined, MenuOutlined } from "@ant-design/icons";
+import { Close, Menu } from "@mui/icons-material";
 
 export default function MainLayout({ children }) {
   const router = useRouter();
@@ -61,7 +61,7 @@ export default function MainLayout({ children }) {
           className="fixed lg:hidden top-4.5 left-5 z-50 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-[#366598]"
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
         >
-          {sidebarOpen ? <CloseOutlined /> : <MenuOutlined />}
+          {sidebarOpen ? <Close /> : <Menu />}
         </button>
       </div>
     </div>
