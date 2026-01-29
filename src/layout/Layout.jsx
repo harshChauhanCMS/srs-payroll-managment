@@ -2,22 +2,17 @@ import useOnline from "@/hooks/useOnline";
 import Header from "@/components/Header/Header";
 import Sidebar from "@/components/Sidebar/Sidebar";
 
+import { FloatButton } from "antd";
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Box, Fab, Typography, Card } from "@mui/material";
-import {
-  Close,
-  KeyboardDoubleArrowRight,
-  SignalWifiOff,
-  Warning,
-} from "@mui/icons-material";
+import { CloseOutlined, DoubleRightOutlined } from "@ant-design/icons";
 
 const Layout = () => {
   const isOnline = useOnline();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(true);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -27,125 +22,77 @@ const Layout = () => {
       navigate("/", { replace: true });
     }
 
+    setIsLoading(false);
+
     return () => {
       mounted = false;
     };
   }, [token, navigate]);
 
   // Early return if no token or still loading
-  if (!token) {
+  if (!token || isLoading) {
     return null;
   }
 
   return (
     <>
       {isOnline ? (
-        <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+        <div className="flex h-screen overflow-hidden scroll-smooth">
           <Sidebar
             sidebarOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
             isCollapsed={isCollapsed}
             setIsCollapsed={setIsCollapsed}
           />
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              flex: 1,
-              overflow: "auto",
-              ml: { lg: isCollapsed ? "80px" : "256px", xs: 0 },
-              transition: "margin-left 0.3s",
-            }}
+          <div
+            className={`flex flex-col mx-auto flex-1 overflow-auto ${
+              isCollapsed ? "lg:ml-20" : "lg:ml-64"
+            }`}
           >
             <Header />
-            <Box
-              sx={{
-                px: 3,
-                py: 2,
-                flex: 1,
-                overflow: "auto",
-                position: "relative",
-              }}
-            >
+            <div className="px-5 py-3 flex-1 overflow-auto relative">
               <Outlet />
               {sidebarOpen ? (
-                <Fab
-                  color="primary"
+                <FloatButton
+                  icon={<CloseOutlined />}
                   onClick={() => setSidebarOpen(false)}
-                  sx={{
-                    display: { xs: "flex", lg: "none" },
+                  className="lg:hidden custom:block"
+                  style={{
                     position: "fixed",
-                    bottom: 16,
-                    left: 270,
+                    bottom: "16px",
+                    left: "270px",
                     zIndex: 1000,
                   }}
-                >
-                  <Close />
-                </Fab>
+                />
               ) : (
-                <Fab
-                  color="primary"
+                <FloatButton
+                  icon={<DoubleRightOutlined />}
                   onClick={() => setSidebarOpen(true)}
-                  sx={{
-                    display: { xs: "flex", lg: "none" },
+                  className="lg:hidden custom:block"
+                  style={{
                     position: "fixed",
-                    bottom: 16,
-                    left: 16,
+                    bottom: "16px",
+                    left: "16px",
                     zIndex: 1000,
                   }}
-                >
-                  <KeyboardDoubleArrowRight />
-                </Fab>
+                />
               )}
-            </Box>
-          </Box>
-        </Box>
+            </div>
+          </div>
+        </div>
       ) : (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "100vh",
-            background: "linear-gradient(to bottom, #f4f4f4, #e0e0e0)",
-          }}
-        >
-          <Card
-            sx={{
-              textAlign: "center",
-              p: 4,
-              backgroundColor: "white",
-              borderRadius: 2,
-              boxShadow: 3,
-              border: "1px solid #e0e0e0",
-              maxWidth: 400,
-            }}
-          >
-            <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-              <SignalWifiOff sx={{ fontSize: 40, color: "error.main" }} />
-            </Box>
-            <Typography
-              variant="h4"
-              component="h1"
-              sx={{ color: "#5c536e", mb: 1, fontWeight: 600 }}
-            >
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#f4f4f4] to-[#e0e0e0]">
+          <div className="text-center p-8 bg-white rounded-lg shadow-lg border border-[#e0e0e0] animate-fadeIn">
+            <span className="text-4xl mb-4 block animate-pulse">🔴</span>
+            <h1 className="text-3xl font-semibold text-[#5c536e] mb-2">
               You’re Offline!
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                color: "#7a6f8c",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1,
-              }}
-            >
-              <Warning sx={{ color: "warning.main" }} />
-              Please check your internet connection
-            </Typography>
-          </Card>
-        </Box>
+            </h1>
+            <p className="text-lg text-[#7a6f8c] flex items-center justify-center gap-2">
+              <span className="animate-bounce">⚠️</span> Please check your
+              internet connection
+            </p>
+          </div>
+        </div>
       )}
     </>
   );

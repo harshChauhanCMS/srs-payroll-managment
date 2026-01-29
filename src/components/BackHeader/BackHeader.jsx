@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Box, Typography } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 
 export default function BackHeader({ label, href, rightContent }) {
   const router = useRouter();
@@ -16,37 +15,16 @@ export default function BackHeader({ label, href, rightContent }) {
   };
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        mb: 3,
-      }}
-    >
-      <Box
+    <div className="w-full flex items-center justify-between mb-6">
+      <button
+        type="button"
         onClick={handleBack}
-        role="button"
-        tabIndex={0}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          color: "#121212",
-          cursor: "pointer",
-          transition: "color 0.3s",
-          "&:hover": {
-            color: "#366598",
-          },
-        }}
+        className="flex items-center gap-2 text-[#121212] hover:text-[#366598] transition-colors cursor-pointer"
       >
-        <ArrowBack />
-        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-          {label}
-        </Typography>
-      </Box>
-      <Box>{rightContent}</Box>
-    </Box>
+        <ArrowLeftOutlined />
+        <span className="font-medium">{label}</span>
+      </button>
+      {rightContent}
+    </div>
   );
 }

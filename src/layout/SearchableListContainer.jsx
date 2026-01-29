@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Pagination from "@/components/Pagination/Pagination";
 import SearchBar from "@/components/SearchBar/SearchBar";
@@ -30,7 +30,7 @@ const SearchableListContainer = ({
     };
   });
   const [currentPage, setCurrentPage] = useState(
-    () => parseInt(searchParams.get("page")) || 1,
+    () => parseInt(searchParams.get("page")) || 1
   );
   const [data, setData] = useState([]);
   const [totalPages, setTotalPages] = useState(0);

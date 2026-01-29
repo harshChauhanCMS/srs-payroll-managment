@@ -10,21 +10,9 @@ import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
 
 import { apiUrls } from "@/apis";
+import { Select, Modal } from "antd";
 import { useEffect, useState } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import {
-  Select,
-  MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  CircularProgress,
-  Box,
-  Typography,
-} from "@mui/material";
 
 const Blogs = () => {
   const router = useRouter();
@@ -44,7 +32,6 @@ const Blogs = () => {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   const fetchData = () => {
     getQuery({
       url: `${apiUrls?.blogs?.getAllBlogs}?page=${page}&limit=${limit}`,
@@ -152,26 +139,27 @@ const Blogs = () => {
         return (
           <Select
             value={value ? "verified" : "not_verified"}
-            onChange={(e) => {
+            onChange={(newValue) => {
               handleToggleVerification(record._id, value);
             }}
+            loading={togglingId === record._id}
             disabled={togglingId === record._id}
-            sx={{ width: "100%", minWidth: "160px" }}
+            style={{ width: "100%", minWidth: "160px" }}
             size="small"
-            variant="outlined"
+            className="verification-status-select"
           >
-            <MenuItem value="not_verified">
+            <Select.Option value="not_verified">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                 <span>Not Verified</span>
               </div>
-            </MenuItem>
-            <MenuItem value="verified">
+            </Select.Option>
+            <Select.Option value="verified">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span>Verified</span>
               </div>
-            </MenuItem>
+            </Select.Option>
           </Select>
         );
       },
@@ -224,59 +212,41 @@ const Blogs = () => {
             totalPages={Math.ceil(totalDocuments / limit)}
             pageLimit={limit}
             onPageChange={handlePageChange}
-            onLimitChange={(e) => handleLimitChange(e.target.value)}
+            onLimitChange={handleLimitChange}
             totalDocuments={totalDocuments}
           />
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title="Delete Blog"
         open={deleteModalVisible}
-        onClose={handleDeleteCancel}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
+        onOk={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        okText="Delete"
+        cancelText="Cancel"
+        okButtonProps={{
+          danger: true,
+          loading: deleteLoading,
+        }}
+        cancelButtonProps={{ disabled: deleteLoading }}
       >
-        <DialogTitle id="alert-dialog-title">Delete Blog</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
+        <div className="py-4">
+          <p className="text-gray-600 mb-4">
             Are you sure you want to delete this blog? This action cannot be
             undone.
-          </DialogContentText>
+          </p>
           {blogToDelete && (
-            <Box sx={{ mt: 2, bgcolor: "#f9fafb", p: 2, borderRadius: 1 }}>
-              <Typography variant="subtitle2" fontWeight="bold">
-                Blog Title:
-              </Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                {blogToDelete.title}
-              </Typography>
-              <Typography variant="subtitle2" fontWeight="bold">
-                Author:
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                {blogToDelete.authorName}
-              </Typography>
-            </Box>
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="font-medium text-gray-800">Blog Title:</p>
+              <p className="text-gray-600">{blogToDelete.title}</p>
+              <p className="font-medium text-gray-800 mt-2">Author:</p>
+              <p className="text-gray-600">{blogToDelete.authorName}</p>
+            </div>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel} disabled={deleteLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteConfirm}
-            color="error"
-            disabled={deleteLoading}
-            autoFocus
-            startIcon={
-              deleteLoading ? <CircularProgress size={20} /> : undefined
-            }
-          >
-            {deleteLoading ? "Deleting..." : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </div>
+      </Modal>
     </>
   );
 };

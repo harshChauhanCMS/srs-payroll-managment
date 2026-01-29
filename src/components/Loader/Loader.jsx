@@ -1,21 +1,22 @@
-import { Box, CircularProgress } from "@mui/material";
+import { Spin } from "antd";
+import { LoadingOutlined } from "@ant-design/icons";
 
 const Loader = () => {
   return (
-    <Box
-      sx={{
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        zIndex: 1000,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <CircularProgress size={80} sx={{ color: "#C2A368" }} />
-    </Box>
+    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-101">
+      <Spin
+        indicator={
+          <LoadingOutlined
+            style={{
+              fontSize: 80,
+              color: "#C2A368",
+            }}
+            spin
+            size="large"
+          />
+        }
+      />
+    </div>
   );
 };
 
