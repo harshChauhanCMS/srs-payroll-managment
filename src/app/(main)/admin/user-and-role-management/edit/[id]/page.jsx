@@ -15,6 +15,7 @@ import {
   MailOutlined,
   LockOutlined,
   BankOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import {
   Form,
@@ -40,9 +41,14 @@ const EditUser = () => {
   const { getQuery, loading: fetchLoading } = useGetQuery();
   const { patchQuery, loading: updateLoading } = usePatchQuery();
   const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
+  const { getQuery: getSites, loading: sitesLoading } = useGetQuery();
+
   const [user, setUser] = useState(null);
   const [companies, setCompanies] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [hasCompany, setHasCompany] = useState(false);
 
+  // Fetch companies
   useEffect(() => {
     getCompanies({
       url: "/api/v1/admin/companies?active=true&limit=100",
@@ -55,6 +61,26 @@ const EditUser = () => {
     });
   }, []);
 
+  // Fetch sites when company is selected/available
+  const fetchSites = useCallback(
+    (companyId) => {
+      if (!companyId) {
+        setSites([]);
+        return;
+      }
+      getSites({
+        url: `/api/v1/admin/sites?company=${companyId}&active=true&limit=100`,
+        onSuccess: (res) => {
+          setSites(res.sites || []);
+        },
+        onFail: (err) => {
+          console.error("Failed to fetch sites", err);
+        },
+      });
+    },
+    [getSites],
+  );
+
   const fetchUser = useCallback(() => {
     getQuery({
       url: `/api/v1/admin/users/${id}`,
@@ -62,12 +88,18 @@ const EditUser = () => {
         const userData = response?.user || null;
         setUser(userData);
         if (userData) {
+          const companyId = userData.company?._id || userData.company;
+          const siteId = userData.site?._id || userData.site;
+
+          setHasCompany(!!companyId);
+
           form.setFieldsValue({
             name: userData.name,
             email: userData.email,
             role: userData.role,
             pan: userData.pan,
-            company: userData.company?._id || userData.company, // Handle object or ID
+            company: companyId || undefined,
+            site: siteId || undefined,
             aadhar: userData.aadhar,
             address: userData.address,
             active: userData.active,
@@ -78,6 +110,11 @@ const EditUser = () => {
               create: userData.permissions?.create || false,
             },
           });
+
+          // Fetch sites for this company
+          if (companyId) {
+            fetchSites(companyId);
+          }
         }
       },
       onFail: (err) => {
@@ -85,20 +122,34 @@ const EditUser = () => {
         toast.error("Failed to fetch user details");
       },
     });
-  }, [id, getQuery, form]);
+  }, [id, getQuery, form, fetchSites]);
 
   useEffect(() => {
     if (id) {
       fetchUser();
     }
-  }, []);
+  }, [id]);
+
+  const handleCompanyChange = (companyId) => {
+    // Clear site when company changes
+    form.setFieldValue("site", undefined);
+    setSites([]);
+
+    if (companyId) {
+      setHasCompany(true);
+      fetchSites(companyId);
+    } else {
+      setHasCompany(false);
+    }
+  };
 
   const handleSubmit = (values) => {
     const payload = {
       name: values.name,
       email: values.email,
       role: values.role,
-      company: values.company,
+      company: values.company || null,
+      site: values.site || null,
       pan: values.pan,
       aadhar: values.aadhar,
       address: values.address,
@@ -152,6 +203,10 @@ const EditUser = () => {
       </>
     );
   }
+
+  // Check if user was originally assigned a company
+  const originalCompanyId = user?.company?._id || user?.company;
+  const isCompanyLocked = !!originalCompanyId;
 
   return (
     <>
@@ -225,29 +280,61 @@ const EditUser = () => {
           </Row>
 
           <Row gutter={16}>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item name="active" label="Status" valuePropName="checked">
                 <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="company"
                 label="Company"
-                rules={[{ required: true, message: "Please select a company" }]}
+                extra={
+                  isCompanyLocked
+                    ? "Company cannot be changed once assigned"
+                    : "Select company first to enable site selection"
+                }
               >
                 <Select
                   placeholder="Select company"
-                  prefix={<BankOutlined className="text-gray-400" />}
+                  suffixIcon={<BankOutlined className="text-gray-400" />}
                   size="large"
                   loading={companiesLoading}
                   showSearch
                   optionFilterProp="children"
-                  disabled
+                  disabled={isCompanyLocked}
+                  onChange={handleCompanyChange}
+                  allowClear={!isCompanyLocked}
                 >
                   {companies.map((company) => (
                     <Option key={company._id} value={company._id}>
                       {company.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="site"
+                label="Site"
+                extra={!hasCompany ? "Assign company first" : ""}
+              >
+                <Select
+                  placeholder={
+                    hasCompany ? "Select site" : "Select company first"
+                  }
+                  suffixIcon={<EnvironmentOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={sitesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={!hasCompany}
+                  allowClear
+                >
+                  {sites.map((site) => (
+                    <Option key={site._id} value={site._id}>
+                      {site.name} ({site.siteCode})
                     </Option>
                   ))}
                 </Select>

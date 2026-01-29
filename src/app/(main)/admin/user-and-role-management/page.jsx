@@ -42,9 +42,8 @@ const UserAndRoleManagement = () => {
           permissions: item?.permissions || {},
           status: item?.active ? "Active" : "Inactive",
           active: item?.active,
-          site: item?.site?.name
-            ? `${item.site.name} (${item.site.company?.name || "N/A"})`
-            : "Not Assigned",
+          company: item?.company?.name || "Not Assigned",
+          site: item?.site?.name || "Not Assigned",
           date: moment(item?.createdAt).format("DD-MM-YYYY") || "N/A",
           _id: item?._id,
         }));
@@ -120,9 +119,19 @@ const UserAndRoleManagement = () => {
       ),
     },
     {
+      Header: "Company",
+      accessor: "company",
+      width: 150,
+      Cell: (value) => (
+        <Tag color={value === "Not Assigned" ? "default" : "purple"}>
+          {value}
+        </Tag>
+      ),
+    },
+    {
       Header: "Site",
       accessor: "site",
-      width: 180,
+      width: 150,
       Cell: (value) => (
         <Tag color={value === "Not Assigned" ? "default" : "blue"}>{value}</Tag>
       ),

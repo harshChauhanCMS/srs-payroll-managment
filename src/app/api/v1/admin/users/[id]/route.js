@@ -16,6 +16,7 @@ export async function GET(request, { params }) {
     const user = await User.findById(id)
       .select("-password")
       .populate("company", "name")
+      .populate("site", "name siteCode")
       .populate("createdBy", "name email")
       .lean();
 
@@ -53,6 +54,7 @@ export async function PATCH(request, { params }) {
       address,
       active,
       company,
+      site,
     } = body;
 
     await connectDB();
@@ -72,6 +74,7 @@ export async function PATCH(request, { params }) {
     if (address !== undefined) user.address = address.trim();
     if (active !== undefined) user.active = active;
     if (company !== undefined) user.company = company;
+    if (site !== undefined) user.site = site;
 
     // Update password if provided
     if (password) {
