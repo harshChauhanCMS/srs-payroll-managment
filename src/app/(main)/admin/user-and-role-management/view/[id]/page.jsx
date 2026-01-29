@@ -8,9 +8,8 @@ import useGetQuery from "@/hooks/getQuery.hook";
 import BackHeader from "@/components/BackHeader/BackHeader";
 
 import { useParams, useRouter } from "next/navigation";
+import { Card, Tag, Descriptions, Divider } from "antd";
 import { useEffect, useState, useCallback } from "react";
-
-import { Card, Tag, Descriptions, Divider, Button } from "antd";
 import {
   UserOutlined,
   MailOutlined,
@@ -19,6 +18,11 @@ import {
   HomeOutlined,
   CalendarOutlined,
   EditOutlined,
+  BankOutlined,
+  EnvironmentOutlined,
+  ClusterOutlined,
+  StarOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 
 const ViewUser = () => {
@@ -88,21 +92,14 @@ const ViewUser = () => {
   return (
     <>
       <BackHeader label="Back" />
-      <div className="flex justify-between items-center">
-        <Title title="User Details" />
-        <Button
-          type="primary"
-          icon={<EditOutlined />}
-          onClick={() =>
-            router.push(`/admin/user-and-role-management/edit/${id}`)
-          }
-          className="simple-button"
-        >
-          Edit User
-        </Button>
-      </div>
 
-      <Card className="shadow-md mt-5">
+      <Title
+        title="User Details"
+        buttonText="Edit User"
+        destination={`/admin/user-and-role-management/edit/${id}`}
+      />
+
+      <Card className="shadow-md" style={{ marginTop: "8px" }}>
         {/* Basic Information */}
         <Descriptions
           title={
@@ -168,6 +165,86 @@ const ViewUser = () => {
             {user.updatedAt
               ? moment(user.updatedAt).format("DD-MM-YYYY hh:mm A")
               : "N/A"}
+          </Descriptions.Item>
+        </Descriptions>
+
+        <Divider />
+
+        {/* Organization Details */}
+        <Descriptions
+          title={
+            <span className="flex items-center gap-2">
+              <BankOutlined /> Organization Details
+            </span>
+          }
+          bordered
+          column={{ xs: 1, sm: 2, md: 3 }}
+        >
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <BankOutlined /> Company
+              </span>
+            }
+          >
+            {user.company?.name || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <EnvironmentOutlined /> Site
+              </span>
+            }
+          >
+            {user.site ? `${user.site.name} (${user.site.siteCode})` : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <ClusterOutlined /> Department
+              </span>
+            }
+          >
+            {user.department?.name
+              ? `${user.department.name} (${user.department.code || ""})`
+              : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <IdcardOutlined /> Designation
+              </span>
+            }
+          >
+            {user.designation?.name || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <StarOutlined /> Grade
+              </span>
+            }
+          >
+            {user.grade?.name ? `${user.grade.name}` : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <ToolOutlined /> Skills
+              </span>
+            }
+          >
+            {user.skills?.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {user.skills.map((skill) => (
+                  <Tag key={skill._id || skill} color="blue">
+                    {skill.name}
+                  </Tag>
+                ))}
+              </div>
+            ) : (
+              "N/A"
+            )}
           </Descriptions.Item>
         </Descriptions>
 
