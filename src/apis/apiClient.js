@@ -6,8 +6,9 @@ import { logger } from "@/utils/logger";
 import { getAuthTokens } from "@/utils/storage";
 
 const apiInstance = () => {
+  const baseURL = apiBaseUrl || (typeof window !== "undefined" ? "" : "http://localhost:3000");
   const api = axios.create({
-    baseURL: apiBaseUrl,
+    baseURL,
   });
 
   axiosRetry(api, { retries: 3 });

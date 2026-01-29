@@ -2,7 +2,6 @@
 
 import toast from "react-hot-toast";
 import usePostQuery from "@/hooks/postQuery.hook";
-
 import { apiUrls } from "@/apis";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
@@ -10,9 +9,9 @@ import { Fragment } from "react";
 import { setUser } from "@/helpers/slices/userSlice";
 import { setAuthTokens, setUserData } from "@/utils/storage";
 import { Form, Input, Button, Typography } from "antd";
-import { LockOutlined, PhoneOutlined } from "@ant-design/icons";
+import { LockOutlined, MailOutlined } from "@ant-design/icons";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const Login = () => {
   const [form] = Form.useForm();
@@ -21,13 +20,9 @@ const Login = () => {
   const router = useRouter();
 
   const handleLogin = (values) => {
-    // Add +91 prefix to mobile number
-    const mobileNumberWithPrefix = `+91${values.mobileNumber}`;
-
     const payload = {
-      mobileNumber: mobileNumberWithPrefix,
+      email: values.email.trim().toLowerCase(),
       password: values.password,
-      role: "admin",
     };
 
     postQuery({
@@ -37,25 +32,23 @@ const Login = () => {
         "Content-Type": "application/json",
       },
       onSuccess: (res) => {
-        const { token, admin } = res;
+        const { token, user } = res;
 
         dispatch(
           setUser({
-            user: admin,
+            user,
             tokens: { accessToken: token },
-          })
+          }),
         );
 
         setAuthTokens({ accessToken: token });
-        setUserData(admin);
+        setUserData(user);
 
         toast.success(res.message || "Login successful");
-
         router.push("/admin/dashboard");
       },
-      onFail: (err) => {
-        console.error("Login failed:", err);
-        toast.error("Login failed. Please try again.");
+      onFail: () => {
+        // Error toast handled by postQuery hook
       },
     });
   };
@@ -89,26 +82,23 @@ const Login = () => {
               marginBottom: 24,
             }}
           >
-            Admin Login
+            SRS Payroll Login
           </Title>
 
           <Form form={form} layout="vertical" onFinish={handleLogin}>
             <Form.Item
-              label="Mobile Number"
-              name="mobileNumber"
+              label="Email"
+              name="email"
               rules={[
-                { required: true, message: "Please enter your mobile number" },
-                {
-                  pattern: /^[6-9]\d{9}$/,
-                  message: "Please enter a valid 10-digit mobile number",
-                },
+                { required: true, message: "Please enter your email" },
+                { type: "email", message: "Please enter a valid email" },
               ]}
             >
               <Input
-                prefix={<PhoneOutlined />}
+                prefix={<MailOutlined />}
                 size="large"
-                placeholder="9699554545"
-                maxLength={10}
+                placeholder="you@company.com"
+                type="email"
               />
             </Form.Item>
 
