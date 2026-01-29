@@ -173,6 +173,10 @@ export async function GET(request) {
           select: "name siteCode",
           populate: { path: "company", select: "name" },
         })
+        .populate("department", "name code")
+        .populate("designation", "name code")
+        .populate("grade", "name code")
+        .populate("skills", "name category")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

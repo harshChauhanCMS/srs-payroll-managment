@@ -16,6 +16,10 @@ import {
   LockOutlined,
   BankOutlined,
   EnvironmentOutlined,
+  ClusterOutlined,
+  IdcardOutlined,
+  StarOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 import {
   Form,
@@ -42,26 +46,60 @@ const EditUser = () => {
   const { patchQuery, loading: updateLoading } = usePatchQuery();
   const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
   const { getQuery: getSites, loading: sitesLoading } = useGetQuery();
+  const { getQuery: getDepartments, loading: departmentsLoading } =
+    useGetQuery();
+  const { getQuery: getDesignations, loading: designationsLoading } =
+    useGetQuery();
+  const { getQuery: getGrades, loading: gradesLoading } = useGetQuery();
+  const { getQuery: getSkills, loading: skillsLoading } = useGetQuery();
 
   const [user, setUser] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [sites, setSites] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [skills, setSkills] = useState([]);
   const [hasCompany, setHasCompany] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
 
   // Fetch companies
   useEffect(() => {
     getCompanies({
       url: "/api/v1/admin/companies?active=true&limit=100",
-      onSuccess: (res) => {
-        setCompanies(res.companies || []);
-      },
-      onFail: (err) => {
-        console.error("Failed to fetch companies", err);
-      },
+      onSuccess: (res) => setCompanies(res.companies || []),
+      onFail: (err) => console.error("Failed to fetch companies", err),
     });
   }, []);
 
-  // Fetch sites when company is selected/available
+  // Fetch departments
+  useEffect(() => {
+    getDepartments({
+      url: "/api/v1/admin/departments?active=true&limit=100",
+      onSuccess: (res) => setDepartments(res.departments || []),
+      onFail: (err) => console.error("Failed to fetch departments", err),
+    });
+  }, []);
+
+  // Fetch grades
+  useEffect(() => {
+    getGrades({
+      url: "/api/v1/admin/grades?active=true&limit=100",
+      onSuccess: (res) => setGrades(res.grades || []),
+      onFail: (err) => console.error("Failed to fetch grades", err),
+    });
+  }, []);
+
+  // Fetch skills
+  useEffect(() => {
+    getSkills({
+      url: "/api/v1/admin/skills?active=true&limit=100",
+      onSuccess: (res) => setSkills(res.skills || []),
+      onFail: (err) => console.error("Failed to fetch skills", err),
+    });
+  }, []);
+
+  // Fetch sites when company is selected
   const fetchSites = useCallback(
     (companyId) => {
       if (!companyId) {
@@ -70,15 +108,27 @@ const EditUser = () => {
       }
       getSites({
         url: `/api/v1/admin/sites?company=${companyId}&active=true&limit=100`,
-        onSuccess: (res) => {
-          setSites(res.sites || []);
-        },
-        onFail: (err) => {
-          console.error("Failed to fetch sites", err);
-        },
+        onSuccess: (res) => setSites(res.sites || []),
+        onFail: (err) => console.error("Failed to fetch sites", err),
       });
     },
     [getSites],
+  );
+
+  // Fetch designations when department changes
+  const fetchDesignations = useCallback(
+    (departmentId) => {
+      if (!departmentId) {
+        setDesignations([]);
+        return;
+      }
+      getDesignations({
+        url: `/api/v1/admin/designations?department=${departmentId}&active=true&limit=100`,
+        onSuccess: (res) => setDesignations(res.designations || []),
+        onFail: (err) => console.error("Failed to fetch designations", err),
+      });
+    },
+    [getDesignations],
   );
 
   const fetchUser = useCallback(() => {
@@ -90,8 +140,14 @@ const EditUser = () => {
         if (userData) {
           const companyId = userData.company?._id || userData.company;
           const siteId = userData.site?._id || userData.site;
+          const departmentId = userData.department?._id || userData.department;
+          const designationId =
+            userData.designation?._id || userData.designation;
+          const gradeId = userData.grade?._id || userData.grade;
+          const skillIds = userData.skills?.map((s) => s._id || s) || [];
 
           setHasCompany(!!companyId);
+          setSelectedDepartment(departmentId);
 
           form.setFieldsValue({
             name: userData.name,
@@ -100,6 +156,10 @@ const EditUser = () => {
             pan: userData.pan,
             company: companyId || undefined,
             site: siteId || undefined,
+            department: departmentId || undefined,
+            designation: designationId || undefined,
+            grade: gradeId || undefined,
+            skills: skillIds,
             aadhar: userData.aadhar,
             address: userData.address,
             active: userData.active,
@@ -111,10 +171,9 @@ const EditUser = () => {
             },
           });
 
-          // Fetch sites for this company
-          if (companyId) {
-            fetchSites(companyId);
-          }
+          // Fetch sites and designations for this user
+          if (companyId) fetchSites(companyId);
+          if (departmentId) fetchDesignations(departmentId);
         }
       },
       onFail: (err) => {
@@ -122,24 +181,29 @@ const EditUser = () => {
         toast.error("Failed to fetch user details");
       },
     });
-  }, [id, getQuery, form, fetchSites]);
+  }, [id, getQuery, form, fetchSites, fetchDesignations]);
 
   useEffect(() => {
-    if (id) {
-      fetchUser();
-    }
+    if (id) fetchUser();
   }, [id]);
 
   const handleCompanyChange = (companyId) => {
-    // Clear site when company changes
     form.setFieldValue("site", undefined);
     setSites([]);
-
     if (companyId) {
       setHasCompany(true);
       fetchSites(companyId);
     } else {
       setHasCompany(false);
+    }
+  };
+
+  const handleDepartmentChange = (departmentId) => {
+    form.setFieldValue("designation", undefined);
+    setDesignations([]);
+    setSelectedDepartment(departmentId);
+    if (departmentId) {
+      fetchDesignations(departmentId);
     }
   };
 
@@ -150,6 +214,10 @@ const EditUser = () => {
       role: values.role,
       company: values.company || null,
       site: values.site || null,
+      department: values.department || null,
+      designation: values.designation || null,
+      grade: values.grade || null,
+      skills: values.skills || [],
       pan: values.pan,
       aadhar: values.aadhar,
       address: values.address,
@@ -162,7 +230,6 @@ const EditUser = () => {
       },
     };
 
-    // Only include password if it's provided
     if (values.password) {
       payload.password = values.password;
     }
@@ -204,7 +271,6 @@ const EditUser = () => {
     );
   }
 
-  // Check if user was originally assigned a company
   const originalCompanyId = user?.company?._id || user?.company;
   const isCompanyLocked = !!originalCompanyId;
 
@@ -265,7 +331,7 @@ const EditUser = () => {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={6}>
               <Form.Item
                 name="role"
                 label="Role"
@@ -277,23 +343,23 @@ const EditUser = () => {
                 </Select>
               </Form.Item>
             </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
+            <Col xs={24} md={6}>
               <Form.Item name="active" label="Status" valuePropName="checked">
                 <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
               </Form.Item>
             </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Organization Assignment
+          </Typography.Title>
+
+          <Row gutter={16}>
             <Col xs={24} md={8}>
               <Form.Item
                 name="company"
                 label="Company"
-                extra={
-                  isCompanyLocked
-                    ? "Company cannot be changed once assigned"
-                    : "Select company first to enable site selection"
-                }
+                extra={isCompanyLocked ? "Cannot change once assigned" : ""}
               >
                 <Select
                   placeholder="Select company"
@@ -306,9 +372,9 @@ const EditUser = () => {
                   onChange={handleCompanyChange}
                   allowClear={!isCompanyLocked}
                 >
-                  {companies.map((company) => (
-                    <Option key={company._id} value={company._id}>
-                      {company.name}
+                  {companies.map((c) => (
+                    <Option key={c._id} value={c._id}>
+                      {c.name}
                     </Option>
                   ))}
                 </Select>
@@ -318,7 +384,7 @@ const EditUser = () => {
               <Form.Item
                 name="site"
                 label="Site"
-                extra={!hasCompany ? "Assign company first" : ""}
+                extra={!hasCompany ? "Select company first" : ""}
               >
                 <Select
                   placeholder={
@@ -332,9 +398,99 @@ const EditUser = () => {
                   disabled={!hasCompany}
                   allowClear
                 >
-                  {sites.map((site) => (
-                    <Option key={site._id} value={site._id}>
-                      {site.name} ({site.siteCode})
+                  {sites.map((s) => (
+                    <Option key={s._id} value={s._id}>
+                      {s.name} ({s.siteCode})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="department" label="Department">
+                <Select
+                  placeholder="Select department"
+                  suffixIcon={<ClusterOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={departmentsLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  onChange={handleDepartmentChange}
+                  allowClear
+                >
+                  {departments.map((d) => (
+                    <Option key={d._id} value={d._id}>
+                      {d.name} ({d.code})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="designation"
+                label="Designation"
+                extra={!selectedDepartment ? "Select department first" : ""}
+              >
+                <Select
+                  placeholder={
+                    selectedDepartment
+                      ? "Select designation"
+                      : "Select department first"
+                  }
+                  suffixIcon={<IdcardOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={designationsLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={!selectedDepartment}
+                  allowClear
+                >
+                  {designations.map((d) => (
+                    <Option key={d._id} value={d._id}>
+                      {d.name} ({d.code})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="grade" label="Grade">
+                <Select
+                  placeholder="Select grade"
+                  suffixIcon={<StarOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={gradesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  allowClear
+                >
+                  {grades.map((g) => (
+                    <Option key={g._id} value={g._id}>
+                      {g.name} ({g.code})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="skills" label="Skills">
+                <Select
+                  mode="multiple"
+                  placeholder="Select skills"
+                  suffixIcon={<ToolOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={skillsLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  allowClear
+                >
+                  {skills.map((s) => (
+                    <Option key={s._id} value={s._id}>
+                      {s.name} ({s.category})
                     </Option>
                   ))}
                 </Select>

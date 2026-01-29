@@ -49,6 +49,27 @@ const userSchema = new mongoose.Schema(
       ref: "Site",
       default: null,
     },
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      default: null,
+    },
+    designation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Designation",
+      default: null,
+    },
+    grade: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Grade",
+      default: null,
+    },
+    skills: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Skill",
+      },
+    ],
     pan: {
       type: String,
       trim: true,

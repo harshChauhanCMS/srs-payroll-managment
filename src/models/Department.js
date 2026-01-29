@@ -18,63 +18,6 @@ const departmentSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-    // Designations within this department
-    designations: [
-      {
-        name: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        code: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        level: {
-          type: Number,
-          default: 1,
-        },
-      },
-    ],
-    // Grades for salary/position classification
-    grades: [
-      {
-        name: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        code: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        minSalary: {
-          type: Number,
-          default: 0,
-        },
-        maxSalary: {
-          type: Number,
-          default: 0,
-        },
-      },
-    ],
-    // Skills required/associated with this department
-    skills: [
-      {
-        name: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        category: {
-          type: String,
-          trim: true,
-          default: "General",
-        },
-      },
-    ],
     active: {
       type: Boolean,
       default: true,

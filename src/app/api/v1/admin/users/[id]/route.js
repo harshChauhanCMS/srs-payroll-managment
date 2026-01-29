@@ -17,6 +17,10 @@ export async function GET(request, { params }) {
       .select("-password")
       .populate("company", "name")
       .populate("site", "name siteCode")
+      .populate("department", "name code")
+      .populate("designation", "name code level")
+      .populate("grade", "name code minSalary maxSalary")
+      .populate("skills", "name category")
       .populate("createdBy", "name email")
       .lean();
 
@@ -55,6 +59,10 @@ export async function PATCH(request, { params }) {
       active,
       company,
       site,
+      department,
+      designation,
+      grade,
+      skills,
     } = body;
 
     await connectDB();
@@ -75,6 +83,10 @@ export async function PATCH(request, { params }) {
     if (active !== undefined) user.active = active;
     if (company !== undefined) user.company = company;
     if (site !== undefined) user.site = site;
+    if (department !== undefined) user.department = department;
+    if (designation !== undefined) user.designation = designation;
+    if (grade !== undefined) user.grade = grade;
+    if (skills !== undefined) user.skills = skills;
 
     // Update password if provided
     if (password) {
