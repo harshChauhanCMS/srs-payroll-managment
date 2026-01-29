@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import moment from "moment";
 
@@ -135,13 +134,13 @@ const EnhancedTable = ({
             return value.toString().includes(searchQuery);
           }
           return false;
-        })
+        }),
       )
       .filter((row) =>
         Object.entries(filterValues).every(([key, value]) => {
           if (value === undefined) return true;
           return row[key] === value;
-        })
+        }),
       )
       .filter((row) => {
         if (dateRange.length === 2) {
@@ -183,7 +182,7 @@ const EnhancedTable = ({
                 <Option key={index} value={value}>
                   {value}
                 </Option>
-              )
+              ),
             )}
           </Select>
         )}
@@ -197,9 +196,9 @@ const EnhancedTable = ({
       b[column.accessor || column.dataIndex]
         ? 1
         : a[column.accessor || column.dataIndex] <
-          b[column.accessor || column.dataIndex]
-        ? -1
-        : 0,
+            b[column.accessor || column.dataIndex]
+          ? -1
+          : 0,
     render: column.Cell || column.render || ((value, record, index) => value),
   }));
 

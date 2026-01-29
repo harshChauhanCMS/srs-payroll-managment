@@ -164,6 +164,11 @@ export async function GET(request) {
       User.find(query)
         .select("-password")
         .populate("company", "name")
+        .populate({
+          path: "site",
+          select: "name siteCode",
+          populate: { path: "company", select: "name" },
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

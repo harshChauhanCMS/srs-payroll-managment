@@ -8,44 +8,64 @@ import useGetQuery from "@/hooks/getQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
 
-import { Modal, Tag, Space } from "antd";
+import { Modal, Tag, Select } from "antd";
 import { useEffect, useState } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
-const UserAndRoleManagement = () => {
+const { Option } = Select;
+
+const SiteManagement = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { getQuery, loading } = useGetQuery();
+  const { getQuery, loading: fetchLoading } = useGetQuery();
+  const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
   const { deleteQuery, loading: deleteLoading } = useDeleteQuery();
 
   const [tableData, setTableData] = useState([]);
   const [totalDocuments, setTotalDocuments] = useState(0);
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
+  const [siteToDelete, setSiteToDelete] = useState(null);
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
 
-  const fetchData = () => {
-    getQuery({
-      url: `/api/v1/admin/users?page=${page}&limit=${limit}`,
+  // Fetch companies for filter
+  useEffect(() => {
+    getCompanies({
+      url: "/api/v1/admin/companies?active=true&limit=100",
       onSuccess: (response) => {
-        const dataList = Array.isArray(response?.users) ? response.users : [];
+        setCompanies(response.companies || []);
+      },
+      onFail: (err) => {
+        console.error("Failed to fetch companies", err);
+      },
+    });
+  }, []);
+
+  const fetchData = () => {
+    let url = `/api/v1/admin/sites?page=${page}&limit=${limit}`;
+    if (selectedCompany) {
+      url += `&company=${selectedCompany}`;
+    }
+
+    getQuery({
+      url,
+      onSuccess: (response) => {
+        const dataList = Array.isArray(response?.sites) ? response.sites : [];
         setTotalDocuments(response.pagination?.total || 0);
 
         const mappedData = dataList.map((item) => ({
           name: item?.name || "N/A",
-          email: item?.email || "N/A",
-          role: item?.role || "N/A",
-          permissions: item?.permissions || {},
+          siteCode: item?.siteCode || "N/A",
+          company: item?.company?.name || "N/A",
+          address: item?.address || "N/A",
           status: item?.active ? "Active" : "Inactive",
           active: item?.active,
-          site: item?.site?.name
-            ? `${item.site.name} (${item.site.company?.name || "N/A"})`
-            : "Not Assigned",
-          date: moment(item?.createdAt).format("DD-MM-YYYY") || "N/A",
+          createdAt: moment(item?.createdAt).format("DD-MM-YYYY"),
           _id: item?._id,
         }));
 
@@ -53,92 +73,69 @@ const UserAndRoleManagement = () => {
       },
       onFail: (err) => {
         console.log(err);
-        toast.error("Failed to fetch users");
+        toast.error("Failed to fetch sites");
       },
     });
   };
 
-  const handleDeleteClick = (user) => {
-    setUserToDelete(user);
+  useEffect(() => {
+    fetchData();
+  }, [page, limit, selectedCompany]);
+
+  const handleEditStart = (site) => {
+    router.push(`/admin/site/edit/${site._id}`);
+  };
+
+  const handleDeleteClick = (site) => {
+    setSiteToDelete(site);
     setDeleteModalVisible(true);
   };
 
   const handleDeleteConfirm = () => {
-    if (!userToDelete) return;
+    if (!siteToDelete) return;
 
     deleteQuery({
-      url: `/api/v1/admin/users/${userToDelete._id}`,
+      url: `/api/v1/admin/sites/${siteToDelete._id}`,
       onSuccess: () => {
-        toast.success("User deactivated successfully");
-        // Update the user in the list instead of removing them
+        toast.success("Site deactivated successfully");
         setTableData((prevData) =>
           prevData.map((item) =>
-            item._id === userToDelete._id
+            item._id === siteToDelete._id
               ? { ...item, active: false, status: "Inactive" }
               : item,
           ),
         );
-        // setTotalDocuments((prev) => prev - 1); // Don't decrease count as user is still there
         setDeleteModalVisible(false);
-        setUserToDelete(null);
+        setSiteToDelete(null);
       },
       onFail: (err) => {
-        console.log("Delete failed:", err);
-        toast.error("Failed to deactivate user");
+        toast.error("Failed to deactivate site");
         setDeleteModalVisible(false);
-        setUserToDelete(null);
+        setSiteToDelete(null);
       },
     });
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteModalVisible(false);
-    setUserToDelete(null);
-  };
-
   const columns = [
     {
-      Header: "Name",
+      Header: "Site Name",
       accessor: "name",
-      width: 150,
-    },
-    {
-      Header: "Email",
-      accessor: "email",
-      width: 200,
-    },
-    {
-      Header: "Role",
-      accessor: "role",
-      width: 100,
-      Cell: (value) => (
-        <Tag
-          color={value === "admin" ? "red" : value === "hr" ? "blue" : "green"}
-        >
-          {value?.toUpperCase()}
-        </Tag>
-      ),
-    },
-    {
-      Header: "Site",
-      accessor: "site",
       width: 180,
-      Cell: (value) => (
-        <Tag color={value === "Not Assigned" ? "default" : "blue"}>{value}</Tag>
-      ),
     },
     {
-      Header: "Permissions",
-      accessor: "permissions",
+      Header: "Site Code",
+      accessor: "siteCode",
+      width: 120,
+    },
+    {
+      Header: "Company",
+      accessor: "company",
       width: 200,
-      Cell: (value) => (
-        <div className="flex flex-wrap gap-1.5">
-          {value?.view && <Tag color="cyan">View</Tag>}
-          {value?.edit && <Tag color="orange">Edit</Tag>}
-          {value?.delete && <Tag color="red">Delete</Tag>}
-          {value?.create && <Tag color="green">Create</Tag>}
-        </div>
-      ),
+    },
+    {
+      Header: "Address",
+      accessor: "address",
+      width: 200,
     },
     {
       Header: "Status",
@@ -149,15 +146,11 @@ const UserAndRoleManagement = () => {
       ),
     },
     {
-      Header: "Created",
-      accessor: "date",
+      Header: "Created At",
+      accessor: "createdAt",
       width: 120,
     },
   ];
-
-  useEffect(() => {
-    fetchData();
-  }, [page, limit]);
 
   const handlePageChange = (newPage) => {
     const newSearchParams = new URLSearchParams(searchParams.toString());
@@ -175,13 +168,13 @@ const UserAndRoleManagement = () => {
   return (
     <>
       <Title
-        title={"User & Role Management"}
+        title="Site Management"
         showButton={true}
-        buttonText="Add User"
-        destination="/admin/user-and-role-management/add"
+        buttonText="Add Site"
+        destination="/admin/site/add"
       />
 
-      {loading ? (
+      {fetchLoading ? (
         <div className="flex justify-center items-center h-64">
           <Loader />
         </div>
@@ -190,16 +183,11 @@ const UserAndRoleManagement = () => {
           <EnhancedTable
             columns={columns}
             data={tableData}
-            showDate={true}
             showActions={true}
-            onView={(row) =>
-              `/admin/user-and-role-management/view/${row._id}?page=${page}&limit=${limit}`
-            }
-            onEdit={(row) =>
-              router.push(`/admin/user-and-role-management/edit/${row._id}`)
-            }
-            // onDelete={handleDeleteClick}
-            entryText={`Total Users: ${totalDocuments}`}
+            filterColumns={"company"}
+            onEdit={handleEditStart}
+            onDelete={handleDeleteClick}
+            entryText={`Total Sites: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}
             pageLimit={limit}
@@ -212,10 +200,10 @@ const UserAndRoleManagement = () => {
 
       {/* Delete Confirmation Modal */}
       <Modal
-        title="Deactivate User"
+        title="Deactivate Site"
         open={deleteModalVisible}
         onOk={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
+        onCancel={() => setDeleteModalVisible(false)}
         okText="Deactivate"
         cancelText="Cancel"
         okButtonProps={{
@@ -229,20 +217,19 @@ const UserAndRoleManagement = () => {
           className: "white-button",
           style: { borderRadius: "8px" },
         }}
+        centered
       >
         <div className="py-4">
           <p className="text-gray-600 mb-4">
-            Are you sure you want to deactivate this user? They will no longer
-            be able to login.
+            Are you sure you want to deactivate this site? Users assigned to
+            this site may be affected.
           </p>
-          {userToDelete && (
+          {siteToDelete && (
             <div className="bg-gray-50 p-3 rounded-lg">
-              <p className="font-medium text-gray-800">Name:</p>
-              <p className="text-gray-600">{userToDelete.name}</p>
-              <p className="font-medium text-gray-800 mt-2">Email:</p>
-              <p className="text-gray-600">{userToDelete.email}</p>
-              <p className="font-medium text-gray-800 mt-2">Role:</p>
-              <p className="text-gray-600 capitalize">{userToDelete.role}</p>
+              <p className="font-medium text-gray-800">Site:</p>
+              <p className="text-gray-600">
+                {siteToDelete.name} ({siteToDelete.siteCode})
+              </p>
             </div>
           )}
         </div>
@@ -251,4 +238,4 @@ const UserAndRoleManagement = () => {
   );
 };
 
-export default UserAndRoleManagement;
+export default SiteManagement;

@@ -1,4 +1,5 @@
 import {
+  AppstoreOutlined,
   DashboardOutlined,
   TeamOutlined,
   BankOutlined,
@@ -14,7 +15,7 @@ export const adminSidebarItems = [
   {
     name: "Dashboard",
     link: "/admin/dashboard",
-    icon: DashboardOutlined,
+    icon: AppstoreOutlined,
   },
   {
     name: "User & Roles",
@@ -24,6 +25,11 @@ export const adminSidebarItems = [
   {
     name: "Company",
     link: "/admin/company",
+    icon: BankOutlined,
+  },
+  {
+    name: "Site",
+    link: "/admin/site",
     icon: BankOutlined,
   },
 ];
