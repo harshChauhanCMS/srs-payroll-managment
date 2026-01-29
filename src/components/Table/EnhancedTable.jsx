@@ -174,7 +174,7 @@ const EnhancedTable = ({
             value={filterValues[column.accessor] || ""}
             onChange={(value) => handleFilterChange(column, value)}
             style={{ width: "60%", minWidth: 120 }}
-            dropdownStyle={{ backgroundColor: "#f9f9f9" }}
+            styles={{ popup: { backgroundColor: "#f9f9f9" } }}
           >
             <Option value="">All</Option>
             {[...new Set(data.map((row) => row[column.accessor]))].map(

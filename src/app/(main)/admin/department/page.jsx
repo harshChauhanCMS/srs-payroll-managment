@@ -712,7 +712,7 @@ const DepartmentMastersPage = () => {
         open={addModalOpen}
         onCancel={() => setAddModalOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleAddSubmit}>
           {renderFormFields()}
@@ -731,7 +731,7 @@ const DepartmentMastersPage = () => {
         open={editModalOpen}
         onCancel={() => setEditModalOpen(false)}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleEditSubmit}>
           {renderFormFields()}
