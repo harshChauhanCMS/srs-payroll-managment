@@ -187,7 +187,7 @@ const UserAndRoleManagement = () => {
             onEdit={(row) =>
               router.push(`/admin/user-and-role-management/edit/${row._id}`)
             }
-            onDelete={handleDeleteClick}
+            // onDelete={handleDeleteClick}
             entryText={`Total Users: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}

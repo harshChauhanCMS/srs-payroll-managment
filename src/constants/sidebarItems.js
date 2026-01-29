@@ -1,7 +1,7 @@
 import {
   DashboardOutlined,
   TeamOutlined,
-  UserOutlined,
+  BankOutlined,
   ClockCircleOutlined,
   DollarOutlined,
   FileTextOutlined,
@@ -20,6 +20,11 @@ export const adminSidebarItems = [
     name: "User & Roles",
     link: "/admin/user-and-role-management",
     icon: TeamOutlined,
+  },
+  {
+    name: "Company",
+    link: "/admin/company",
+    icon: BankOutlined,
   },
 ];
 

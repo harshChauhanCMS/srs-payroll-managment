@@ -70,6 +70,23 @@ export async function POST(request) {
       create: permissions.create !== undefined ? permissions.create : false,
     };
 
+    // Extract admin ID from token for createdBy
+    let createdBy = null;
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        createdBy = decoded._id;
+      } catch (error) {
+        console.warn(
+          "Failed to extract admin ID for createdBy:",
+          error.message,
+        );
+      }
+    }
+
     // Create user
     const user = await User.create({
       email: email.trim().toLowerCase(),
@@ -81,6 +98,7 @@ export async function POST(request) {
       aadhar: (aadhar || "").trim(),
       address: (address || "").trim(),
       active: true,
+      createdBy,
     });
 
     // Send welcome email with credentials
