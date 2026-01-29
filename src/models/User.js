@@ -64,13 +64,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
-
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
@@ -82,5 +75,10 @@ userSchema.methods.generateToken = function () {
 };
 
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+// Avoid using a cached model that may have old middleware (e.g. pre-save with broken next)
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
+const User = mongoose.model("User", userSchema);
 export default User;

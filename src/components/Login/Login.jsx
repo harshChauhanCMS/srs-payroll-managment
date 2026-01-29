@@ -2,16 +2,27 @@
 
 import toast from "react-hot-toast";
 import usePostQuery from "@/hooks/postQuery.hook";
+
+import { Fragment } from "react";
 import { apiUrls } from "@/apis";
+import { ROLES } from "@/constants/roles";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-import { Fragment } from "react";
 import { setUser } from "@/helpers/slices/userSlice";
-import { setAuthTokens, setUserData } from "@/utils/storage";
 import { Form, Input, Button, Typography } from "antd";
+import { setAuthTokens, setUserData } from "@/utils/storage";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 
 const { Title } = Typography;
+
+const DASHBOARD_BY_ROLE = {
+  [ROLES.SUPER_ADMIN]: "/admin/dashboard",
+  [ROLES.HR]: "/hr/dashboard",
+  [ROLES.ACCOUNTS]: "/accounts/dashboard",
+  [ROLES.MANAGER]: "/manager/dashboard",
+};
+
+const getDashboardPath = (role) => DASHBOARD_BY_ROLE[role];
 
 const Login = () => {
   const [form] = Form.useForm();
@@ -20,14 +31,12 @@ const Login = () => {
   const router = useRouter();
 
   const handleLogin = (values) => {
-    const payload = {
-      email: values.email.trim().toLowerCase(),
-      password: values.password,
-    };
-
     postQuery({
       url: apiUrls.auth.login,
-      postData: payload,
+      postData: {
+        email: values.email.trim().toLowerCase(),
+        password: values.password,
+      },
       headers: {
         "Content-Type": "application/json",
       },
@@ -45,10 +54,10 @@ const Login = () => {
         setUserData(user);
 
         toast.success(res.message || "Login successful");
-        router.push("/admin/dashboard");
+        router.push(getDashboardPath(user.role));
       },
-      onFail: () => {
-        // Error toast handled by postQuery hook
+      onFail: (err) => {
+        toast.error(err.message || "Invalid credentials");
       },
     });
   };
