@@ -83,48 +83,60 @@ const EditSite = () => {
     });
   }, [id, getQuery, form]);
 
-  // Fetch users - only unassigned users OR users assigned to THIS site
-  const fetchUsers = useCallback(() => {
-    getQuery({
-      url: `/api/v1/admin/users?limit=1000`,
-      onSuccess: (response) => {
-        const users = response?.users || [];
+  // Fetch users - only users from the SAME company as this site (exclude admins)
+  const fetchUsers = useCallback(
+    (companyId) => {
+      if (!companyId) return;
 
-        // Filter: only users who are unassigned OR assigned to THIS site
-        const eligibleUsers = users.filter((user) => {
-          const userSiteId = user.site?._id || user.site;
-          return !userSiteId || userSiteId === id;
-        });
+      getQuery({
+        url: `/api/v1/admin/users?limit=1000&excludeRole=admin&company=${companyId}`,
+        onSuccess: (response) => {
+          const users = response?.users || [];
 
-        const formattedUsers = eligibleUsers.map((user) => ({
-          key: user._id,
-          title: `${user.name} (${user.email})`,
-          description: user.role,
-        }));
-        setAllUsers(formattedUsers);
-
-        const assigned = eligibleUsers
-          .filter((user) => {
+          // Filter: only users who are unassigned to any site OR assigned to THIS site
+          const eligibleUsers = users.filter((user) => {
             const userSiteId = user.site?._id || user.site;
-            return userSiteId === id;
-          })
-          .map((user) => user._id);
-        setAssignedUserKeys(assigned);
-        setOriginalAssignedKeys(assigned);
-      },
-      onFail: (err) => {
-        console.error(err);
-        toast.error("Failed to fetch users");
-      },
-    });
-  }, [id, getQuery]);
+            return !userSiteId || userSiteId === id;
+          });
+
+          const formattedUsers = eligibleUsers.map((user) => ({
+            key: user._id,
+            title: `${user.name} (${user.email})`,
+            description: user.role,
+          }));
+          setAllUsers(formattedUsers);
+
+          const assigned = eligibleUsers
+            .filter((user) => {
+              const userSiteId = user.site?._id || user.site;
+              return userSiteId === id;
+            })
+            .map((user) => user._id);
+          setAssignedUserKeys(assigned);
+          setOriginalAssignedKeys(assigned);
+        },
+        onFail: (err) => {
+          console.error(err);
+          toast.error("Failed to fetch users");
+        },
+      });
+    },
+    [id, getQuery],
+  );
 
   useEffect(() => {
     if (id) {
       fetchSite();
-      fetchUsers();
     }
   }, [id]);
+
+  // Fetch users when site is loaded (to get the company ID)
+  useEffect(() => {
+    if (site?.company) {
+      const companyId = site.company._id || site.company;
+      fetchUsers(companyId);
+    }
+  }, [site]);
 
   const handleSubmit = (values) => {
     putQuery({

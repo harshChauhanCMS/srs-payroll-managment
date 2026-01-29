@@ -66,10 +66,10 @@ const EditCompany = () => {
     });
   }, [id, getQuery, form]);
 
-  // Fetch users - only unassigned users OR users assigned to THIS company
+  // Fetch users - only unassigned users OR users assigned to THIS company (exclude admins)
   const fetchUsers = useCallback(() => {
     getQuery({
-      url: `/api/v1/admin/users?limit=1000`, // Fetch all users
+      url: `/api/v1/admin/users?limit=1000&excludeRole=admin`,
       onSuccess: (response) => {
         const users = response?.users || [];
 

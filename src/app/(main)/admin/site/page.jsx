@@ -186,7 +186,7 @@ const SiteManagement = () => {
             showActions={true}
             filterColumns={"company"}
             onEdit={handleEditStart}
-            onDelete={handleDeleteClick}
+            // onDelete={handleDeleteClick}
             entryText={`Total Sites: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}

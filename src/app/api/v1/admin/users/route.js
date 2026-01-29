@@ -145,6 +145,8 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
+    const excludeRole = searchParams.get("excludeRole");
+    const company = searchParams.get("company");
     const active = searchParams.get("active");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
@@ -154,6 +156,8 @@ export async function GET(request) {
     // Build query
     const query = {};
     if (role) query.role = role;
+    if (excludeRole) query.role = { $ne: excludeRole };
+    if (company) query.company = company;
     if (active !== null && active !== undefined) {
       query.active = active === "true";
     }

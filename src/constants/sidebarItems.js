@@ -6,6 +6,7 @@ import {
   ClockCircleOutlined,
   DollarOutlined,
   FileTextOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 
 export const sidebarHeading = "SRS Payroll";
@@ -30,7 +31,7 @@ export const adminSidebarItems = [
   {
     name: "Site",
     link: "/admin/site",
-    icon: BankOutlined,
+    icon: EnvironmentOutlined,
   },
 ];
 
