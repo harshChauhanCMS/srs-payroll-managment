@@ -31,18 +31,18 @@ export default function Sidebar({
   const { logout, user } = useAuth();
 
   // Get sidebar items based on user role
-  const sidebarNavItems = getSidebarItems(user?.role || "customer");
+  const sidebarNavItems = getSidebarItems(user?.role || "employee");
 
   // Get dashboard link based on user role
   const getDashboardLink = () => {
     switch (user?.role) {
       case "admin":
         return "/admin/dashboard";
-      case "vendor":
-        return "/vendor/dashboard";
-      case "customer":
+      case "hr":
+        return "/hr/dashboard";
+      case "employee":
       default:
-        return "/user/dashboard";
+        return "/employee/dashboard";
     }
   };
 

@@ -77,7 +77,7 @@ const Layout = () => {
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#f4f4f4] to-[#e0e0e0]">
+        <div className="flex items-center justify-center min-h-screen bg-linear-to-b from-[#f4f4f4] to-[#e0e0e0]">
           <div className="text-center p-8 bg-white rounded-lg shadow-lg border border-[#e0e0e0] animate-fadeIn">
             <span className="text-4xl mb-4 block animate-pulse">🔴</span>
             <h1 className="text-3xl font-semibold text-[#5c536e] mb-2">

@@ -28,6 +28,17 @@ const userSchema = new mongoose.Schema(
       required: true,
       default: ROLES.EMPLOYEE,
     },
+    permissions: {
+      view: { type: Boolean, default: true },
+      edit: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+      create: { type: Boolean, default: false },
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     pan: {
       type: String,
       trim: true,

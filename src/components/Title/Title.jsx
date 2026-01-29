@@ -21,7 +21,11 @@ const Title = ({ title, buttonText, destination, onButtonClick }) => {
       </h1>
 
       {buttonText && (
-        <Button className="simple-button" onClick={handleDestination}>
+        <Button
+          className="simple-button"
+          onClick={handleDestination}
+          style={{ borderRadius: "8px" }}
+        >
           {buttonText}
         </Button>
       )}
