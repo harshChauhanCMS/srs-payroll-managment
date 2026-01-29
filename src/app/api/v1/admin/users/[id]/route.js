@@ -136,6 +136,26 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
+    // Prevent self-deletion
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded._id === id) {
+          return NextResponse.json(
+            { message: "You cannot delete your own account" },
+            { status: 403 },
+          );
+        }
+      } catch (tokenError) {
+        // Continue if token verification fails - middleware or other checks might have handled it,
+        // or we just proceed with standard deletion. Ideally this should be robust auth middleware.
+        console.error("Token check warning in delete:", tokenError.message);
+      }
+    }
+
     // Soft delete by setting active to false
     user.active = false;
     await user.save();

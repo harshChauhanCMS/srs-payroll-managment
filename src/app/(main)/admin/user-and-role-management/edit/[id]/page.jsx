@@ -185,6 +185,7 @@ const EditUser = () => {
                   prefix={<LockOutlined className="text-gray-400" />}
                   placeholder="Enter new password (optional)"
                   size="large"
+                  disabled
                 />
               </Form.Item>
             </Col>
@@ -194,7 +195,7 @@ const EditUser = () => {
                 label="Role"
                 rules={[{ required: true, message: "Please select role" }]}
               >
-                <Select placeholder="Select role" size="large">
+                <Select placeholder="Select role" size="large" disabled>
                   <Option value="hr">HR</Option>
                   <Option value="employee">Employee</Option>
                 </Select>
@@ -257,13 +258,31 @@ const EditUser = () => {
 
           <Row gutter={16}>
             <Col xs={24} md={8}>
-              <Form.Item name="pan" label="PAN Number">
+              <Form.Item
+                name="pan"
+                label="PAN Number"
+                rules={[
+                  {
+                    pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+                    message: "Invalid PAN format (e.g., ABCDE1234F)",
+                  },
+                ]}
+              >
                 <Input placeholder="ABCDE1234F" size="large" />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="aadhar" label="Aadhar Number">
-                <Input placeholder="1234-5678-9012" size="large" />
+              <Form.Item
+                name="aadhar"
+                label="Aadhar Number"
+                rules={[
+                  {
+                    pattern: /^\d{12}$/,
+                    message: "Aadhar must be exactly 12 digits",
+                  },
+                ]}
+              >
+                <Input placeholder="123456789012" size="large" maxLength={12} />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>

@@ -67,10 +67,15 @@ const UserAndRoleManagement = () => {
       url: `/api/v1/admin/users/${userToDelete._id}`,
       onSuccess: () => {
         toast.success("User deactivated successfully");
+        // Update the user in the list instead of removing them
         setTableData((prevData) =>
-          prevData.filter((item) => item._id !== userToDelete._id),
+          prevData.map((item) =>
+            item._id === userToDelete._id
+              ? { ...item, active: false, status: "Inactive" }
+              : item,
+          ),
         );
-        setTotalDocuments((prev) => prev - 1);
+        // setTotalDocuments((prev) => prev - 1); // Don't decrease count as user is still there
         setDeleteModalVisible(false);
         setUserToDelete(null);
       },
