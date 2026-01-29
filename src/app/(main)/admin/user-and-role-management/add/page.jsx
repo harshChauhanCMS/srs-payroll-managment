@@ -2,6 +2,7 @@
 
 import toast from "react-hot-toast";
 import Title from "@/components/Title/Title";
+import useGetQuery from "@/hooks/getQuery.hook";
 import usePostQuery from "@/hooks/postQuery.hook";
 import BackHeader from "@/components/BackHeader/BackHeader";
 
@@ -10,7 +11,6 @@ import {
   UserOutlined,
   MailOutlined,
   LockOutlined,
-  ArrowLeftOutlined,
   BankOutlined,
 } from "@ant-design/icons";
 import {

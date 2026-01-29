@@ -13,6 +13,16 @@ const departmentSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: [true, "Company is required"],
+    },
+    site: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Site",
+      required: [true, "Site is required"],
+    },
     description: {
       type: String,
       trim: true,
@@ -27,6 +37,9 @@ const departmentSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+// Compound index for efficient queries
+departmentSchema.index({ company: 1, site: 1 });
 
 // Avoid using a cached model
 if (mongoose.models.Department) {

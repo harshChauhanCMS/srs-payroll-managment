@@ -12,7 +12,10 @@ export async function GET(request, { params }) {
 
     await connectDB();
 
-    const department = await Department.findById(id).lean();
+    const department = await Department.findById(id)
+      .populate("company", "name")
+      .populate("site", "name siteCode")
+      .lean();
 
     if (!department) {
       return NextResponse.json(
@@ -40,7 +43,7 @@ export async function PUT(request, { params }) {
     const { id } = await params;
     const body = await request.json();
 
-    const { name, code, description, active } = body;
+    const { name, code, company, site, description, active } = body;
 
     await connectDB();
 
@@ -70,10 +73,16 @@ export async function PUT(request, { params }) {
     // Update fields if provided
     if (name !== undefined) department.name = name.trim();
     if (code !== undefined) department.code = code.trim().toUpperCase();
+    if (company !== undefined) department.company = company;
+    if (site !== undefined) department.site = site;
     if (description !== undefined) department.description = description.trim();
     if (active !== undefined) department.active = active;
 
     await department.save();
+
+    // Populate for response
+    await department.populate("company", "name");
+    await department.populate("site", "name siteCode");
 
     return NextResponse.json({
       message: "Department updated successfully",

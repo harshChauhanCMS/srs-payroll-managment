@@ -10,20 +10,26 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const active = searchParams.get("active");
+    const company = searchParams.get("company");
+    const site = searchParams.get("site");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
 
     await connectDB();
 
     const query = {};
-    if (active !== null && active !== undefined) {
+    if (active !== null && active !== undefined && active !== "") {
       query.active = active === "true";
     }
+    if (company) query.company = company;
+    if (site) query.site = site;
 
     const skip = (page - 1) * limit;
 
     const [departments, total] = await Promise.all([
       Department.find(query)
+        .populate("company", "name")
+        .populate("site", "name siteCode")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -39,7 +45,6 @@ export async function GET(request) {
         total,
         pages: Math.ceil(total / limit),
       },
-      message: "Departments fetched successfully",
     });
   } catch (err) {
     console.error("List departments error:", err);
@@ -57,7 +62,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, code, description } = body;
+    const { name, code, company, site, description } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -69,6 +74,20 @@ export async function POST(request) {
     if (!code) {
       return NextResponse.json(
         { message: "Department code is required" },
+        { status: 400 },
+      );
+    }
+
+    if (!company) {
+      return NextResponse.json(
+        { message: "Company is required" },
+        { status: 400 },
+      );
+    }
+
+    if (!site) {
+      return NextResponse.json(
+        { message: "Site is required" },
         { status: 400 },
       );
     }
@@ -89,9 +108,15 @@ export async function POST(request) {
     const department = await Department.create({
       name: name.trim(),
       code: code.trim().toUpperCase(),
+      company,
+      site,
       description: (description || "").trim(),
       active: true,
     });
+
+    // Populate and return
+    await department.populate("company", "name");
+    await department.populate("site", "name siteCode");
 
     return NextResponse.json(
       {
