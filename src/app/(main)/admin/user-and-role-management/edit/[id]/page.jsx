@@ -243,6 +243,7 @@ const EditUser = () => {
                   loading={companiesLoading}
                   showSearch
                   optionFilterProp="children"
+                  disabled
                 >
                   {companies.map((company) => (
                     <Option key={company._id} value={company._id}>
