@@ -177,10 +177,10 @@ const UserAndRoleManagement = () => {
             showDate={true}
             showActions={true}
             onView={(row) =>
-              `/admin/user-and-role-management/${row._id}?page=${page}&limit=${limit}`
+              `/admin/user-and-role-management/view/${row._id}?page=${page}&limit=${limit}`
             }
             onEdit={(row) =>
-              router.push(`/admin/user-and-role-management/${row._id}/edit`)
+              router.push(`/admin/user-and-role-management/edit/${row._id}`)
             }
             onDelete={handleDeleteClick}
             entryText={`Total Users: ${totalDocuments}`}
@@ -205,8 +205,14 @@ const UserAndRoleManagement = () => {
         okButtonProps={{
           danger: true,
           loading: deleteLoading,
+          className: "red-button",
+          style: { borderRadius: "8px" },
         }}
-        cancelButtonProps={{ disabled: deleteLoading }}
+        cancelButtonProps={{
+          disabled: deleteLoading,
+          className: "white-button",
+          style: { borderRadius: "8px" },
+        }}
       >
         <div className="py-4">
           <p className="text-gray-600 mb-4">
