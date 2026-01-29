@@ -16,13 +16,12 @@ import { LockOutlined, MailOutlined } from "@ant-design/icons";
 const { Title } = Typography;
 
 const DASHBOARD_BY_ROLE = {
-  [ROLES.SUPER_ADMIN]: "/admin/dashboard",
+  [ROLES.ADMIN]: "/admin/dashboard",
   [ROLES.HR]: "/hr/dashboard",
-  [ROLES.ACCOUNTS]: "/accounts/dashboard",
-  [ROLES.MANAGER]: "/manager/dashboard",
+  [ROLES.EMPLOYEE]: "/employee/dashboard",
 };
 
-const getDashboardPath = (role) => DASHBOARD_BY_ROLE[role];
+const getDashboardPath = (role) => DASHBOARD_BY_ROLE[role] || "/";
 
 const Login = () => {
   const [form] = Form.useForm();

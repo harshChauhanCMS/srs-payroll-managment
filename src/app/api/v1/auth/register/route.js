@@ -12,7 +12,6 @@ export async function POST(request) {
       password,
       name,
       role = ROLES.MANAGER,
-      gstNumber = "",
       pan = "",
       aadhar = "",
       address = "",
@@ -22,7 +21,7 @@ export async function POST(request) {
     if (!email || !password || !name) {
       return NextResponse.json(
         { message: "Email, password and name are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -30,14 +29,14 @@ export async function POST(request) {
     if (role && !validRoles.includes(role)) {
       return NextResponse.json(
         { message: `Role must be one of: ${validRoles.join(", ")}` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!process.env.JWT_SECRET) {
       return NextResponse.json(
         { message: "Server configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -47,7 +46,7 @@ export async function POST(request) {
     if (existing) {
       return NextResponse.json(
         { message: "User with this email already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -58,7 +57,6 @@ export async function POST(request) {
       password: hashedPassword,
       name: name.trim(),
       role,
-      gstNumber: (gstNumber || "").trim(),
       pan: (pan || "").trim(),
       aadhar: (aadhar || "").trim(),
       address: (address || "").trim(),
@@ -76,12 +74,17 @@ export async function POST(request) {
   } catch (err) {
     console.error("Register error:", err);
     if (err.name === "ValidationError") {
-      const msg = Object.values(err.errors || {}).map((e) => e.message).join(", ");
-      return NextResponse.json({ message: msg || "Validation failed" }, { status: 400 });
+      const msg = Object.values(err.errors || {})
+        .map((e) => e.message)
+        .join(", ");
+      return NextResponse.json(
+        { message: msg || "Validation failed" },
+        { status: 400 },
+      );
     }
     return NextResponse.json(
       { message: err.message || "Registration failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

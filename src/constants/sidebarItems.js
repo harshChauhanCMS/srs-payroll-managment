@@ -8,18 +8,9 @@ import {
   FileTextOutlined,
   FileSearchOutlined,
 } from "@ant-design/icons";
-import {
-  Camera,
-  ClipboardCheck,
-  LayoutDashboard,
-  Rss,
-  Scale,
-  User,
-  Users,
-  Bell,
-} from "lucide-react";
+import { LayoutDashboard, Users } from "lucide-react";
 
-export const sidebarHeading = "VAKEEL AT HOME";
+export const sidebarHeading = "SRS";
 
 // Admin Sidebar Items
 export const adminSidebarItems = [
@@ -33,26 +24,26 @@ export const adminSidebarItems = [
     link: "/admin/all",
     icon: Users,
   },
-  {
-    name: "Lawyers",
-    link: "/admin/lawyers-list",
-    icon: Scale,
-  },
-  {
-    name: "Clerks",
-    link: "/admin/clerks-list",
-    icon: Scale,
-  },
-  {
-    name: "Public",
-    link: "/admin/public-list",
-    icon: User,
-  },
-  {
-    name: "Blogs",
-    link: "/admin/blogs",
-    icon: Rss,
-  },
+  // {
+  //   name: "Lawyers",
+  //   link: "/admin/lawyers-list",
+  //   icon: Scale,
+  // },
+  // {
+  //   name: "Clerks",
+  //   link: "/admin/clerks-list",
+  //   icon: Scale,
+  // },
+  // {
+  //   name: "Public",
+  //   link: "/admin/public-list",
+  //   icon: User,
+  // },
+  // {
+  //   name: "Blogs",
+  //   link: "/admin/blogs",
+  //   icon: Rss,
+  // },
   // {
   //   name: "Subscription Management",
   //   link: "/admin/subscription-management",
@@ -68,21 +59,21 @@ export const adminSidebarItems = [
   //     },
   //   ],
   // },
-  {
-    name: "Ask Me Anything",
-    link: "/admin/ask-me-anything",
-    icon: ClipboardCheck,
-  },
-  {
-    name: "VAH Gram",
-    link: "/admin/vah-gram",
-    icon: Camera,
-  },
-  {
-    name: "Send Notification",
-    link: "/admin/send-notification",
-    icon: Bell,
-  },
+  // {
+  //   name: "Ask Me Anything",
+  //   link: "/admin/ask-me-anything",
+  //   icon: ClipboardCheck,
+  // },
+  // {
+  //   name: "VAH Gram",
+  //   link: "/admin/vah-gram",
+  //   icon: Camera,
+  // },
+  // {
+  //   name: "Send Notification",
+  //   link: "/admin/send-notification",
+  //   icon: Bell,
+  // },
   // {
   //   name: "Reviews Management",
   //   link: "/admin/reviews-management",

@@ -12,25 +12,21 @@ const Layout = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const token = localStorage.getItem("token");
+  const [isLoading, setIsLoading] = useState(() => {
+    // Initialize based on token presence
+    return !localStorage.getItem("token");
+  });
 
   useEffect(() => {
-    let mounted = true;
+    const token = localStorage.getItem("token");
 
-    if (!token && mounted) {
+    if (!token) {
       navigate("/", { replace: true });
     }
-
-    setIsLoading(false);
-
-    return () => {
-      mounted = false;
-    };
-  }, [token, navigate]);
+  }, [navigate]);
 
   // Early return if no token or still loading
-  if (!token || isLoading) {
+  if (isLoading) {
     return null;
   }
 

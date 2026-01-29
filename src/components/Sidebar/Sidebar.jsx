@@ -117,14 +117,14 @@ export default function Sidebar({
               {isCollapsed ? <ArrowRightOutlined /> : <ArrowLeftOutlined />}
             </button>
 
-            <Image
+            {/* <Image
               src={images.vakeelLogo}
               alt="Vakeel At Home"
               width={120}
               height={120}
               onClick={() => router.push(getDashboardLink())}
               className="cursor-pointer"
-            />
+            /> */}
             {!isCollapsed && (
               <span
                 className="font-bold text-lg text-[#C2A368] cursor-pointer"

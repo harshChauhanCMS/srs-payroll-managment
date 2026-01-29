@@ -26,12 +26,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ALL_ROLES,
       required: true,
-      default: ROLES.MANAGER,
-    },
-    gstNumber: {
-      type: String,
-      trim: true,
-      default: "",
+      default: ROLES.EMPLOYEE,
     },
     pan: {
       type: String,
@@ -61,7 +56,7 @@ const userSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 userSchema.methods.isPasswordCorrect = async function (password) {
@@ -73,7 +68,6 @@ userSchema.methods.generateToken = function () {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
-
 
 // Avoid using a cached model that may have old middleware (e.g. pre-save with broken next)
 if (mongoose.models.User) {
