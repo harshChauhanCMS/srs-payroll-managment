@@ -99,6 +99,7 @@ export async function POST(request) {
       address: (address || "").trim(),
       active: true,
       createdBy,
+      company: body.company || null,
     });
 
     // Send welcome email with credentials
@@ -162,6 +163,7 @@ export async function GET(request) {
     const [users, total] = await Promise.all([
       User.find(query)
         .select("-password")
+        .populate("company", "name")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

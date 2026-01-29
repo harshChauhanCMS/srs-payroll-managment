@@ -11,6 +11,7 @@ import {
   MailOutlined,
   LockOutlined,
   ArrowLeftOutlined,
+  BankOutlined,
 } from "@ant-design/icons";
 import {
   Form,
@@ -24,12 +25,29 @@ import {
   Typography,
 } from "antd";
 
+import { useEffect, useState } from "react";
+
 const { Option } = Select;
 
 const AddUser = () => {
   const router = useRouter();
   const [form] = Form.useForm();
   const { postQuery, loading } = usePostQuery();
+  const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
+
+  const [companies, setCompanies] = useState([]);
+
+  useEffect(() => {
+    getCompanies({
+      url: "/api/v1/admin/companies?active=true&limit=100", // Fetch enough active companies
+      onSuccess: (res) => {
+        setCompanies(res.companies || []);
+      },
+      onFail: (err) => {
+        console.error("Failed to fetch companies", err);
+      },
+    });
+  }, []);
 
   const handleSubmit = (values) => {
     const payload = {
@@ -137,6 +155,31 @@ const AddUser = () => {
                 <Select placeholder="Select role" size="large">
                   <Option value="hr">HR</Option>
                   <Option value="employee">Employee</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="company"
+                label="Company"
+                rules={[{ required: true, message: "Please select a company" }]}
+              >
+                <Select
+                  placeholder="Select company"
+                  suffixIcon={<BankOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={companiesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {companies.map((company) => (
+                    <Option key={company._id} value={company._id}>
+                      {company.name}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>

@@ -10,7 +10,12 @@ import BackHeader from "@/components/BackHeader/BackHeader";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 
-import { UserOutlined, MailOutlined, LockOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  MailOutlined,
+  LockOutlined,
+  BankOutlined,
+} from "@ant-design/icons";
 import {
   Form,
   Input,
@@ -34,7 +39,21 @@ const EditUser = () => {
   const [form] = Form.useForm();
   const { getQuery, loading: fetchLoading } = useGetQuery();
   const { patchQuery, loading: updateLoading } = usePatchQuery();
+  const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
   const [user, setUser] = useState(null);
+  const [companies, setCompanies] = useState([]);
+
+  useEffect(() => {
+    getCompanies({
+      url: "/api/v1/admin/companies?active=true&limit=100",
+      onSuccess: (res) => {
+        setCompanies(res.companies || []);
+      },
+      onFail: (err) => {
+        console.error("Failed to fetch companies", err);
+      },
+    });
+  }, []);
 
   const fetchUser = useCallback(() => {
     getQuery({
@@ -48,6 +67,7 @@ const EditUser = () => {
             email: userData.email,
             role: userData.role,
             pan: userData.pan,
+            company: userData.company?._id || userData.company, // Handle object or ID
             aadhar: userData.aadhar,
             address: userData.address,
             active: userData.active,
@@ -78,6 +98,7 @@ const EditUser = () => {
       name: values.name,
       email: values.email,
       role: values.role,
+      company: values.company,
       pan: values.pan,
       aadhar: values.aadhar,
       address: values.address,
@@ -207,6 +228,28 @@ const EditUser = () => {
             <Col xs={24} md={12}>
               <Form.Item name="active" label="Status" valuePropName="checked">
                 <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="company"
+                label="Company"
+                rules={[{ required: true, message: "Please select a company" }]}
+              >
+                <Select
+                  placeholder="Select company"
+                  prefix={<BankOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={companiesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {companies.map((company) => (
+                    <Option key={company._id} value={company._id}>
+                      {company.name}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>

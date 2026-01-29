@@ -37,17 +37,14 @@ const Header = () => {
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <>
-                {/* Notification Bell */}
-                <button className="relative p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all duration-200 group">
+                {/* <button className="relative p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all duration-200 group">
                   <BellOutlined className="text-lg text-slate-600 group-hover:text-[#C2A368] transition-colors" />
-                  {/* Notification dot */}
+
                   <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                </button>
+                </button> */}
 
-                {/* Divider */}
-                <div className="h-8 w-px bg-linear-to-b from-transparent via-slate-200 to-transparent" />
+                {/* <div className="h-8 w-px bg-linear-to-b from-transparent via-slate-200 to-transparent" /> */}
 
-                {/* Profile Section */}
                 <div className="flex items-center gap-3 pl-2 pr-4 py-1.5 rounded-full bg-linear-to-r from-slate-50 to-slate-100/50 hover:from-slate-100 hover:to-slate-50 transition-all duration-300 cursor-pointer group">
                   <div className="relative">
                     <div className="h-9 w-9 rounded-full overflow-hidden ring-2 ring-[#C2A368]/30 group-hover:ring-[#C2A368]/60 transition-all duration-300">
@@ -59,7 +56,6 @@ const Header = () => {
                         className="h-full w-full object-cover"
                       />
                     </div>
-                    {/* Online indicator */}
                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
                   </div>
                   <div className="hidden sm:flex flex-col">

@@ -13,7 +13,11 @@ export async function GET(request, { params }) {
 
     await connectDB();
 
-    const user = await User.findById(id).select("-password").lean();
+    const user = await User.findById(id)
+      .select("-password")
+      .populate("company", "name")
+      .populate("createdBy", "name email")
+      .lean();
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -48,6 +52,7 @@ export async function PATCH(request, { params }) {
       aadhar,
       address,
       active,
+      company,
     } = body;
 
     await connectDB();
@@ -66,6 +71,7 @@ export async function PATCH(request, { params }) {
     if (aadhar !== undefined) user.aadhar = aadhar.trim();
     if (address !== undefined) user.address = address.trim();
     if (active !== undefined) user.active = active;
+    if (company !== undefined) user.company = company;
 
     // Update password if provided
     if (password) {

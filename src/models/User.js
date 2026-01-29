@@ -39,6 +39,11 @@ const userSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      default: null,
+    },
     pan: {
       type: String,
       trim: true,

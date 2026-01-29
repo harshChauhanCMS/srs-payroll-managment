@@ -42,6 +42,7 @@ const UserAndRoleManagement = () => {
           permissions: item?.permissions || {},
           status: item?.active ? "Active" : "Inactive",
           active: item?.active,
+          company: item?.company?.name || "Not Assigned",
           date: moment(item?.createdAt).format("DD-MM-YYYY") || "N/A",
           _id: item?._id,
         }));
@@ -114,6 +115,14 @@ const UserAndRoleManagement = () => {
         >
           {value?.toUpperCase()}
         </Tag>
+      ),
+    },
+    {
+      Header: "Company",
+      accessor: "company",
+      width: 150,
+      Cell: (value) => (
+        <Tag color={value === "Not Assigned" ? "default" : "blue"}>{value}</Tag>
       ),
     },
     {
