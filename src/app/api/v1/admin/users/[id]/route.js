@@ -35,7 +35,10 @@ export async function GET(request, { params }) {
 
     // HR can only view users in their company
     if (auth.user.role === ROLES.HR) {
-      if (!auth.user.company || String(user.company) !== String(auth.user.company)) {
+      if (
+        !auth.user.company ||
+        String(user.company) !== String(auth.user.company)
+      ) {
         return NextResponse.json(
           { message: "Forbidden. You can only view users in your company." },
           { status: 403 },
@@ -111,13 +114,19 @@ export async function PATCH(request, { params }) {
 
     // HR can only update users in their company; cannot change company to another
     if (currentUser.role === ROLES.HR) {
-      if (!currentUser.company || String(user.company) !== String(currentUser.company)) {
+      if (
+        !currentUser.company ||
+        String(user.company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
           { message: "Forbidden. You can only edit users in your company." },
           { status: 403 },
         );
       }
-      if (company !== undefined && String(company) !== String(currentUser.company)) {
+      if (
+        company !== undefined &&
+        String(company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
           { message: "Forbidden. You cannot assign users to another company." },
           { status: 403 },
@@ -194,8 +203,16 @@ export async function PATCH(request, { params }) {
 }
 
 /**
+ * PUT /api/v1/admin/users/[id]
+ * Alias for PATCH - Update user details and permissions
+ */
+export async function PUT(request, { params }) {
+  return PATCH(request, { params });
+}
+
+/**
  * DELETE /api/v1/admin/users/[id]
- * Soft delete: release from skills, grade, designation, department, site, company; set softDelete = true (and active = false).
+ * Hard delete: release from skills, grade, designation, department, site, company; then delete user from database.
  */
 export async function DELETE(request, { params }) {
   try {
@@ -205,7 +222,7 @@ export async function DELETE(request, { params }) {
     const currentUser = auth.user;
     if (currentUser.role === ROLES.HR && !currentUser.permissions?.delete) {
       return NextResponse.json(
-        { message: "Forbidden. You do not have permission to deactivate users." },
+        { message: "Forbidden. You do not have permission to delete users." },
         { status: 403 },
       );
     }
@@ -228,29 +245,32 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // HR can only deactivate users in their company
+    // HR can only delete users in their company
     if (currentUser.role === ROLES.HR) {
-      if (!currentUser.company || String(user.company) !== String(currentUser.company)) {
+      if (
+        !currentUser.company ||
+        String(user.company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
-          { message: "Forbidden. You can only deactivate users in your company." },
+          { message: "Forbidden. You can only delete users in your company." },
           { status: 403 },
         );
       }
     }
 
-    // Release from all assignments, then mark as soft-deleted
+    // Release from all assignments before deletion
     user.skills = [];
     user.grade = null;
     user.designation = null;
     user.department = null;
     user.site = null;
     user.company = null;
-    user.softDelete = true;
-    user.active = false;
-    await user.save();
+
+    // Actually delete the user from database
+    await User.findByIdAndDelete(id);
 
     return NextResponse.json({
-      message: "User deactivated successfully",
+      message: "User deleted successfully",
     });
   } catch (err) {
     console.error("Delete user error:", err);

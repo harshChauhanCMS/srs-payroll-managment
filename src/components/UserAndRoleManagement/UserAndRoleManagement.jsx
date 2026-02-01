@@ -6,12 +6,14 @@ import Title from "@/components/Title/Title";
 import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
+import usePutQuery from "@/hooks/putQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
 import { usePermissions } from "@/hooks/usePermissions";
 
-import { Modal, Tag } from "antd";
+import { Modal, Tag, Switch } from "antd";
 import { useEffect, useState } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 
 export default function UserAndRoleManagement({
   basePath = "/admin",
@@ -21,14 +23,17 @@ export default function UserAndRoleManagement({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { canView, canEdit, canDelete, canCreate } = usePermissions();
+  const currentUser = useSelector((state) => state.user?.user);
 
   const { getQuery, loading } = useGetQuery();
   const { deleteQuery, loading: deleteLoading } = useDeleteQuery();
+  const { putQuery } = usePutQuery();
 
   const [tableData, setTableData] = useState([]);
   const [totalDocuments, setTotalDocuments] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [togglingUserId, setTogglingUserId] = useState(null);
 
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
@@ -70,7 +75,38 @@ export default function UserAndRoleManagement({
     fetchData();
   }, [page, limit]);
 
+  const handleStatusToggle = (userId, currentStatus) => {
+    // Prevent toggling own account
+    if (currentUser?._id === userId) {
+      toast.error("You cannot toggle your own account status");
+      return;
+    }
+
+    setTogglingUserId(userId);
+
+    putQuery({
+      url: `/api/v1/admin/users/${userId}`,
+      putData: { active: !currentStatus },
+      onSuccess: () => {
+        toast.success(
+          `User ${!currentStatus ? "activated" : "deactivated"} successfully`,
+        );
+        fetchData();
+        setTogglingUserId(null);
+      },
+      onFail: (err) => {
+        toast.error(err?.message || "Failed to update user status");
+        setTogglingUserId(null);
+      },
+    });
+  };
+
   const handleDeleteClick = (user) => {
+    // Prevent deleting own account
+    if (currentUser?._id === user._id) {
+      toast.error("You cannot delete your own account");
+      return;
+    }
     setUserToDelete(user);
     setDeleteModalVisible(true);
   };
@@ -86,8 +122,8 @@ export default function UserAndRoleManagement({
         setDeleteModalVisible(false);
         setUserToDelete(null);
       },
-      onFail: () => {
-        toast.error("Failed to delete user");
+      onFail: (err) => {
+        toast.error(err?.message || "Failed to delete user");
         setDeleteModalVisible(false);
         setUserToDelete(null);
       },
@@ -142,20 +178,24 @@ export default function UserAndRoleManagement({
     },
     {
       Header: "Status",
-      accessor: "status",
-      width: 100,
+      accessor: "active",
+      width: 120,
       Cell: (value, record) => (
-        <Tag
-          color={
-            record.softDelete
-              ? "default"
-              : record.active
-                ? "success"
-                : "default"
-          }
-        >
-          {value}
-        </Tag>
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={value}
+            loading={togglingUserId === record._id}
+            disabled={
+              record.softDelete ||
+              togglingUserId === record._id ||
+              currentUser?._id === record._id ||
+              !canEdit()
+            }
+            onChange={() => handleStatusToggle(record._id, value)}
+            checkedChildren="Active"
+            unCheckedChildren="Inactive"
+          />
+        </div>
       ),
     },
     { Header: "Created", accessor: "date", width: 120 },
@@ -231,10 +271,13 @@ export default function UserAndRoleManagement({
         centered
       >
         <div className="py-4">
+          <p className="text-red-600 font-semibold mb-4">
+            ⚠️ Warning: This action cannot be undone!
+          </p>
           <p className="text-gray-600 mb-4">
-            Are you sure you want to deactivate this user? The user will first
-            be released from skills, grade, designation, department, site and
-            company, then deactivated.
+            The user will first be released from all assignments (skills, grade,
+            designation, department, site, and company), and then{" "}
+            <strong>permanently deleted</strong> from the database.
           </p>
           {userToDelete && (
             <div className="bg-gray-50 p-3 rounded-lg">

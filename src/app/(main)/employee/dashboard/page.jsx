@@ -57,6 +57,7 @@ const EmployeeDashboard = () => {
         onFail: () => {},
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.company, user?.site, user?.department]);
 
   return (
@@ -70,7 +71,7 @@ const EmployeeDashboard = () => {
       ) : (
         <>
           {/* Welcome Card */}
-          <Card className="mb-6 shadow-md bg-gradient-to-r from-blue-50 to-blue-100">
+          <Card className="mb-6 shadow-md bg-linear-to-r from-blue-50 to-blue-100">
             <div className="flex items-center gap-4">
               <div className="bg-blue-500 text-white p-4 rounded-full">
                 <UserOutlined className="text-3xl" />
