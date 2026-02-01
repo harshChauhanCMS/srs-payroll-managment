@@ -1,7 +1,11 @@
-import React from "react";
+"use client";
 
-const page = () => {
-  return <div>page</div>;
-};
+import Title from "@/components/Title/Title";
 
-export default page;
+export default function EmployeeDashboardPage() {
+  return (
+    <div className="text-slate-950">
+      <Title title="Employee Dashboard" />
+    </div>
+  );
+}

@@ -37,6 +37,7 @@ export default function Sidebar({
   const getDashboardLink = () => {
     switch (user?.role) {
       case "admin":
+      case "super_admin":
         return "/admin/dashboard";
       case "hr":
         return "/hr/dashboard";

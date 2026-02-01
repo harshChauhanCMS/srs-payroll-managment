@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Skill from "@/models/Skill";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 export async function GET(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     await connectDB();
     const skill = await Skill.findById(id).lean();
@@ -18,6 +22,9 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     const body = await request.json();
     const { name, category, active } = body;
@@ -41,6 +48,9 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     await connectDB();
     const skill = await Skill.findById(id);

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import { ROLES } from "@/constants/roles";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 /**
  * GET /api/v1/admin/users/[id]
@@ -9,6 +11,9 @@ import User from "@/models/User";
  */
 export async function GET(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
 
     await connectDB();
@@ -28,6 +33,16 @@ export async function GET(request, { params }) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
+    // HR can only view users in their company
+    if (auth.user.role === ROLES.HR) {
+      if (!auth.user.company || String(user.company) !== String(auth.user.company)) {
+        return NextResponse.json(
+          { message: "Forbidden. You can only view users in your company." },
+          { status: 403 },
+        );
+      }
+    }
+
     return NextResponse.json({ user });
   } catch (err) {
     console.error("Get user error:", err);
@@ -44,6 +59,17 @@ export async function GET(request, { params }) {
  */
 export async function PATCH(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.edit) {
+      return NextResponse.json(
+        { message: "Forbidden. You do not have permission to edit users." },
+        { status: 403 },
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -71,6 +97,32 @@ export async function PATCH(request, { params }) {
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+
+    if (user.softDelete) {
+      return NextResponse.json(
+        { message: "Cannot update a deleted user." },
+        { status: 400 },
+      );
+    }
+
+    // Do not allow setting softDelete via PATCH (only DELETE can set it)
+    // body.softDelete is intentionally not destructured or applied
+
+    // HR can only update users in their company; cannot change company to another
+    if (currentUser.role === ROLES.HR) {
+      if (!currentUser.company || String(user.company) !== String(currentUser.company)) {
+        return NextResponse.json(
+          { message: "Forbidden. You can only edit users in your company." },
+          { status: 403 },
+        );
+      }
+      if (company !== undefined && String(company) !== String(currentUser.company)) {
+        return NextResponse.json(
+          { message: "Forbidden. You cannot assign users to another company." },
+          { status: 403 },
+        );
+      }
     }
 
     // Update fields if provided
@@ -143,10 +195,21 @@ export async function PATCH(request, { params }) {
 
 /**
  * DELETE /api/v1/admin/users/[id]
- * Soft delete user (set active = false)
+ * Soft delete: release from skills, grade, designation, department, site, company; set softDelete = true (and active = false).
  */
 export async function DELETE(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.delete) {
+      return NextResponse.json(
+        { message: "Forbidden. You do not have permission to deactivate users." },
+        { status: 403 },
+      );
+    }
+
     const { id } = await params;
 
     await connectDB();
@@ -158,26 +221,31 @@ export async function DELETE(request, { params }) {
     }
 
     // Prevent self-deletion
-    const authHeader = request.headers.get("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.split(" ")[1];
-      try {
-        const jwt = require("jsonwebtoken");
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded._id === id) {
-          return NextResponse.json(
-            { message: "You cannot delete your own account" },
-            { status: 403 },
-          );
-        }
-      } catch (tokenError) {
-        // Continue if token verification fails - middleware or other checks might have handled it,
-        // or we just proceed with standard deletion. Ideally this should be robust auth middleware.
-        console.error("Token check warning in delete:", tokenError.message);
+    if (String(currentUser._id) === String(id)) {
+      return NextResponse.json(
+        { message: "You cannot delete your own account" },
+        { status: 403 },
+      );
+    }
+
+    // HR can only deactivate users in their company
+    if (currentUser.role === ROLES.HR) {
+      if (!currentUser.company || String(user.company) !== String(currentUser.company)) {
+        return NextResponse.json(
+          { message: "Forbidden. You can only deactivate users in your company." },
+          { status: 403 },
+        );
       }
     }
 
-    // Soft delete by setting active to false
+    // Release from all assignments, then mark as soft-deleted
+    user.skills = [];
+    user.grade = null;
+    user.designation = null;
+    user.department = null;
+    user.site = null;
+    user.company = null;
+    user.softDelete = true;
     user.active = false;
     await user.save();
 

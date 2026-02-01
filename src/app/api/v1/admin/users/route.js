@@ -2,8 +2,15 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import Company from "@/models/Company";
+import Site from "@/models/Site";
+import Department from "@/models/Department";
+import Designation from "@/models/Designation";
+import Grade from "@/models/Grade";
+import Skill from "@/models/Skill";
 import { ROLES } from "@/constants/roles";
 import { sendWelcomeEmail } from "@/lib/email";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 /**
  * POST /api/v1/admin/users
@@ -12,6 +19,17 @@ import { sendWelcomeEmail } from "@/lib/email";
  */
 export async function POST(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.create) {
+      return NextResponse.json(
+        { message: "Forbidden. You do not have permission to create users." },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const {
       email,
@@ -48,6 +66,25 @@ export async function POST(request) {
       );
     }
 
+    // HR can only create users in their own company
+    const companyId = body.company || null;
+    if (currentUser.role === ROLES.HR) {
+      if (!currentUser.company) {
+        return NextResponse.json(
+          { message: "HR user must be assigned to a company to create users." },
+          { status: 403 },
+        );
+      }
+      if (companyId && String(companyId) !== String(currentUser.company)) {
+        return NextResponse.json(
+          { message: "You can only create users in your own company." },
+          { status: 403 },
+        );
+      }
+      // Force company to HR's company
+      body.company = currentUser.company;
+    }
+
     await connectDB();
 
     // Check if user already exists
@@ -70,24 +107,9 @@ export async function POST(request) {
       create: permissions.create !== undefined ? permissions.create : false,
     };
 
-    // Extract admin ID from token for createdBy
-    let createdBy = null;
-    const authHeader = request.headers.get("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.split(" ")[1];
-      try {
-        const jwt = require("jsonwebtoken");
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        createdBy = decoded._id;
-      } catch (error) {
-        console.warn(
-          "Failed to extract admin ID for createdBy:",
-          error.message,
-        );
-      }
-    }
+    const createdBy = currentUser._id;
 
-    // Create user
+    // Create user (use body.company which may have been forced for HR)
     const user = await User.create({
       email: email.trim().toLowerCase(),
       password: hashedPassword,
@@ -143,11 +165,17 @@ export async function POST(request) {
  */
 export async function GET(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
     const excludeRole = searchParams.get("excludeRole");
-    const company = searchParams.get("company");
+    let company = searchParams.get("company");
     const active = searchParams.get("active");
+    const includeDeleted = searchParams.get("includeDeleted");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
 
@@ -155,11 +183,25 @@ export async function GET(request) {
 
     // Build query
     const query = {};
-    if (role) query.role = role;
-    if (excludeRole) query.role = { $ne: excludeRole };
-    if (company) query.company = company;
+    if (currentUser.role === ROLES.HR) {
+      if (!currentUser.company) {
+        return NextResponse.json({
+          users: [],
+          pagination: { page: 1, limit, total: 0, pages: 0 },
+        });
+      }
+      query.company = currentUser.company;
+    } else {
+      if (role) query.role = role;
+      if (excludeRole) query.role = { $ne: excludeRole };
+      if (company) query.company = company;
+    }
     if (active !== null && active !== undefined) {
       query.active = active === "true";
+    }
+    // Exclude soft-deleted users by default
+    if (includeDeleted !== "true") {
+      query.softDelete = false;
     }
 
     const skip = (page - 1) * limit;

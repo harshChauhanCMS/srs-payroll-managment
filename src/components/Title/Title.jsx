@@ -3,7 +3,13 @@
 import { Button } from "antd";
 import { useRouter } from "next/navigation";
 
-const Title = ({ title, buttonText, destination, onButtonClick }) => {
+const Title = ({
+  title,
+  buttonText,
+  destination,
+  onButtonClick,
+  showButton = true,
+}) => {
   const router = useRouter();
 
   const handleDestination = () => {
@@ -20,7 +26,7 @@ const Title = ({ title, buttonText, destination, onButtonClick }) => {
         {title}
       </h1>
 
-      {buttonText && (
+      {showButton && buttonText && (
         <Button
           className="simple-button"
           onClick={handleDestination}

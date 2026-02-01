@@ -1,0 +1,234 @@
+"use client";
+
+import moment from "moment";
+import toast from "react-hot-toast";
+import Title from "@/components/Title/Title";
+import Loader from "@/components/Loader/Loader";
+import useGetQuery from "@/hooks/getQuery.hook";
+import useDeleteQuery from "@/hooks/deleteQuery.hook";
+import EnhancedTable from "@/components/Table/EnhancedTable";
+
+import { Modal, Tag } from "antd";
+import { useEffect, useState } from "react";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
+
+export default function UserAndRoleManagement({
+  basePath = "/admin",
+  showAddButton = true,
+  canEdit = true,
+  canDelete = true,
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const { getQuery, loading } = useGetQuery();
+  const { deleteQuery, loading: deleteLoading } = useDeleteQuery();
+
+  const [tableData, setTableData] = useState([]);
+  const [totalDocuments, setTotalDocuments] = useState(0);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "10", 10);
+
+  const fetchData = () => {
+    getQuery({
+      url: `/api/v1/admin/users?page=${page}&limit=${limit}`,
+      onSuccess: (response) => {
+        const dataList = Array.isArray(response?.users) ? response.users : [];
+        setTotalDocuments(response.pagination?.total || 0);
+
+        const mappedData = dataList.map((item) => ({
+          name: item?.name || "N/A",
+          email: item?.email || "N/A",
+          role: item?.role || "N/A",
+          permissions: item?.permissions || {},
+          status: item?.softDelete ? "Deleted" : item?.active ? "Active" : "Inactive",
+          active: item?.active,
+          softDelete: item?.softDelete,
+          company: item?.company?.name || "Not Assigned",
+          site: item?.site?.name || "Not Assigned",
+          date: moment(item?.createdAt).format("DD-MM-YYYY") || "N/A",
+          _id: item?._id,
+        }));
+
+        setTableData(mappedData);
+      },
+      onFail: (err) => {
+        toast.error("Failed to fetch users");
+      },
+    });
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [page, limit]);
+
+  const handleDeleteClick = (user) => {
+    setUserToDelete(user);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!userToDelete) return;
+
+    deleteQuery({
+      url: `/api/v1/admin/users/${userToDelete._id}`,
+      onSuccess: () => {
+        toast.success("User deleted successfully");
+        fetchData();
+        setDeleteModalVisible(false);
+        setUserToDelete(null);
+      },
+      onFail: () => {
+        toast.error("Failed to delete user");
+        setDeleteModalVisible(false);
+        setUserToDelete(null);
+      },
+    });
+  };
+
+  const columns = [
+    { Header: "Name", accessor: "name", width: 150 },
+    { Header: "Email", accessor: "email", width: 200 },
+    {
+      Header: "Role",
+      accessor: "role",
+      width: 100,
+      Cell: (value) => (
+        <Tag
+          color={value === "admin" ? "red" : value === "hr" ? "blue" : "green"}
+        >
+          {value?.toUpperCase()}
+        </Tag>
+      ),
+    },
+    {
+      Header: "Company",
+      accessor: "company",
+      width: 150,
+      Cell: (value) => (
+        <Tag color={value === "Not Assigned" ? "default" : "purple"}>
+          {value}
+        </Tag>
+      ),
+    },
+    {
+      Header: "Site",
+      accessor: "site",
+      width: 150,
+      Cell: (value) => (
+        <Tag color={value === "Not Assigned" ? "default" : "blue"}>{value}</Tag>
+      ),
+    },
+    {
+      Header: "Permissions",
+      accessor: "permissions",
+      width: 200,
+      Cell: (value) => (
+        <div className="flex flex-wrap gap-1.5">
+          {value?.view && <Tag color="cyan">View</Tag>}
+          {value?.edit && <Tag color="orange">Edit</Tag>}
+          {value?.delete && <Tag color="red">Delete</Tag>}
+          {value?.create && <Tag color="green">Create</Tag>}
+        </div>
+      ),
+    },
+    {
+      Header: "Status",
+      accessor: "status",
+      width: 100,
+      Cell: (value, record) => (
+        <Tag color={record.softDelete ? "default" : record.active ? "success" : "default"}>{value}</Tag>
+      ),
+    },
+    { Header: "Created", accessor: "date", width: 120 },
+  ];
+
+  const handlePageChange = (newPage) => {
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.set("page", newPage);
+    router.push(`${pathname}?${newSearchParams.toString()}`);
+  };
+
+  const handleLimitChange = (newLimit) => {
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.set("limit", newLimit);
+    newSearchParams.set("page", 1);
+    router.push(`${pathname}?${newSearchParams.toString()}`);
+  };
+
+  return (
+    <>
+      <Title
+        title={"User & Role Management"}
+        showButton={showAddButton}
+        buttonText="Add User"
+        destination={`${basePath}/user-and-role-management/add`}
+      />
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader />
+        </div>
+      ) : (
+        <div className="pt-4">
+          <EnhancedTable
+            columns={columns}
+            data={tableData}
+            showDate={true}
+            showActions={true}
+            onView={(row) =>
+              `${basePath}/user-and-role-management/view/${row._id}?page=${page}&limit=${limit}`
+            }
+            onEdit={
+              canEdit
+                ? (row) =>
+                    router.push(
+                      `${basePath}/user-and-role-management/edit/${row._id}`,
+                    )
+                : undefined
+            }
+            onDelete={canDelete ? handleDeleteClick : undefined}
+            entryText={`Total Users: ${totalDocuments}`}
+            currentPage={page}
+            totalPages={Math.ceil(totalDocuments / limit)}
+            pageLimit={limit}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            totalDocuments={totalDocuments}
+          />
+        </div>
+      )}
+
+      <Modal
+        title="Delete User"
+        open={deleteModalVisible}
+        onOk={handleDeleteConfirm}
+        onCancel={() => setDeleteModalVisible(false)}
+        okText="Delete"
+        cancelText="Cancel"
+        okButtonProps={{ danger: true, loading: deleteLoading }}
+        centered
+      >
+        <div className="py-4">
+          <p className="text-gray-600 mb-4">
+            Are you sure you want to deactivate this user? The user will first be released from skills, grade, designation, department, site and company, then deactivated.
+          </p>
+          {userToDelete && (
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="font-medium text-gray-800">Name:</p>
+              <p className="text-gray-600">{userToDelete.name}</p>
+              <p className="font-medium text-gray-800 mt-2">Email:</p>
+              <p className="text-gray-600">{userToDelete.email}</p>
+              <p className="font-medium text-gray-800 mt-2">Role:</p>
+              <p className="text-gray-600 capitalize">{userToDelete.role}</p>
+            </div>
+          )}
+        </div>
+      </Modal>
+    </>
+  );
+}

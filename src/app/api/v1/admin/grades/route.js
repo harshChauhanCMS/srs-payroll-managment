@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Grade from "@/models/Grade";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 export async function GET(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { searchParams } = new URL(request.url);
     const active = searchParams.get("active");
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -34,6 +38,9 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const body = await request.json();
     const { name, code, minSalary, maxSalary } = body;
 

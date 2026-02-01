@@ -31,6 +31,12 @@ export async function POST(request) {
       );
     }
 
+    if (user.softDelete) {
+      return NextResponse.json(
+        { message: "Account has been deleted." },
+        { status: 403 }
+      );
+    }
     if (!user.active) {
       return NextResponse.json(
         { message: "Account is inactive. Contact admin." },

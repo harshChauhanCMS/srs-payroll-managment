@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Skill from "@/models/Skill";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 export async function GET(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
     const active = searchParams.get("active");
@@ -40,6 +44,9 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const body = await request.json();
     const { name, category } = body;
 

@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Designation from "@/models/Designation";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 /**
  * GET /api/v1/admin/designations
- * List all designations with optional filtering
+ * List all designations with optional filtering (Employee: 403)
  */
 export async function GET(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { searchParams } = new URL(request.url);
     const department = searchParams.get("department");
     const active = searchParams.get("active");
@@ -48,10 +52,13 @@ export async function GET(request) {
 }
 
 /**
- * POST /api/v1/admin/designations
+ * POST /api/v1/admin/designations (Employee: 403)
  */
 export async function POST(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const body = await request.json();
     const { name, code, department, level } = body;
 
