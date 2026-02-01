@@ -10,6 +10,7 @@ import usePutQuery from "@/hooks/putQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
 
+import { usePermissions } from "@/hooks/usePermissions";
 import { useEffect, useState, useCallback } from "react";
 import {
   Tabs,
@@ -29,6 +30,7 @@ const DepartmentMastersPage = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { canView, canEdit, canDelete, canCreate } = usePermissions();
 
   const [activeTab, setActiveTab] = useState("departments");
 
@@ -671,7 +673,7 @@ const DepartmentMastersPage = () => {
     <>
       <Title
         title="Department & Masters"
-        showButton={true}
+        showButton={canCreate()}
         buttonText={`Add ${getTabTitle()}`}
         onButtonClick={handleAddClick}
       />
@@ -693,8 +695,9 @@ const DepartmentMastersPage = () => {
             columns={getColumns()}
             data={getData()}
             showActions={true}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
+            onView={canView() ? (row) => `#` : undefined}
+            onEdit={canEdit() ? handleEditClick : undefined}
+            onDelete={canDelete() ? handleDeleteClick : undefined}
             entryText={`Total: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}
