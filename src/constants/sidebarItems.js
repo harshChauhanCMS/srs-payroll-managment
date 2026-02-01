@@ -1,6 +1,5 @@
 import {
   AppstoreOutlined,
-  DashboardOutlined,
   TeamOutlined,
   BankOutlined,
   EnvironmentOutlined,
@@ -34,7 +33,7 @@ export const getSidebarItems = (role) => {
     {
       name: "Dashboard",
       link: `${basePath}/dashboard`,
-      icon: DashboardOutlined,
+      icon: AppstoreOutlined,
       alwaysVisible: true, // Dashboard is always visible
     },
     {
