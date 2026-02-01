@@ -109,8 +109,8 @@ export async function POST(request) {
 
     const company = await Company.create({
       name: name.trim(),
-      gstNumber: (gstNumber || "").trim(),
-      pan: (pan || "").trim(),
+      gstNumber: gstNumber?.trim() || undefined,
+      pan: pan?.trim() || undefined,
       address: (address || "").trim(),
       active: true,
     });
@@ -124,6 +124,19 @@ export async function POST(request) {
     );
   } catch (err) {
     console.error("Create company error:", err);
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      const fieldName =
+        field === "gstNumber"
+          ? "GST Number"
+          : field === "pan"
+            ? "PAN Number"
+            : field;
+      return NextResponse.json(
+        { message: `${fieldName} already exists.` },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { message: err.message || "Failed to create company" },
       { status: 500 },

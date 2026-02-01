@@ -328,14 +328,14 @@ const DepartmentMastersPage = () => {
     deleteQuery({
       url,
       onSuccess: () => {
-        toast.success(`${activeTab.slice(0, -1)} deactivated successfully`);
+        toast.success(`${activeTab.slice(0, -1)} deleted successfully`);
         setDeleteModalOpen(false);
         setSelectedItem(null);
         fetchData();
       },
       onFail: (err) => {
         toast.error(
-          err?.message || `Failed to deactivate ${activeTab.slice(0, -1)}`,
+          err?.message || `Failed to delete ${activeTab.slice(0, -1)}`,
         );
       },
     });
@@ -695,7 +695,7 @@ const DepartmentMastersPage = () => {
             columns={getColumns()}
             data={getData()}
             showActions={true}
-            onView={canView() ? (row) => `#` : undefined}
+            // onView={canView() ? (row) => `#` : undefined}
             onEdit={canEdit() ? handleEditClick : undefined}
             onDelete={canDelete() ? handleDeleteClick : undefined}
             entryText={`Total: ${totalDocuments}`}
@@ -720,8 +720,20 @@ const DepartmentMastersPage = () => {
         <Form form={form} layout="vertical" onFinish={handleAddSubmit}>
           {renderFormFields()}
           <div className="flex justify-end gap-3 mt-4">
-            <Button onClick={() => setAddModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={createLoading}>
+            <Button
+              onClick={() => setAddModalOpen(false)}
+              className="red-button"
+              style={{ borderRadius: "8px" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="simple-button"
+              style={{ borderRadius: "8px" }}
+              loading={createLoading}
+            >
               Create
             </Button>
           </div>
@@ -739,8 +751,20 @@ const DepartmentMastersPage = () => {
         <Form form={form} layout="vertical" onFinish={handleEditSubmit}>
           {renderFormFields()}
           <div className="flex justify-end gap-3 mt-4">
-            <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={updateLoading}>
+            <Button
+              onClick={() => setEditModalOpen(false)}
+              className="red-button"
+              style={{ borderRadius: "8px" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="simple-button"
+              style={{ borderRadius: "8px" }}
+              loading={updateLoading}
+            >
               Update
             </Button>
           </div>
@@ -749,7 +773,7 @@ const DepartmentMastersPage = () => {
 
       {/* Delete Modal */}
       <Modal
-        title={`Deactivate ${getTabTitle()}`}
+        title={`Delete ${getTabTitle()}`}
         open={deleteModalOpen}
         onOk={handleDeleteConfirm}
         onCancel={() => setDeleteModalOpen(false)}
@@ -764,9 +788,15 @@ const DepartmentMastersPage = () => {
           className: "white-button",
           style: { borderRadius: "8px" },
         }}
-        okText="Deactivate"
+        okText="Delete"
       >
-        <p>Are you sure you want to deactivate `{selectedItem?.name}`?</p>
+        <p className="text-red-600 font-semibold mb-2">
+          ⚠️ Warning: This action cannot be undone!
+        </p>
+        <p>
+          Are you sure you want to <strong>delete</strong> `{selectedItem?.name}
+          `?
+        </p>
       </Modal>
     </>
   );

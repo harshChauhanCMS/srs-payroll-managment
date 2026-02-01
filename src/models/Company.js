@@ -10,12 +10,14 @@ const companySchema = new mongoose.Schema(
     gstNumber: {
       type: String,
       trim: true,
-      default: "",
+      unique: true,
+      sparse: true,
     },
     pan: {
       type: String,
       trim: true,
-      default: "",
+      unique: true,
+      sparse: true,
     },
     address: {
       type: String,

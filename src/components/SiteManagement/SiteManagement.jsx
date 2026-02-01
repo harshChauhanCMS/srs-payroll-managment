@@ -7,13 +7,11 @@ import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
-import { usePermissions } from "@/hooks/usePermissions";
 
 import { Modal, Tag, Select } from "antd";
-import { useEffect, useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-
-const { Option } = Select;
 
 export default function SiteManagement({
   basePath = "/admin",
@@ -48,7 +46,7 @@ export default function SiteManagement({
     });
   }, []);
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     let url = `/api/v1/admin/sites?page=${page}&limit=${limit}`;
     if (selectedCompany) {
       url += `&company=${selectedCompany}`;
@@ -77,11 +75,11 @@ export default function SiteManagement({
         toast.error("Failed to fetch sites");
       },
     });
-  };
+  }, [page, limit, selectedCompany, getQuery]);
 
   useEffect(() => {
     fetchData();
-  }, [page, limit, selectedCompany]);
+  }, []);
 
   const handleEditStart = (site) => {
     router.push(`${basePath}/site/edit/${site._id}`);
@@ -98,19 +96,15 @@ export default function SiteManagement({
     deleteQuery({
       url: `/api/v1/admin/sites/${siteToDelete._id}`,
       onSuccess: () => {
-        toast.success("Site deactivated successfully");
+        toast.success("Site deleted successfully");
         setTableData((prevData) =>
-          prevData.map((item) =>
-            item._id === siteToDelete._id
-              ? { ...item, active: false, status: "Inactive" }
-              : item,
-          ),
+          prevData.filter((item) => item._id !== siteToDelete._id),
         );
         setDeleteModalVisible(false);
         setSiteToDelete(null);
       },
-      onFail: () => {
-        toast.error("Failed to deactivate site");
+      onFail: (err) => {
+        toast.error("Failed to delete site");
         setDeleteModalVisible(false);
         setSiteToDelete(null);
       },
@@ -165,7 +159,7 @@ export default function SiteManagement({
             columns={columns}
             data={tableData}
             showActions={true}
-            filterColumns={"company"}
+            // filterColumns={"company"}
             onView={
               canView()
                 ? (row) => `${basePath}/site/view/${row._id}`
@@ -185,11 +179,11 @@ export default function SiteManagement({
       )}
 
       <Modal
-        title="Deactivate Site"
+        title="Delete Site"
         open={deleteModalVisible}
         onOk={handleDeleteConfirm}
         onCancel={() => setDeleteModalVisible(false)}
-        okText="Deactivate"
+        okText="Delete"
         cancelText="Cancel"
         okButtonProps={{
           danger: true,
@@ -204,8 +198,11 @@ export default function SiteManagement({
         centered
       >
         <div className="py-4">
+          <p className="text-red-600 font-semibold mb-4">
+            ⚠️ Warning: This action cannot be undone!
+          </p>
           <p className="text-gray-600 mb-4">
-            Are you sure you want to deactivate this site?
+            Are you sure you want to <strong>delete</strong> this site?
           </p>
           {siteToDelete && (
             <div className="bg-gray-50 p-3 rounded-lg">

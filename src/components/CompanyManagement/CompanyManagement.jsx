@@ -121,24 +121,22 @@ export default function CompanyManagement({
     deleteQuery({
       url: `/api/v1/admin/companies/${companyToDelete._id}`,
       onSuccess: () => {
-        toast.success("Company deactivated successfully");
+        toast.success("Company deleted successfully");
         setTableData((prevData) =>
-          prevData.map((item) =>
-            item._id === companyToDelete._id
-              ? { ...item, active: false, status: "Inactive" }
-              : item,
-          ),
+          prevData.filter((item) => item._id !== companyToDelete._id),
         );
         setDeleteModalVisible(false);
         setCompanyToDelete(null);
       },
       onFail: (err) => {
-        toast.error("Failed to deactivate company");
+        toast.error("Failed to delete company");
         setDeleteModalVisible(false);
         setCompanyToDelete(null);
       },
     });
   };
+
+  // ... columns definition ...
 
   const columns = [
     {
@@ -170,6 +168,8 @@ export default function CompanyManagement({
       width: 120,
     },
   ];
+
+  // ... pagination handlers ...
 
   const handlePageChange = (newPage) => {
     const newSearchParams = new URLSearchParams(searchParams.toString());
@@ -221,6 +221,7 @@ export default function CompanyManagement({
         </div>
       )}
 
+      {/* Edit/Create Modal code (omitted for brevity, unchanged) */}
       <Modal
         title={editingCompany ? "Edit Company" : "Add Company"}
         open={isModalVisible}
@@ -320,11 +321,11 @@ export default function CompanyManagement({
       </Modal>
 
       <Modal
-        title="Deactivate Company"
+        title="Delete Company"
         open={deleteModalVisible}
         onOk={handleDeleteConfirm}
         onCancel={() => setDeleteModalVisible(false)}
-        okText="Deactivate"
+        okText="Delete"
         cancelText="Cancel"
         okButtonProps={{
           danger: true,
@@ -340,9 +341,12 @@ export default function CompanyManagement({
         centered
       >
         <div className="py-4">
+          <p className="text-red-600 font-semibold mb-4">
+            ⚠️ Warning: This action cannot be undone!
+          </p>
           <p className="text-gray-600 mb-4">
-            Are you sure you want to deactivate this company? This may affect
-            users assigned to it.
+            Are you sure you want to <strong>delete</strong> this company? This
+            will also affect all associated sites, departments, and employees.
           </p>
           {companyToDelete && (
             <div className="bg-gray-50 p-3 rounded-lg">

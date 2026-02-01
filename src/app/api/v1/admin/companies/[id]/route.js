@@ -86,8 +86,9 @@ export async function PUT(request, { params }) {
     }
 
     if (name) company.name = name.trim();
-    if (gstNumber !== undefined) company.gstNumber = gstNumber.trim();
-    if (pan !== undefined) company.pan = pan.trim();
+    if (gstNumber !== undefined)
+      company.gstNumber = gstNumber.trim() || undefined;
+    if (pan !== undefined) company.pan = pan.trim() || undefined;
     if (address !== undefined) company.address = address.trim();
     if (active !== undefined) company.active = active;
 
@@ -99,6 +100,19 @@ export async function PUT(request, { params }) {
     });
   } catch (err) {
     console.error("Update company error:", err);
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      const fieldName =
+        field === "gstNumber"
+          ? "GST Number"
+          : field === "pan"
+            ? "PAN Number"
+            : field;
+      return NextResponse.json(
+        { message: `${fieldName} already exists.` },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { message: err.message || "Failed to update company" },
       { status: 500 },
