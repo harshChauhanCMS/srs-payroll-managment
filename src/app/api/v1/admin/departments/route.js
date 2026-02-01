@@ -2,15 +2,15 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Department from "@/models/Department";
 import { ROLES } from "@/constants/roles";
-import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
+import { requireViewPermission, requireCreatePermission } from "@/lib/apiAuth";
 
 /**
  * GET /api/v1/admin/departments
- * List all departments (HR: only their company's departments)
+ * List all departments (HR: only their company's departments, Employees: based on view permission)
  */
 export async function GET(request) {
   try {
-    const auth = await getCurrentUserRequireManagement(request);
+    const auth = await requireViewPermission(request);
     if (auth.error) return auth.error;
 
     const currentUser = auth.user;
@@ -24,7 +24,7 @@ export async function GET(request) {
     await connectDB();
 
     const query = {};
-    if (currentUser.role === ROLES.HR) {
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
       if (!currentUser.company) {
         return NextResponse.json({
           departments: [],
@@ -73,21 +73,14 @@ export async function GET(request) {
 
 /**
  * POST /api/v1/admin/departments
- * Create a new department (HR: only for their company and permissions.create)
+ * Create a new department (requires create permission)
  */
 export async function POST(request) {
   try {
-    const auth = await getCurrentUserRequireManagement(request);
+    const auth = await requireCreatePermission(request);
     if (auth.error) return auth.error;
 
     const currentUser = auth.user;
-    if (currentUser.role === ROLES.HR && !currentUser.permissions?.create) {
-      return NextResponse.json(
-        { message: "Forbidden. You do not have permission to create departments." },
-        { status: 403 },
-      );
-    }
-
     const body = await request.json();
     const { name, code, company, site, description } = body;
 
@@ -119,10 +112,10 @@ export async function POST(request) {
       );
     }
 
-    if (currentUser.role === ROLES.HR) {
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
       if (String(company) !== String(currentUser.company)) {
         return NextResponse.json(
-          { message: "Forbidden. You can only create departments for your own company." },
+          { message: "You can only create departments for your own company." },
           { status: 403 },
         );
       }

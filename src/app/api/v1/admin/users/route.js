@@ -183,7 +183,9 @@ export async function GET(request) {
 
     // Build query
     const query = {};
-    if (currentUser.role === ROLES.HR) {
+
+    // HR and Employees: Only see users from their company
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
       if (!currentUser.company) {
         return NextResponse.json({
           users: [],
@@ -192,6 +194,7 @@ export async function GET(request) {
       }
       query.company = currentUser.company;
     } else {
+      // Admin: Can filter by role, company, etc.
       if (role) query.role = role;
       if (excludeRole) query.role = { $ne: excludeRole };
       if (company) query.company = company;

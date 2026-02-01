@@ -7,6 +7,7 @@ import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
+import { usePermissions } from "@/hooks/usePermissions";
 
 import { Modal, Tag } from "antd";
 import { useEffect, useState } from "react";
@@ -14,13 +15,12 @@ import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
 export default function UserAndRoleManagement({
   basePath = "/admin",
-  showAddButton = true,
-  canEdit = true,
-  canDelete = true,
+  showAddButton = true, // Keep for backward compatibility but will be overridden by permissions
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { canView, canEdit, canDelete, canCreate } = usePermissions();
 
   const { getQuery, loading } = useGetQuery();
   const { deleteQuery, loading: deleteLoading } = useDeleteQuery();
@@ -45,7 +45,11 @@ export default function UserAndRoleManagement({
           email: item?.email || "N/A",
           role: item?.role || "N/A",
           permissions: item?.permissions || {},
-          status: item?.softDelete ? "Deleted" : item?.active ? "Active" : "Inactive",
+          status: item?.softDelete
+            ? "Deleted"
+            : item?.active
+              ? "Active"
+              : "Inactive",
           active: item?.active,
           softDelete: item?.softDelete,
           company: item?.company?.name || "Not Assigned",
@@ -141,7 +145,17 @@ export default function UserAndRoleManagement({
       accessor: "status",
       width: 100,
       Cell: (value, record) => (
-        <Tag color={record.softDelete ? "default" : record.active ? "success" : "default"}>{value}</Tag>
+        <Tag
+          color={
+            record.softDelete
+              ? "default"
+              : record.active
+                ? "success"
+                : "default"
+          }
+        >
+          {value}
+        </Tag>
       ),
     },
     { Header: "Created", accessor: "date", width: 120 },
@@ -164,7 +178,7 @@ export default function UserAndRoleManagement({
     <>
       <Title
         title={"User & Role Management"}
-        showButton={showAddButton}
+        showButton={canCreate()}
         buttonText="Add User"
         destination={`${basePath}/user-and-role-management/add`}
       />
@@ -180,18 +194,21 @@ export default function UserAndRoleManagement({
             data={tableData}
             showDate={true}
             showActions={true}
-            onView={(row) =>
-              `${basePath}/user-and-role-management/view/${row._id}?page=${page}&limit=${limit}`
+            onView={
+              canView()
+                ? (row) =>
+                    `${basePath}/user-and-role-management/view/${row._id}?page=${page}&limit=${limit}`
+                : undefined
             }
             onEdit={
-              canEdit
+              canEdit()
                 ? (row) =>
                     router.push(
                       `${basePath}/user-and-role-management/edit/${row._id}`,
                     )
                 : undefined
             }
-            onDelete={canDelete ? handleDeleteClick : undefined}
+            onDelete={canDelete() ? handleDeleteClick : undefined}
             entryText={`Total Users: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}
@@ -215,7 +232,9 @@ export default function UserAndRoleManagement({
       >
         <div className="py-4">
           <p className="text-gray-600 mb-4">
-            Are you sure you want to deactivate this user? The user will first be released from skills, grade, designation, department, site and company, then deactivated.
+            Are you sure you want to deactivate this user? The user will first
+            be released from skills, grade, designation, department, site and
+            company, then deactivated.
           </p>
           {userToDelete && (
             <div className="bg-gray-50 p-3 rounded-lg">

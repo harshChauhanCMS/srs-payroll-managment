@@ -22,7 +22,9 @@ export async function GET(request) {
     await connectDB();
 
     const query = {};
-    if (currentUser.role === ROLES.HR) {
+
+    // HR and Employees: Only see their own company
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
       if (!currentUser.company) {
         return NextResponse.json({
           companies: [],
@@ -32,6 +34,7 @@ export async function GET(request) {
       }
       query._id = currentUser.company;
     } else {
+      // Admin: Can see all companies
       if (active !== null && active !== undefined) {
         query.active = active === "true";
       }

@@ -5,10 +5,12 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { clearAuthData } from "@/utils/storage";
+import { ROLES } from "@/constants/roles";
 
 import { images } from "@/assets/images";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getSidebarItems, sidebarHeading } from "@/constants/sidebarItems";
 import {
@@ -29,9 +31,39 @@ export default function Sidebar({
   const router = useRouter();
   const sidebar = useRef(null);
   const { logout, user } = useAuth();
+  const { can, isAdmin } = usePermissions();
 
-  // Get sidebar items based on user role
-  const sidebarNavItems = getSidebarItems(user?.role || "employee");
+  // Get sidebar items based on user role, then filter by permissions
+  const sidebarNavItems = useMemo(() => {
+    const allItems = getSidebarItems(user?.role || "employee");
+    const userRole = user?.role;
+    const userPermissions = user?.permissions;
+    const userIsAdmin =
+      userRole === ROLES.ADMIN || userRole === ROLES.SUPER_ADMIN;
+
+    // Filter items based on permissions and role restrictions
+    return allItems.filter((item) => {
+      // Items marked alwaysVisible are always shown
+      if (item.alwaysVisible) {
+        // But check if showForRoles is specified
+        if (item.showForRoles) {
+          return item.showForRoles.includes(userRole);
+        }
+        return true;
+      }
+
+      // Admin/Super Admin sees everything
+      if (userIsAdmin) return true;
+
+      // For HR/Employee: check if they have the required permission
+      if (item.requiresPermission) {
+        return userPermissions?.[item.requiresPermission] === true;
+      }
+
+      // Default: show item
+      return true;
+    });
+  }, [user?.role, user?.permissions]);
 
   // Get dashboard link based on user role
   const getDashboardLink = () => {
@@ -96,8 +128,11 @@ export default function Sidebar({
         initialOpen[item.name] = true;
       }
     });
-    setOpenMenus((prev) => ({ ...prev, ...initialOpen }));
-  }, [pathname]);
+    // Defer state update to avoid cascading render warning
+    queueMicrotask(() => {
+      setOpenMenus((prev) => ({ ...prev, ...initialOpen }));
+    });
+  }, [pathname, sidebarNavItems]);
 
   return (
     <>

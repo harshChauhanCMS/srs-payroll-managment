@@ -7,6 +7,7 @@ import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
+import { usePermissions } from "@/hooks/usePermissions";
 
 import { Modal, Tag, Select } from "antd";
 import { useEffect, useState } from "react";
@@ -16,13 +17,12 @@ const { Option } = Select;
 
 export default function SiteManagement({
   basePath = "/admin",
-  showAddButton = true,
-  canEdit = true,
-  canDelete = true,
+  showAddButton = true, // Backward compatibility
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { canView, canEdit, canDelete, canCreate } = usePermissions();
 
   const { getQuery, loading: fetchLoading } = useGetQuery();
   const { getQuery: getCompanies } = useGetQuery();
@@ -150,7 +150,7 @@ export default function SiteManagement({
     <>
       <Title
         title="Site Management"
-        showButton={showAddButton}
+        showButton={canCreate()}
         buttonText="Add Site"
         destination={`${basePath}/site/add`}
       />
@@ -166,8 +166,13 @@ export default function SiteManagement({
             data={tableData}
             showActions={true}
             filterColumns={"company"}
-            onEdit={canEdit ? handleEditStart : undefined}
-            onDelete={canDelete ? handleDeleteClick : undefined}
+            onView={
+              canView()
+                ? (row) => `${basePath}/site/view/${row._id}`
+                : undefined
+            }
+            onEdit={canEdit() ? handleEditStart : undefined}
+            onDelete={canDelete() ? handleDeleteClick : undefined}
             entryText={`Total Sites: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}

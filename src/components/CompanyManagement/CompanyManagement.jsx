@@ -9,7 +9,7 @@ import usePostQuery from "@/hooks/postQuery.hook";
 import usePutQuery from "@/hooks/putQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
-
+import { usePermissions } from "@/hooks/usePermissions";
 import { useEffect, useState } from "react";
 import { Modal, Form, Input, Row, Col, Button, Switch, Tag } from "antd";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
@@ -21,13 +21,12 @@ import {
 
 export default function CompanyManagement({
   basePath = "/admin",
-  showAddButton = true,
-  canEdit = true,
-  canDelete = true,
+  showAddButton = true, // Backward compatibility
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { canView, canEdit, canDelete, canCreate } = usePermissions();
 
   const { getQuery, loading: fetchLoading } = useGetQuery();
   const { postQuery, loading: createLoading } = usePostQuery();
@@ -189,7 +188,7 @@ export default function CompanyManagement({
     <>
       <Title
         title={"Company Management"}
-        showButton={showAddButton}
+        showButton={canCreate()}
         buttonText="Add Company"
         destination={`${basePath}/company/add`}
       />
@@ -204,8 +203,13 @@ export default function CompanyManagement({
             columns={columns}
             data={tableData}
             showActions={true}
-            onEdit={canEdit ? handleEditStart : undefined}
-            onDelete={canDelete ? handleDeleteClick : undefined}
+            onView={
+              canView()
+                ? (row) => `${basePath}/company/view/${row._id}`
+                : undefined
+            }
+            onEdit={canEdit() ? handleEditStart : undefined}
+            onDelete={canDelete() ? handleDeleteClick : undefined}
             entryText={`Total Companies: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}

@@ -23,7 +23,9 @@ export async function GET(request) {
     await connectDB();
 
     const query = {};
-    if (currentUser.role === ROLES.HR) {
+
+    // HR and Employees: Only see sites from their company
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
       if (!currentUser.company) {
         return NextResponse.json({
           sites: [],
@@ -33,6 +35,7 @@ export async function GET(request) {
       }
       query.company = currentUser.company;
     } else {
+      // Admin: Can filter by company or see all
       if (company) query.company = company;
     }
     if (active !== null && active !== undefined) {
@@ -114,7 +117,10 @@ export async function POST(request) {
     if (currentUser.role === ROLES.HR) {
       if (String(company) !== String(currentUser.company)) {
         return NextResponse.json(
-          { message: "Forbidden. You can only create sites for your own company." },
+          {
+            message:
+              "Forbidden. You can only create sites for your own company.",
+          },
           { status: 403 },
         );
       }
