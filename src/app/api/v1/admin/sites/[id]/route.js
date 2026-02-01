@@ -24,7 +24,10 @@ export async function GET(request, { params }) {
     }
 
     if (auth.user.role === ROLES.HR) {
-      if (!auth.user.company || String(site.company?._id ?? site.company) !== String(auth.user.company)) {
+      if (
+        !auth.user.company ||
+        String(site.company?._id ?? site.company) !== String(auth.user.company)
+      ) {
         return NextResponse.json(
           { message: "Forbidden. You can only view sites in your company." },
           { status: 403 },
@@ -73,13 +76,19 @@ export async function PUT(request, { params }) {
     }
 
     if (currentUser.role === ROLES.HR) {
-      if (!currentUser.company || String(site.company) !== String(currentUser.company)) {
+      if (
+        !currentUser.company ||
+        String(site.company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
           { message: "Forbidden. You can only edit sites in your company." },
           { status: 403 },
         );
       }
-      if (company !== undefined && String(company) !== String(currentUser.company)) {
+      if (
+        company !== undefined &&
+        String(company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
           { message: "Forbidden. You cannot assign sites to another company." },
           { status: 403 },
@@ -126,7 +135,7 @@ export async function PUT(request, { params }) {
 
 /**
  * DELETE /api/v1/admin/sites/[id]
- * Soft delete site (HR: only their company's sites and permissions.delete)
+ * Hard delete site (HR: only their company's sites and permissions.delete)
  */
 export async function DELETE(request, { params }) {
   try {
@@ -136,7 +145,7 @@ export async function DELETE(request, { params }) {
     const currentUser = auth.user;
     if (currentUser.role === ROLES.HR && !currentUser.permissions?.delete) {
       return NextResponse.json(
-        { message: "Forbidden. You do not have permission to deactivate sites." },
+        { message: "Forbidden. You do not have permission to delete sites." },
         { status: 403 },
       );
     }
@@ -152,20 +161,22 @@ export async function DELETE(request, { params }) {
     }
 
     if (currentUser.role === ROLES.HR) {
-      if (!currentUser.company || String(site.company) !== String(currentUser.company)) {
+      if (
+        !currentUser.company ||
+        String(site.company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
-          { message: "Forbidden. You can only deactivate sites in your company." },
+          { message: "Forbidden. You can only delete sites in your company." },
           { status: 403 },
         );
       }
     }
 
-    // Soft delete
-    site.active = false;
-    await site.save();
+    // Permanently delete site
+    await Site.findByIdAndDelete(id);
 
     return NextResponse.json({
-      message: "Site deactivated successfully",
+      message: "Site deleted successfully",
     });
   } catch (err) {
     console.error("Delete site error:", err);

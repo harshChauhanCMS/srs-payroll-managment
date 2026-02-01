@@ -108,7 +108,7 @@ export async function PUT(request, { params }) {
 
 /**
  * DELETE /api/v1/admin/companies/[id]
- * Soft delete company (HR: only their company and permissions.delete)
+ * Hard delete company (HR: only their company and permissions.delete)
  */
 export async function DELETE(request, { params }) {
   try {
@@ -118,7 +118,9 @@ export async function DELETE(request, { params }) {
     const currentUser = auth.user;
     if (currentUser.role === ROLES.HR && !currentUser.permissions?.delete) {
       return NextResponse.json(
-        { message: "Forbidden. You do not have permission to deactivate companies." },
+        {
+          message: "Forbidden. You do not have permission to delete companies.",
+        },
         { status: 403 },
       );
     }
@@ -128,7 +130,7 @@ export async function DELETE(request, { params }) {
     if (currentUser.role === ROLES.HR) {
       if (!currentUser.company || String(currentUser.company) !== String(id)) {
         return NextResponse.json(
-          { message: "Forbidden. You can only deactivate your own company." },
+          { message: "Forbidden. You can only delete your own company." },
           { status: 403 },
         );
       }
@@ -145,11 +147,11 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    company.active = false;
-    await company.save();
+    // Permanently delete company
+    await Company.findByIdAndDelete(id);
 
     return NextResponse.json({
-      message: "Company deactivated successfully",
+      message: "Company deleted successfully",
     });
   } catch (err) {
     console.error("Delete company error:", err);

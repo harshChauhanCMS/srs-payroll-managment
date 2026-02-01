@@ -57,9 +57,9 @@ export async function DELETE(request, { params }) {
     if (!skill) {
       return NextResponse.json({ message: "Skill not found" }, { status: 404 });
     }
-    skill.active = false;
-    await skill.save();
-    return NextResponse.json({ message: "Skill deactivated" });
+    // Permanently delete skill
+    await Skill.findByIdAndDelete(id);
+    return NextResponse.json({ message: "Skill deleted successfully" });
   } catch (err) {
     return NextResponse.json({ message: err.message }, { status: 500 });
   }

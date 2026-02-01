@@ -85,9 +85,9 @@ export async function DELETE(request, { params }) {
         { status: 404 },
       );
     }
-    designation.active = false;
-    await designation.save();
-    return NextResponse.json({ message: "Designation deactivated" });
+    // Permanently delete designation
+    await Designation.findByIdAndDelete(id);
+    return NextResponse.json({ message: "Designation deleted successfully" });
   } catch (err) {
     return NextResponse.json({ message: err.message }, { status: 500 });
   }

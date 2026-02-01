@@ -267,7 +267,16 @@ export default function UserAndRoleManagement({
         onCancel={() => setDeleteModalVisible(false)}
         okText="Delete"
         cancelText="Cancel"
-        okButtonProps={{ danger: true, loading: deleteLoading }}
+        okButtonProps={{
+          danger: true,
+          loading: deleteLoading,
+          className: "red-button",
+          style: { borderRadius: "8px" },
+        }}
+        cancelButtonProps={{
+          className: "white-button",
+          style: { borderRadius: "8px" },
+        }}
         centered
       >
         <div className="py-4">

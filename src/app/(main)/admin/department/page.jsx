@@ -754,8 +754,17 @@ const DepartmentMastersPage = () => {
         onOk={handleDeleteConfirm}
         onCancel={() => setDeleteModalOpen(false)}
         confirmLoading={deleteLoading}
+        okButtonProps={{
+          danger: true,
+          loading: deleteLoading,
+          className: "red-button",
+          style: { borderRadius: "8px" },
+        }}
+        cancelButtonProps={{
+          className: "white-button",
+          style: { borderRadius: "8px" },
+        }}
         okText="Deactivate"
-        okButtonProps={{ danger: true }}
       >
         <p>Are you sure you want to deactivate `{selectedItem?.name}`?</p>
       </Modal>

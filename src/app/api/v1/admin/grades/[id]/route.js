@@ -72,9 +72,9 @@ export async function DELETE(request, { params }) {
     if (!grade) {
       return NextResponse.json({ message: "Grade not found" }, { status: 404 });
     }
-    grade.active = false;
-    await grade.save();
-    return NextResponse.json({ message: "Grade deactivated" });
+    // Permanently delete grade
+    await Grade.findByIdAndDelete(id);
+    return NextResponse.json({ message: "Grade deleted successfully" });
   } catch (err) {
     return NextResponse.json({ message: err.message }, { status: 500 });
   }

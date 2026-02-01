@@ -31,9 +31,15 @@ export async function GET(request, { params }) {
 
     if (auth.user.role === ROLES.HR) {
       const deptCompanyId = department.company?._id ?? department.company;
-      if (!auth.user.company || String(deptCompanyId) !== String(auth.user.company)) {
+      if (
+        !auth.user.company ||
+        String(deptCompanyId) !== String(auth.user.company)
+      ) {
         return NextResponse.json(
-          { message: "Forbidden. You can only view departments in your company." },
+          {
+            message:
+              "Forbidden. You can only view departments in your company.",
+          },
           { status: 403 },
         );
       }
@@ -61,7 +67,9 @@ export async function PUT(request, { params }) {
     const currentUser = auth.user;
     if (currentUser.role === ROLES.HR && !currentUser.permissions?.edit) {
       return NextResponse.json(
-        { message: "Forbidden. You do not have permission to edit departments." },
+        {
+          message: "Forbidden. You do not have permission to edit departments.",
+        },
         { status: 403 },
       );
     }
@@ -83,15 +91,27 @@ export async function PUT(request, { params }) {
     }
 
     if (currentUser.role === ROLES.HR) {
-      if (!currentUser.company || String(department.company) !== String(currentUser.company)) {
+      if (
+        !currentUser.company ||
+        String(department.company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
-          { message: "Forbidden. You can only edit departments in your company." },
+          {
+            message:
+              "Forbidden. You can only edit departments in your company.",
+          },
           { status: 403 },
         );
       }
-      if (company !== undefined && String(company) !== String(currentUser.company)) {
+      if (
+        company !== undefined &&
+        String(company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
-          { message: "Forbidden. You cannot assign departments to another company." },
+          {
+            message:
+              "Forbidden. You cannot assign departments to another company.",
+          },
           { status: 403 },
         );
       }
@@ -140,7 +160,7 @@ export async function PUT(request, { params }) {
 
 /**
  * DELETE /api/v1/admin/departments/[id]
- * Soft delete department (HR: only their company and permissions.delete)
+ * Hard delete department (HR: only their company and permissions.delete)
  */
 export async function DELETE(request, { params }) {
   try {
@@ -150,7 +170,10 @@ export async function DELETE(request, { params }) {
     const currentUser = auth.user;
     if (currentUser.role === ROLES.HR && !currentUser.permissions?.delete) {
       return NextResponse.json(
-        { message: "Forbidden. You do not have permission to deactivate departments." },
+        {
+          message:
+            "Forbidden. You do not have permission to delete departments.",
+        },
         { status: 403 },
       );
     }
@@ -169,20 +192,25 @@ export async function DELETE(request, { params }) {
     }
 
     if (currentUser.role === ROLES.HR) {
-      if (!currentUser.company || String(department.company) !== String(currentUser.company)) {
+      if (
+        !currentUser.company ||
+        String(department.company) !== String(currentUser.company)
+      ) {
         return NextResponse.json(
-          { message: "Forbidden. You can only deactivate departments in your company." },
+          {
+            message:
+              "Forbidden. You can only delete departments in your company.",
+          },
           { status: 403 },
         );
       }
     }
 
-    // Soft delete
-    department.active = false;
-    await department.save();
+    // Permanently delete department
+    await Department.findByIdAndDelete(id);
 
     return NextResponse.json({
-      message: "Department deactivated successfully",
+      message: "Department deleted successfully",
     });
   } catch (err) {
     console.error("Delete department error:", err);
