@@ -24,6 +24,27 @@ const companySchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    bankAccountNumber: {
+      type: String,
+      trim: true,
+      default: "",
+      unique: true,
+      sparse: true,
+    },
+    ifscCode: {
+      type: String,
+      trim: true,
+      default: "",
+      unique: true,
+      sparse: true,
+    },
+    bankName: {
+      type: String,
+      trim: true,
+      default: "",
+      unique: true,
+      sparse: true,
+    },
     active: {
       type: Boolean,
       default: true,

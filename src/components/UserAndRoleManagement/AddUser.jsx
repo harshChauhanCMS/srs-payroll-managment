@@ -273,6 +273,24 @@ export default function AddUser({ basePath = "/admin" }) {
             </Col>
           </Row>
 
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="esiCode" label="ESI Code">
+                <Input placeholder="ESI Code" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="uan" label="UAN">
+                <Input placeholder="UAN" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="pfNumber" label="PF Number">
+                <Input placeholder="PF Number" size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
             <Button
               type="primary"

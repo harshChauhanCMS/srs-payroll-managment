@@ -85,6 +85,9 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    esiCode: { type: String, trim: true, default: "" },
+    uan: { type: String, trim: true, default: "" },
+    pfNumber: { type: String, trim: true, default: "" },
     active: {
       type: Boolean,
       default: true,

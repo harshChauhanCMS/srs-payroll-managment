@@ -40,6 +40,9 @@ export async function POST(request) {
       pan = "",
       aadhar = "",
       address = "",
+      esiCode = "",
+      uan = "",
+      pfNumber = "",
     } = body;
 
     // Validation
@@ -119,6 +122,9 @@ export async function POST(request) {
       pan: (pan || "").trim(),
       aadhar: (aadhar || "").trim(),
       address: (address || "").trim(),
+      esiCode: (esiCode || "").trim(),
+      uan: (uan || "").trim(),
+      pfNumber: (pfNumber || "").trim(),
       active: true,
       createdBy,
       company: body.company || null,
