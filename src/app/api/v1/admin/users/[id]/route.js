@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import SalaryComponent from "@/models/SalaryComponent";
 import { ROLES } from "@/constants/roles";
 import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
@@ -46,7 +47,19 @@ export async function GET(request, { params }) {
       }
     }
 
-    return NextResponse.json({ user });
+    // Fetch the latest salary component for the user's company
+    let salaryComponent = null;
+    const companyId = user.company?._id || user.company;
+    if (companyId) {
+      salaryComponent = await SalaryComponent.findOne({
+        company: companyId,
+        active: true,
+      })
+        .sort({ payrollYear: -1, payrollMonth: -1 })
+        .lean();
+    }
+
+    return NextResponse.json({ user, salaryComponent });
   } catch (err) {
     console.error("Get user error:", err);
     return NextResponse.json(
@@ -85,6 +98,9 @@ export async function PATCH(request, { params }) {
       pan,
       aadhar,
       address,
+      esiCode,
+      uan,
+      pfNumber,
       active,
       company,
       site,
@@ -92,6 +108,8 @@ export async function PATCH(request, { params }) {
       designation,
       grade,
       skills,
+      pfPercentage,
+      esiPercentage,
     } = body;
 
     await connectDB();
@@ -141,6 +159,9 @@ export async function PATCH(request, { params }) {
     if (pan !== undefined) user.pan = pan.trim();
     if (aadhar !== undefined) user.aadhar = aadhar.trim();
     if (address !== undefined) user.address = address.trim();
+    if (esiCode !== undefined) user.esiCode = esiCode.trim();
+    if (uan !== undefined) user.uan = uan.trim();
+    if (pfNumber !== undefined) user.pfNumber = pfNumber.trim();
     if (active !== undefined) user.active = active;
     if (company !== undefined) user.company = company;
     if (site !== undefined) user.site = site;
@@ -148,6 +169,8 @@ export async function PATCH(request, { params }) {
     if (designation !== undefined) user.designation = designation;
     if (grade !== undefined) user.grade = grade;
     if (skills !== undefined) user.skills = skills;
+    if (pfPercentage !== undefined) user.pfPercentage = Number(pfPercentage);
+    if (esiPercentage !== undefined) user.esiPercentage = Number(esiPercentage);
 
     // Update password if provided
     if (password) {

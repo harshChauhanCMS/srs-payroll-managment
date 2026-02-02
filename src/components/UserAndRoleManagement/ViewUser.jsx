@@ -6,6 +6,10 @@ import Title from "@/components/Title/Title";
 import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import BackHeader from "@/components/BackHeader/BackHeader";
+import {
+  calcPfDeduction,
+  calcEsiDeduction,
+} from "@/utils/salaryCalculations";
 
 import { useParams } from "next/navigation";
 import { Card, Tag, Descriptions, Divider } from "antd";
@@ -31,12 +35,14 @@ export default function ViewUser({ basePath = "/admin" }) {
 
   const { getQuery, loading } = useGetQuery();
   const [user, setUser] = useState(null);
+  const [salaryComponent, setSalaryComponent] = useState(null);
 
   const fetchUser = useCallback(() => {
     getQuery({
       url: `/api/v1/admin/users/${id}`,
       onSuccess: (response) => {
         setUser(response?.user || null);
+        setSalaryComponent(response?.salaryComponent || null);
       },
       onFail: (err) => {
         console.error(err);
@@ -317,6 +323,221 @@ export default function ViewUser({ basePath = "/admin" }) {
 
         <Divider />
 
+        {salaryComponent ? (
+          <>
+            <Descriptions
+              title={
+                <span className="flex items-center gap-2">
+                  <DollarOutlined /> Company Salary Structure (
+                  {salaryComponent.payrollMonth}/{salaryComponent.payrollYear})
+                </span>
+              }
+              bordered
+              column={{ xs: 1, sm: 2, md: 4 }}
+            >
+              <Descriptions.Item label="Total Days">
+                {salaryComponent.totalDays ?? 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Working Days">
+                {salaryComponent.workingDays ?? 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Present Days">
+                {salaryComponent.presentDays ?? 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="National Holiday">
+                {salaryComponent.nationalHoliday ?? 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Payable Days">
+                {salaryComponent.payableDays ?? 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Overtime Days">
+                {salaryComponent.overtimeDays ?? 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Half Day Present">
+                {salaryComponent.halfDayPresent ?? 0}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider />
+
+            <Descriptions
+              title={
+                <span className="flex items-center gap-2">
+                  <DollarOutlined /> Allowances (from salary structure)
+                </span>
+              }
+              bordered
+              column={{ xs: 1, sm: 2, md: 3 }}
+            >
+              {[
+                { key: "houseRentAllowance", label: "HRA" },
+                { key: "overtimeAmount", label: "Overtime Amount" },
+                { key: "incentive", label: "Incentive" },
+                { key: "exportAllowance", label: "Export Allowance" },
+                { key: "basicSpecialAllowance", label: "Basic Special Allowance" },
+                { key: "citySpecialAllowance", label: "City Special Allowance" },
+                { key: "conveyanceAllowance", label: "Conveyance Allowance" },
+                { key: "bonusAllowance", label: "Bonus Allowance" },
+                {
+                  key: "specialHeadConveyanceAllowance",
+                  label: "Special Head Conveyance",
+                },
+                { key: "arrear", label: "Arrear" },
+                { key: "medicalAllowance", label: "Medical Allowance" },
+                { key: "leavePayment", label: "Leave Payment" },
+                { key: "specialAllowance", label: "Special Allowance" },
+                { key: "uniformMaintenanceAllowance", label: "Uniform Maintenance" },
+                { key: "otherAllowance", label: "Other Allowance" },
+                { key: "leaveEarnings", label: "Leave Earnings" },
+                { key: "bonusEarnings", label: "Bonus Earnings" },
+              ]
+                .filter((o) => (Number(salaryComponent[o.key]) || 0) > 0)
+                .map(({ key, label }) => (
+                  <Descriptions.Item key={key} label={label}>
+                    ₹{Number(salaryComponent[key]).toLocaleString()}
+                  </Descriptions.Item>
+                ))}
+              {[
+                "houseRentAllowance",
+                "overtimeAmount",
+                "incentive",
+                "exportAllowance",
+                "basicSpecialAllowance",
+                "citySpecialAllowance",
+                "conveyanceAllowance",
+                "bonusAllowance",
+                "specialHeadConveyanceAllowance",
+                "arrear",
+                "medicalAllowance",
+                "leavePayment",
+                "specialAllowance",
+                "uniformMaintenanceAllowance",
+                "otherAllowance",
+                "leaveEarnings",
+                "bonusEarnings",
+              ].every((k) => !(Number(salaryComponent[k]) || 0)) && (
+                <Descriptions.Item span={3}>
+                  No allowances configured.
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+
+            <Divider />
+
+            <Descriptions
+              title={
+                <span className="flex items-center gap-2">
+                  <DollarOutlined /> Deductions (from salary structure)
+                </span>
+              }
+              bordered
+              column={{ xs: 1, sm: 2, md: 3 }}
+            >
+              {[
+                { key: "pfPercentage", label: "PF" },
+                { key: "esiDeduction", label: "ESI" },
+                { key: "haryanaWelfareFund", label: "Haryana Welfare Fund" },
+                { key: "labourWelfareFund", label: "Labour Welfare Fund" },
+                { key: "groupTermLifeInsurance", label: "Group Term Life Insurance" },
+                { key: "miscellaneousDeduction", label: "Miscellaneous" },
+                { key: "shoesDeduction", label: "Shoes" },
+                { key: "jacketDeduction", label: "Jacket" },
+                { key: "canteenDeduction", label: "Canteen" },
+                { key: "iCardDeduction", label: "I Card" },
+              ]
+                .filter((o) => (Number(salaryComponent[o.key]) || 0) > 0)
+                .map(({ key, label }) => (
+                  <Descriptions.Item key={key} label={label}>
+                    ₹{Number(salaryComponent[key]).toLocaleString()}
+                  </Descriptions.Item>
+                ))}
+              <Descriptions.Item label="Total Deductions">
+                ₹{(Number(salaryComponent.totalDeductions) || 0).toLocaleString()}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider />
+          </>
+        ) : (
+          <>
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Company Salary Structure">
+                {user.company
+                  ? "No salary structure defined for this company yet."
+                  : "No company assigned."}
+              </Descriptions.Item>
+            </Descriptions>
+            <Divider />
+          </>
+        )}
+
+        {(() => {
+          const skillTotals = (user.skills || []).reduce(
+            (acc, s) => {
+              if (!s || typeof s !== "object") return acc;
+              return {
+                basic: acc.basic + (Number(s.basic) || 0),
+                hra: acc.hra + (Number(s.houseRentAllowance) || 0),
+                other: acc.other + (Number(s.otherAllowance) || 0),
+                leave: acc.leave + (Number(s.leaveEarnings) || 0),
+                bonus: acc.bonus + (Number(s.bonusEarnings) || 0),
+                arrear: acc.arrear + (Number(s.arrear) || 0),
+              };
+            },
+            { basic: 0, hra: 0, other: 0, leave: 0, bonus: 0, arrear: 0 },
+          );
+          const grossEarnings =
+            skillTotals.basic +
+            skillTotals.hra +
+            skillTotals.other +
+            skillTotals.leave +
+            skillTotals.bonus +
+            skillTotals.arrear;
+          const userPfRate = (user.pfPercentage ?? 12) / 100;
+          const userEsiRate = (user.esiPercentage ?? 0.75) / 100;
+          const pfAmount = calcPfDeduction(skillTotals.basic, userPfRate);
+          const esiAmount = calcEsiDeduction(grossEarnings, userEsiRate);
+          const netSalary = grossEarnings - pfAmount - esiAmount;
+          const fmt = (n) => `₹${Number(n).toLocaleString()}`;
+
+          return (
+            <Descriptions
+              title={
+                <span className="flex items-center gap-2">
+                  <DollarOutlined /> User Deductions & Net Salary
+                </span>
+              }
+              bordered
+              column={{ xs: 1, sm: 2, md: 3 }}
+            >
+              <Descriptions.Item label="PF Rate">
+                {user.pfPercentage ?? 12}%
+              </Descriptions.Item>
+              <Descriptions.Item label="ESI Rate">
+                {user.esiPercentage ?? 0.75}%
+              </Descriptions.Item>
+              <Descriptions.Item label="Gross Earnings">
+                {fmt(grossEarnings)}
+              </Descriptions.Item>
+              <Descriptions.Item label="PF Deduction">
+                {fmt(pfAmount)}
+              </Descriptions.Item>
+              <Descriptions.Item label="ESI Deduction">
+                {grossEarnings >= 21000
+                  ? `${fmt(0)} (Gross >= ₹21,000)`
+                  : fmt(esiAmount)}
+              </Descriptions.Item>
+              <Descriptions.Item label="Net Salary">
+                <span className="font-semibold text-green-700">
+                  {fmt(netSalary)}
+                </span>
+              </Descriptions.Item>
+            </Descriptions>
+          );
+        })()}
+
+        <Divider />
+
         <Descriptions
           title={
             <span className="flex items-center gap-2">
@@ -385,6 +606,33 @@ export default function ViewUser({ basePath = "/admin" }) {
             }
           >
             {user.address || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <IdcardOutlined /> ESI Code
+              </span>
+            }
+          >
+            {user.esiCode || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <IdcardOutlined /> UAN
+              </span>
+            }
+          >
+            {user.uan || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <IdcardOutlined /> PF Number
+              </span>
+            }
+          >
+            {user.pfNumber || "N/A"}
           </Descriptions.Item>
         </Descriptions>
       </Card>

@@ -96,19 +96,19 @@ export function calcGross(totalEarning, incentive) {
 }
 
 /**
- * PF @12% = ROUND(Basic Earned * 12%, 0)
+ * PF = ROUND(Basic Earned * pfRate, 0). Default 12%.
  */
-export function calcPfDeduction(basicEarned) {
-  return round((Number(basicEarned) || 0) * PF_RATE);
+export function calcPfDeduction(basicEarned, pfRate = PF_RATE) {
+  return round((Number(basicEarned) || 0) * pfRate);
 }
 
 /**
- * ESI 0.75% = IF(Gross < 21000, ROUND(Gross * 0.75%, 0), 0)
+ * ESI = IF(Gross < ceiling, ROUND(Gross * esiRate, 0), 0). Default 0.75%.
  */
-export function calcEsiDeduction(gross) {
+export function calcEsiDeduction(gross, esiRate = ESI_RATE, ceiling = ESI_CEILING) {
   const g = Number(gross) || 0;
-  if (g >= ESI_CEILING) return 0;
-  return round(g * ESI_RATE);
+  if (g >= ceiling) return 0;
+  return round(g * esiRate);
 }
 
 /**

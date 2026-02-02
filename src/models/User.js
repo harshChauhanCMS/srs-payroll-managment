@@ -88,6 +88,8 @@ const userSchema = new mongoose.Schema(
     esiCode: { type: String, trim: true, default: "" },
     uan: { type: String, trim: true, default: "" },
     pfNumber: { type: String, trim: true, default: "" },
+    pfPercentage: { type: Number, default: 12 },
+    esiPercentage: { type: Number, default: 0.75 },
     active: {
       type: Boolean,
       default: true,

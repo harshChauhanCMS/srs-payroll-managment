@@ -6,9 +6,11 @@ import toast from "react-hot-toast";
 import Title from "@/components/Title/Title";
 import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
+import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
 import PermissionGuard from "@/components/PermissionGuard/PermissionGuard";
 
+import { Tag, Modal } from "antd";
 import { useEffect, useState, useCallback } from "react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
@@ -17,8 +19,9 @@ export default function SalaryComponentPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { canView, canCreate } = usePermissions();
+  const { canView, canCreate, canDelete } = usePermissions();
   const { getQuery, loading } = useGetQuery();
+  const { deleteQuery, loading: deleteLoading } = useDeleteQuery();
 
   const [tableData, setTableData] = useState([]);
   const [totalDocuments, setTotalDocuments] = useState(0);
@@ -41,9 +44,9 @@ export default function SalaryComponentPage() {
             payrollPeriod: `${item.payrollMonth}/${item.payrollYear}`,
             address: item.company.address ?? "—",
             bankName: item.company.bankName ?? "—",
-            mobileNumber: item.mobileNumber ?? "—",
             totalDeductions: item.totalDeductions ?? "—",
             amount: item.amount ?? item.roundedAmount ?? "—",
+            status: item.active,
             date: item.createdAt
               ? moment(item.createdAt).format("DD-MM-YYYY")
               : "—",
@@ -64,9 +67,17 @@ export default function SalaryComponentPage() {
     { Header: "Company", accessor: "company", width: 200 },
     { Header: "Address", accessor: "address", width: 200 },
     { Header: "Period", accessor: "payrollPeriod", width: 120 },
-    { Header: "Bank Name", accessor: "bankName", width: 120 },
-    // { Header: "Mobile Number", accessor: "mobileNumber", width: 120 },
     { Header: "Deductions", accessor: "totalDeductions", width: 120 },
+    {
+      Header: "Status",
+      accessor: "status",
+      width: 100,
+      Cell: ({ value }) => (
+        <Tag color={value ? "success" : "default"}>
+          {value ? "Active" : "Inactive"}
+        </Tag>
+      ),
+    },
     { Header: "Created", accessor: "date", width: 120 },
   ];
 
@@ -88,6 +99,28 @@ export default function SalaryComponentPage() {
     : pathname?.startsWith("/employee")
     ? "/employee"
     : "/admin";
+
+  const handleDelete = (row) => {
+    Modal.confirm({
+      title: "Delete Salary Component",
+      content: `Are you sure you want to delete the salary component for ${row.company} (${row.payrollPeriod})?`,
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: () => {
+        deleteQuery({
+          url: `/api/v1/admin/salary-components/${row._id}`,
+          onSuccess: () => {
+            toast.success("Salary component deleted successfully");
+            fetchData();
+          },
+          onFail: (err) => {
+            toast.error(err?.message || "Failed to delete salary component");
+          },
+        });
+      },
+    });
+  };
 
   return (
     <PermissionGuard
@@ -130,7 +163,7 @@ export default function SalaryComponentPage() {
                     router.push(`${basePath}/salary-component/edit/${row._id}`)
                 : undefined
             }
-            onDelete={undefined}
+            onDelete={canDelete() ? handleDelete : undefined}
             entryText={`Total Records: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}

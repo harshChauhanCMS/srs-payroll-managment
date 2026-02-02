@@ -25,6 +25,7 @@ import {
 import {
   Form,
   Input,
+  InputNumber,
   Select,
   Checkbox,
   Button,
@@ -157,6 +158,11 @@ export default function EditUser({ basePath = "/admin" }) {
             skills: skillIds,
             aadhar: userData.aadhar,
             address: userData.address,
+            esiCode: userData.esiCode,
+            uan: userData.uan,
+            pfNumber: userData.pfNumber,
+            pfPercentage: userData.pfPercentage ?? 12,
+            esiPercentage: userData.esiPercentage ?? 0.75,
             active: userData.active,
             permissions: {
               view: userData.permissions?.view || false,
@@ -215,6 +221,11 @@ export default function EditUser({ basePath = "/admin" }) {
       pan: values.pan,
       aadhar: values.aadhar,
       address: values.address,
+      esiCode: values.esiCode,
+      uan: values.uan,
+      pfNumber: values.pfNumber,
+      pfPercentage: values.pfPercentage,
+      esiPercentage: values.esiPercentage,
       active: values.active,
       permissions: {
         view: values.permissions?.view || false,
@@ -579,6 +590,67 @@ export default function EditUser({ basePath = "/admin" }) {
             </>
           )}
 
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            <span className="flex items-center gap-2">
+              <DollarOutlined /> Salary Deduction Rates (per-user override)
+            </span>
+          </Typography.Title>
+
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="pfPercentage"
+                label="PF Percentage (%)"
+                rules={[
+                  {
+                    type: "number",
+                    min: 0,
+                    max: 100,
+                    message: "Must be between 0 and 100",
+                  },
+                ]}
+                extra="Default: 12%. PF deduction rate applied to basic."
+              >
+                <InputNumber
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  controls={false}
+                  style={{ width: "100%" }}
+                  placeholder="12"
+                  size="large"
+                  addonAfter="%"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="esiPercentage"
+                label="ESI Percentage (%)"
+                rules={[
+                  {
+                    type: "number",
+                    min: 0,
+                    max: 100,
+                    message: "Must be between 0 and 100",
+                  },
+                ]}
+                extra="Default: 0.75%. Applied when gross < Rs. 21,000."
+              >
+                <InputNumber
+                  min={0}
+                  max={100}
+                  step={0.01}
+                  controls={false}
+                  style={{ width: "100%" }}
+                  placeholder="0.75"
+                  size="large"
+                  addonAfter="%"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
           <Form.Item label="Permissions" className="mb-4">
             <div className="flex flex-wrap gap-6 p-4 bg-gray-50 rounded-lg">
               <Form.Item
@@ -656,6 +728,24 @@ export default function EditUser({ basePath = "/admin" }) {
             <Col xs={24} md={8}>
               <Form.Item name="address" label="Address">
                 <Input placeholder="Enter address" size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="esiCode" label="ESI Code">
+                <Input placeholder="ESI Code" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="uan" label="UAN">
+                <Input placeholder="UAN Number" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="pfNumber" label="PF Number">
+                <Input placeholder="PF Number" size="large" />
               </Form.Item>
             </Col>
           </Row>
