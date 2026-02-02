@@ -68,16 +68,16 @@ export default function SalaryComponentPage() {
     { Header: "Address", accessor: "address", width: 200 },
     { Header: "Period", accessor: "payrollPeriod", width: 120 },
     { Header: "Deductions", accessor: "totalDeductions", width: 120 },
-    {
-      Header: "Status",
-      accessor: "status",
-      width: 100,
-      Cell: ({ value }) => (
-        <Tag color={value ? "success" : "default"}>
-          {value ? "Active" : "Inactive"}
-        </Tag>
-      ),
-    },
+    // {
+    //   Header: "Status",
+    //   accessor: "status",
+    //   width: 100,
+    //   Cell: ({ value }) => (
+    //     <Tag color={value ? "green" : "red"}>
+    //       {value ? "Active" : "Inactive"}
+    //     </Tag>
+    //   ),
+    // },
     { Header: "Created", accessor: "date", width: 120 },
   ];
 

@@ -169,8 +169,12 @@ export async function PATCH(request, { params }) {
     if (designation !== undefined) user.designation = designation;
     if (grade !== undefined) user.grade = grade;
     if (skills !== undefined) user.skills = skills;
-    if (pfPercentage !== undefined) user.pfPercentage = Number(pfPercentage);
-    if (esiPercentage !== undefined) user.esiPercentage = Number(esiPercentage);
+    if (pfPercentage !== undefined)
+      user.pfPercentage =
+        pfPercentage === null || pfPercentage === "" ? null : Number(pfPercentage);
+    if (esiPercentage !== undefined)
+      user.esiPercentage =
+        esiPercentage === null || esiPercentage === "" ? null : Number(esiPercentage);
 
     // Update password if provided
     if (password) {

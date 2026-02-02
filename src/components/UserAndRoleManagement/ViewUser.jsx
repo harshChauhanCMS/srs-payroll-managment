@@ -6,10 +6,7 @@ import Title from "@/components/Title/Title";
 import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import BackHeader from "@/components/BackHeader/BackHeader";
-import {
-  calcPfDeduction,
-  calcEsiDeduction,
-} from "@/utils/salaryCalculations";
+import { calcPfDeduction, calcEsiDeduction } from "@/utils/salaryCalculations";
 
 import { useParams } from "next/navigation";
 import { Card, Tag, Descriptions, Divider } from "antd";
@@ -374,8 +371,14 @@ export default function ViewUser({ basePath = "/admin" }) {
                 { key: "overtimeAmount", label: "Overtime Amount" },
                 { key: "incentive", label: "Incentive" },
                 { key: "exportAllowance", label: "Export Allowance" },
-                { key: "basicSpecialAllowance", label: "Basic Special Allowance" },
-                { key: "citySpecialAllowance", label: "City Special Allowance" },
+                {
+                  key: "basicSpecialAllowance",
+                  label: "Basic Special Allowance",
+                },
+                {
+                  key: "citySpecialAllowance",
+                  label: "City Special Allowance",
+                },
                 { key: "conveyanceAllowance", label: "Conveyance Allowance" },
                 { key: "bonusAllowance", label: "Bonus Allowance" },
                 {
@@ -386,7 +389,10 @@ export default function ViewUser({ basePath = "/admin" }) {
                 { key: "medicalAllowance", label: "Medical Allowance" },
                 { key: "leavePayment", label: "Leave Payment" },
                 { key: "specialAllowance", label: "Special Allowance" },
-                { key: "uniformMaintenanceAllowance", label: "Uniform Maintenance" },
+                {
+                  key: "uniformMaintenanceAllowance",
+                  label: "Uniform Maintenance",
+                },
                 { key: "otherAllowance", label: "Other Allowance" },
                 { key: "leaveEarnings", label: "Leave Earnings" },
                 { key: "bonusEarnings", label: "Bonus Earnings" },
@@ -424,7 +430,7 @@ export default function ViewUser({ basePath = "/admin" }) {
 
             <Divider />
 
-            <Descriptions
+            {/* <Descriptions
               title={
                 <span className="flex items-center gap-2">
                   <DollarOutlined /> Deductions (from salary structure)
@@ -454,7 +460,7 @@ export default function ViewUser({ basePath = "/admin" }) {
               <Descriptions.Item label="Total Deductions">
                 ₹{(Number(salaryComponent.totalDeductions) || 0).toLocaleString()}
               </Descriptions.Item>
-            </Descriptions>
+            </Descriptions> */}
 
             <Divider />
           </>
@@ -484,7 +490,7 @@ export default function ViewUser({ basePath = "/admin" }) {
                 arrear: acc.arrear + (Number(s.arrear) || 0),
               };
             },
-            { basic: 0, hra: 0, other: 0, leave: 0, bonus: 0, arrear: 0 },
+            { basic: 0, hra: 0, other: 0, leave: 0, bonus: 0, arrear: 0 }
           );
           const grossEarnings =
             skillTotals.basic +
@@ -493,28 +499,76 @@ export default function ViewUser({ basePath = "/admin" }) {
             skillTotals.leave +
             skillTotals.bonus +
             skillTotals.arrear;
-          const userPfRate = (user.pfPercentage ?? 12) / 100;
-          const userEsiRate = (user.esiPercentage ?? 0.75) / 100;
-          const pfAmount = calcPfDeduction(skillTotals.basic, userPfRate);
-          const esiAmount = calcEsiDeduction(grossEarnings, userEsiRate);
-          const netSalary = grossEarnings - pfAmount - esiAmount;
+
+          // Priority: user-defined > salary component > hardcoded default
+          const pfFromUser = user.pfPercentage != null;
+          const esiFromUser = user.esiPercentage != null;
+          const pfRate = pfFromUser
+            ? user.pfPercentage / 100
+            : salaryComponent?.pfPercentage != null
+            ? salaryComponent.pfPercentage / 100
+            : 0.12;
+          const esiRate = esiFromUser
+            ? user.esiPercentage / 100
+            : salaryComponent?.esiDeduction != null
+            ? salaryComponent.esiDeduction / 100
+            : 0.0075;
+
+          const pfAmount = calcPfDeduction(skillTotals.basic, pfRate);
+          const esiAmount = calcEsiDeduction(grossEarnings, esiRate);
+
+          // Other deductions from salary component
+          const otherDeductionItems = salaryComponent
+            ? [
+                { key: "haryanaWelfareFund", label: "Haryana Welfare Fund" },
+                { key: "labourWelfareFund", label: "Labour Welfare Fund" },
+                {
+                  key: "groupTermLifeInsurance",
+                  label: "Group Term Life Insurance",
+                },
+                { key: "miscellaneousDeduction", label: "Miscellaneous" },
+                { key: "shoesDeduction", label: "Shoes" },
+                { key: "jacketDeduction", label: "Jacket" },
+                { key: "canteenDeduction", label: "Canteen" },
+                { key: "iCardDeduction", label: "I Card" },
+              ].filter((d) => (Number(salaryComponent[d.key]) || 0) > 0)
+            : [];
+          const otherDeductionsTotal = otherDeductionItems.reduce(
+            (sum, d) => sum + (Number(salaryComponent[d.key]) || 0),
+            0
+          );
+
+          const totalDeductions = pfAmount + esiAmount + otherDeductionsTotal;
+          const netSalary = grossEarnings - totalDeductions;
           const fmt = (n) => `₹${Number(n).toLocaleString()}`;
+          const pfLabel = pfFromUser
+            ? "from user"
+            : salaryComponent?.pfPercentage != null
+            ? "from salary structure"
+            : "default";
+          const esiLabel = esiFromUser
+            ? "from user"
+            : salaryComponent?.esiDeduction != null
+            ? "from salary structure"
+            : "default";
 
           return (
             <Descriptions
               title={
                 <span className="flex items-center gap-2">
-                  <DollarOutlined /> User Deductions & Net Salary
+                  <DollarOutlined /> Deductions & Net Salary
                 </span>
               }
               bordered
               column={{ xs: 1, sm: 2, md: 3 }}
             >
               <Descriptions.Item label="PF Rate">
-                {user.pfPercentage ?? 12}%
+                {pfRate * 100}%{" "}
+                <Tag color={pfFromUser ? "blue" : "default"}>{pfLabel}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="ESI Rate">
-                {user.esiPercentage ?? 0.75}%
+                {esiRate * 100}%{" "}
+                <Tag color={esiFromUser ? "blue" : "default"}>{esiLabel}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Gross Earnings">
                 {fmt(grossEarnings)}
@@ -526,6 +580,21 @@ export default function ViewUser({ basePath = "/admin" }) {
                 {grossEarnings >= 21000
                   ? `${fmt(0)} (Gross >= ₹21,000)`
                   : fmt(esiAmount)}
+              </Descriptions.Item>
+              {otherDeductionItems.map(({ key, label }) => (
+                <Descriptions.Item key={key} label={label}>
+                  {fmt(Number(salaryComponent[key]) || 0)}
+                </Descriptions.Item>
+              ))}
+              {otherDeductionsTotal > 0 && (
+                <Descriptions.Item label="Other Deductions Total">
+                  {fmt(otherDeductionsTotal)}
+                </Descriptions.Item>
+              )}
+              <Descriptions.Item label="Total Deductions">
+                <span className="font-semibold text-red-600">
+                  {fmt(totalDeductions)}
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label="Net Salary">
                 <span className="font-semibold text-green-700">

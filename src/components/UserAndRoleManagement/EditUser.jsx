@@ -161,8 +161,8 @@ export default function EditUser({ basePath = "/admin" }) {
             esiCode: userData.esiCode,
             uan: userData.uan,
             pfNumber: userData.pfNumber,
-            pfPercentage: userData.pfPercentage ?? 12,
-            esiPercentage: userData.esiPercentage ?? 0.75,
+            pfPercentage: userData.pfPercentage ?? undefined,
+            esiPercentage: userData.esiPercentage ?? undefined,
             active: userData.active,
             permissions: {
               view: userData.permissions?.view || false,
@@ -224,8 +224,8 @@ export default function EditUser({ basePath = "/admin" }) {
       esiCode: values.esiCode,
       uan: values.uan,
       pfNumber: values.pfNumber,
-      pfPercentage: values.pfPercentage,
-      esiPercentage: values.esiPercentage,
+      pfPercentage: values.pfPercentage ?? null,
+      esiPercentage: values.esiPercentage ?? null,
       active: values.active,
       permissions: {
         view: values.permissions?.view || false,
@@ -609,7 +609,7 @@ export default function EditUser({ basePath = "/admin" }) {
                     message: "Must be between 0 and 100",
                   },
                 ]}
-                extra="Default: 12%. PF deduction rate applied to basic."
+                extra="Leave empty to use salary component default. Applied to basic."
               >
                 <InputNumber
                   min={0}
@@ -617,7 +617,7 @@ export default function EditUser({ basePath = "/admin" }) {
                   step={0.01}
                   controls={false}
                   style={{ width: "100%" }}
-                  placeholder="12"
+                  placeholder="Empty = salary component default"
                   size="large"
                   addonAfter="%"
                 />
@@ -635,7 +635,7 @@ export default function EditUser({ basePath = "/admin" }) {
                     message: "Must be between 0 and 100",
                   },
                 ]}
-                extra="Default: 0.75%. Applied when gross < Rs. 21,000."
+                extra="Leave empty to use salary component default. Applied when gross < Rs. 21,000."
               >
                 <InputNumber
                   min={0}
@@ -643,7 +643,7 @@ export default function EditUser({ basePath = "/admin" }) {
                   step={0.01}
                   controls={false}
                   style={{ width: "100%" }}
-                  placeholder="0.75"
+                  placeholder="Empty = salary component default"
                   size="large"
                   addonAfter="%"
                 />
