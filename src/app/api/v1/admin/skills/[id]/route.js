@@ -27,7 +27,17 @@ export async function PUT(request, { params }) {
 
     const { id } = await params;
     const body = await request.json();
-    const { name, category, active } = body;
+    const {
+      name,
+      category,
+      active,
+      basic,
+      houseRentAllowance,
+      otherAllowance,
+      leaveEarnings,
+      bonusEarnings,
+      arrear,
+    } = body;
 
     await connectDB();
     const skill = await Skill.findById(id);
@@ -38,6 +48,12 @@ export async function PUT(request, { params }) {
     if (name !== undefined) skill.name = name.trim();
     if (category !== undefined) skill.category = category.trim();
     if (active !== undefined) skill.active = active;
+    if (basic !== undefined) skill.basic = Number(basic) || 0;
+    if (houseRentAllowance !== undefined) skill.houseRentAllowance = Number(houseRentAllowance) || 0;
+    if (otherAllowance !== undefined) skill.otherAllowance = Number(otherAllowance) || 0;
+    if (leaveEarnings !== undefined) skill.leaveEarnings = Number(leaveEarnings) || 0;
+    if (bonusEarnings !== undefined) skill.bonusEarnings = Number(bonusEarnings) || 0;
+    if (arrear !== undefined) skill.arrear = Number(arrear) || 0;
 
     await skill.save();
     return NextResponse.json({ message: "Skill updated", skill });

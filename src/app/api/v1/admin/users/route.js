@@ -221,7 +221,7 @@ export async function GET(request) {
         .populate("department", "name code")
         .populate("designation", "name code")
         .populate("grade", "name code")
-        .populate("skills", "name category")
+        .populate("skills", "name category basic houseRentAllowance otherAllowance leaveEarnings bonusEarnings arrear")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

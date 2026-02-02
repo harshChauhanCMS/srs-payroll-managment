@@ -20,6 +20,7 @@ import {
   IdcardOutlined,
   StarOutlined,
   ToolOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 import {
   Form,
@@ -107,7 +108,7 @@ export default function EditUser({ basePath = "/admin" }) {
         onFail: (err) => console.error("Failed to fetch sites", err),
       });
     },
-    [getSites],
+    [getSites]
   );
 
   const fetchDesignations = useCallback(
@@ -122,7 +123,7 @@ export default function EditUser({ basePath = "/admin" }) {
         onFail: (err) => console.error("Failed to fetch designations", err),
       });
     },
-    [getDesignations],
+    [getDesignations]
   );
 
   const fetchUser = useCallback(() => {
@@ -281,7 +282,9 @@ export default function EditUser({ basePath = "/admin" }) {
         <Card className="shadow-md" style={{ marginTop: "20px" }}>
           <div className="py-8 px-4 text-center">
             <p className="text-gray-600 text-lg">User has been deleted.</p>
-            <p className="text-gray-500 mt-2">Deleted users cannot be edited.</p>
+            <p className="text-gray-500 mt-2">
+              Deleted users cannot be edited.
+            </p>
           </div>
         </Card>
       </>
@@ -514,6 +517,67 @@ export default function EditUser({ basePath = "/admin" }) {
               </Form.Item>
             </Col>
           </Row>
+
+          {user?.skills?.length > 0 && (
+            <>
+              <Typography.Title level={5} className="mt-4! mb-3!">
+                <span className="flex items-center gap-2">
+                  <DollarOutlined /> Salary (from assigned skills)
+                </span>
+              </Typography.Title>
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-gray-600 text-sm mb-3">
+                  Salary amounts are stored on the assigned Skill. To change
+                  amounts, edit the skill below.
+                </p>
+                {user.skills.map((skill, idx) => {
+                  const s = skill && typeof skill === "object" ? skill : {};
+                  const basic = Number(s.basic) || 0;
+                  const hra = Number(s.houseRentAllowance) || 0;
+                  const other = Number(s.otherAllowance) || 0;
+                  const leave = Number(s.leaveEarnings) || 0;
+                  const bonus = Number(s.bonusEarnings) || 0;
+                  const arrear = Number(s.arrear) || 0;
+                  const hasAny =
+                    basic || hra || other || leave || bonus || arrear;
+                  const fmt = (n) => `₹${Number(n).toLocaleString()}`;
+                  return (
+                    <div key={s._id || idx} className="mb-3 last:mb-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-800">
+                          {s.name || `Skill ${idx + 1}`}
+                        </span>
+                        <Button
+                          type="link"
+                          size="small"
+                          className="p-0 h-auto"
+                          onClick={() =>
+                            router.push(`${basePath}/skills/edit/${s._id}`)
+                          }
+                        >
+                          Edit skill salary
+                        </Button>
+                      </div>
+                      {!hasAny ? (
+                        <span className="text-gray-500 text-sm">
+                          No salary configured
+                        </span>
+                      ) : (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-700 text-sm">
+                          {basic > 0 && <span>Basic: {fmt(basic)}</span>}
+                          {hra > 0 && <span>HRA: {fmt(hra)}</span>}
+                          {other > 0 && <span>Other: {fmt(other)}</span>}
+                          {leave > 0 && <span>Leave: {fmt(leave)}</span>}
+                          {bonus > 0 && <span>Bonus: {fmt(bonus)}</span>}
+                          {arrear > 0 && <span>Arrear: {fmt(arrear)}</span>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           <Form.Item label="Permissions" className="mb-4">
             <div className="flex flex-wrap gap-6 p-4 bg-gray-50 rounded-lg">

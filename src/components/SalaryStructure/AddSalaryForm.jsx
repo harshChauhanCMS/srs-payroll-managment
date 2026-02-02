@@ -2,15 +2,15 @@
 
 import toast from "react-hot-toast";
 import Title from "@/components/Title/Title";
+import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import usePostQuery from "@/hooks/postQuery.hook";
+import usePatchQuery from "@/hooks/patchQuery.hook";
 import BackHeader from "@/components/BackHeader/BackHeader";
 import PermissionGuard from "@/components/PermissionGuard/PermissionGuard";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
-import { runAllCalculations } from "@/utils/salaryCalculations";
-import { BankOutlined, UserOutlined } from "@ant-design/icons";
+import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import {
   Form,
   Input,
@@ -20,31 +20,50 @@ import {
   Card,
   Row,
   Col,
-  DatePicker,
+  Checkbox,
 } from "antd";
 
-const STANDARD_WORKING_DAYS = 26;
+const EARNINGS_OPTIONS = [
+  { key: "basic", label: "Basic (Monthly Rate)" },
+  { key: "houseRentAllowance", label: "HRA (Monthly Rate)" },
+  { key: "otherAllowance", label: "Other Allowance" },
+  { key: "leaveEarnings", label: "Leave Earnings" },
+  { key: "bonusEarnings", label: "Bonus Earnings" },
+  { key: "arrear", label: "Arrear" },
+];
 
-export default function AddSalaryForm({ basePath = "/admin" }) {
+const DEDUCTIONS_OPTIONS = [
+  { key: "labourWelfareFund", label: "Labour Welfare Fund" },
+  { key: "haryanaWelfareFund", label: "Haryana Welfare Fund" },
+  { key: "groupTermLifeInsurance", label: "Group Term Life Insurance" },
+  { key: "miscellaneousDeduction", label: "Miscellaneous Deduction" },
+  { key: "shoesDeduction", label: "Shoes Deduction" },
+  { key: "jacketDeduction", label: "Jacket Deduction" },
+  { key: "canteenDeduction", label: "Canteen Deduction" },
+  { key: "iCardDeduction", label: "I Card Deduction" },
+];
+
+export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
   const router = useRouter();
+  const params = useParams();
+  const id = editId ?? params?.id ?? null;
+  const isEdit = !!id;
+
   const [form] = Form.useForm();
-  const { postQuery, loading } = usePostQuery();
+  const { postQuery, loading: postLoading } = usePostQuery();
+  const { patchQuery, loading: patchLoading } = usePatchQuery();
   const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
-  const { getQuery: getSites, loading: sitesLoading } = useGetQuery();
-  const { getQuery: getDepartments, loading: deptLoading } = useGetQuery();
-  const { getQuery: getDesignations, loading: desigLoading } = useGetQuery();
-  const { getQuery: getGrades, loading: gradesLoading } = useGetQuery();
-  const { getQuery: getUsers, loading: usersLoading } = useGetQuery();
+  const { getQuery: getSalaryComponent, loading: fetchLoading } = useGetQuery();
 
   const [companies, setCompanies] = useState([]);
-  const [sites, setSites] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [designations, setDesignations] = useState([]);
-  const [grades, setGrades] = useState([]);
-  const [users, setUsers] = useState([]);
+
+  const [selectedEarnings, setSelectedEarnings] = useState(["basic"]);
+  const [selectedDeductions, setSelectedDeductions] = useState([]);
+  const [showDays, setShowDays] = useState(true);
 
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
+  const loading = isEdit ? patchLoading : postLoading;
 
   useEffect(() => {
     getCompanies({
@@ -55,85 +74,71 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
-  const selectedCompany = Form.useWatch("company", form);
+  const fetchForEdit = useCallback(() => {
+    if (!id) return;
+    getSalaryComponent({
+      url: `/api/v1/admin/salary-components/${id}`,
+      onSuccess: (response) => {
+        const sc = response?.salaryComponent;
+        if (!sc) return;
+        const companyId = sc.company?._id ?? sc.company;
+        const deductions = DEDUCTIONS_OPTIONS.map((o) => o.key).filter(
+          (key) => (Number(sc[key]) || 0) > 0
+        );
+        form.setFieldsValue({
+          company: companyId,
+          payrollMonth: sc.payrollMonth ?? currentMonth,
+          payrollYear: sc.payrollYear ?? currentYear,
+          presentDays: sc.presentDays ?? 0,
+          nationalHoliday: sc.nationalHoliday ?? 0,
+          payableDays: sc.payableDays ?? 0,
+          overtimeDays: sc.overtimeDays ?? 0,
+          labourWelfareFund: sc.labourWelfareFund ?? 0,
+          haryanaWelfareFund: sc.haryanaWelfareFund ?? 0,
+          groupTermLifeInsurance: sc.groupTermLifeInsurance ?? 0,
+          miscellaneousDeduction: sc.miscellaneousDeduction ?? 0,
+          shoesDeduction: sc.shoesDeduction ?? 0,
+          jacketDeduction: sc.jacketDeduction ?? 0,
+          canteenDeduction: sc.canteenDeduction ?? 0,
+          iCardDeduction: sc.iCardDeduction ?? 0,
+          totalDeductions: sc.totalDeductions ?? 0,
+          bankAccountNumber: sc.bankAccountNumber ?? "",
+          ifscCode: sc.ifscCode ?? "",
+          bankName: sc.bankName ?? "",
+          permanentAddress: sc.permanentAddress ?? "",
+          aadharNumber: sc.aadharNumber ?? "",
+          mobileNumber: sc.mobileNumber ?? "",
+          remarks: sc.remarks ?? "",
+        });
+        setSelectedDeductions(deductions.length > 0 ? deductions : []);
+        setShowDays(true);
+      },
+      onFail: () => {
+        toast.error("Failed to fetch salary component");
+      },
+    });
+  }, [id, getSalaryComponent, form, currentMonth, currentYear]);
 
-  // Only fetch when company is selected; when no company, use empty options in render (no setState in effect)
   useEffect(() => {
-    if (!selectedCompany) return;
+    if (isEdit && id) fetchForEdit();
+  }, [isEdit, id, fetchForEdit]);
 
-    getSites({
-      url: `/api/v1/admin/sites?company=${selectedCompany}&limit=500`,
-      onSuccess: (res) => setSites(res.sites || []),
-      onFail: () => {},
-    });
-    getDepartments({
-      url: `/api/v1/admin/departments?company=${selectedCompany}&limit=500`,
-      onSuccess: (res) => setDepartments(res.departments || []),
-      onFail: () => {},
-    });
-    getDesignations({
-      url: "/api/v1/admin/designations?limit=500",
-      onSuccess: (res) => setDesignations(res.designations || []),
-      onFail: () => {},
-    });
-    getGrades({
-      url: "/api/v1/admin/grades?limit=500",
-      onSuccess: (res) => setGrades(res.grades || []),
-      onFail: () => {},
-    });
-    getUsers({
-      url: `/api/v1/admin/users?company=${selectedCompany}&limit=500`,
-      onSuccess: (res) => setUsers(res.users || []),
-      onFail: () => {},
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-fetch when selectedCompany changes
-  }, [selectedCompany]);
-
-  // Derive options: when no company selected, show empty lists (avoids setState in effect)
-  const sitesForCompany = selectedCompany ? sites : [];
-  const departmentsForCompany = selectedCompany ? departments : [];
-  const usersForCompany = selectedCompany ? users : [];
-
-  const recalcAndSet = () => {
+  const recalcDeductions = () => {
     const values = form.getFieldsValue();
-    const payable =
-      values.payableDays > 0
-        ? values.payableDays
-        : (Number(values.presentDays) || 0) +
-          (Number(values.nationalHoliday) || 0);
-    const calculated = runAllCalculations({
-      ...values,
-      payableDays: payable,
-    });
-    form.setFieldsValue({
-      payableDays: calculated.payableDays,
-      basicEarned: calculated.basicEarned,
-      hraEarned: calculated.hraEarned,
-      totalEarning: calculated.totalEarning,
-      incentive: calculated.incentive,
-      gross: calculated.gross,
-      esiApplicableGross: calculated.esiApplicableGross,
-      pfDeduction: calculated.pfDeduction,
-      esiDeduction: calculated.esiDeduction,
-      totalDeductions: calculated.totalDeductions,
-      netPayment: calculated.netPayment,
-      roundedAmount: calculated.roundedAmount,
-      totalPayable: calculated.totalPayable,
-      amount: calculated.amount,
-    });
+    const sum =
+      (Number(values.labourWelfareFund) || 0) +
+      (Number(values.haryanaWelfareFund) || 0) +
+      (Number(values.groupTermLifeInsurance) || 0) +
+      (Number(values.miscellaneousDeduction) || 0) +
+      (Number(values.shoesDeduction) || 0) +
+      (Number(values.jacketDeduction) || 0) +
+      (Number(values.canteenDeduction) || 0) +
+      (Number(values.iCardDeduction) || 0);
+    form.setFieldValue("totalDeductions", sum);
   };
 
-  const handleValuesChange = (changedValues, allValues) => {
-    const keysThatTriggerRecalc = [
-      "basic",
-      "houseRentAllowance",
-      "otherAllowance",
-      "leaveEarnings",
-      "bonusEarnings",
-      "presentDays",
-      "nationalHoliday",
-      "payableDays",
-      "overtimeDays",
+  const handleValuesChange = (changedValues) => {
+    const deductionKeys = [
       "labourWelfareFund",
       "haryanaWelfareFund",
       "groupTermLifeInsurance",
@@ -143,88 +148,126 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
       "canteenDeduction",
       "iCardDeduction",
     ];
-    if (
-      Object.keys(changedValues).some((k) => keysThatTriggerRecalc.includes(k))
-    ) {
-      setTimeout(recalcAndSet, 0);
+    if (Object.keys(changedValues).some((k) => deductionKeys.includes(k))) {
+      setTimeout(recalcDeductions, 0);
     }
   };
 
   const handleSubmit = (values) => {
+    if (selectedEarnings.length === 0) {
+      toast.error(
+        "Select at least one earning (e.g. Basic) in salary components."
+      );
+      return;
+    }
+    const optionalEarningsAndDeductions = [
+      ...EARNINGS_OPTIONS.map((o) => o.key),
+      ...DEDUCTIONS_OPTIONS.map((o) => o.key),
+    ];
+    const defaults = {};
+    optionalEarningsAndDeductions.forEach((k) => {
+      defaults[k] = 0;
+    });
+
     const payload = {
+      ...defaults,
       ...values,
       company: values.company,
       payrollMonth: values.payrollMonth ?? currentMonth,
       payrollYear: values.payrollYear ?? currentYear,
-      employee: values.employee || undefined,
-      site: values.site || undefined,
-      department: values.department || undefined,
-      designation: values.designation || undefined,
-      grade: values.grade || undefined,
-      skills: Array.isArray(values.skills) ? values.skills : [],
-      dateOfBirth: values.dateOfBirth
-        ? values.dateOfBirth?.toISOString?.() ??
-          values.dateOfBirth?.format?.("YYYY-MM-DD") ??
-          String(values.dateOfBirth)
-        : undefined,
-      dateOfJoining: values.dateOfJoining
-        ? values.dateOfJoining?.toISOString?.() ??
-          values.dateOfJoining?.format?.("YYYY-MM-DD") ??
-          String(values.dateOfJoining)
-        : undefined,
-      dateOfConfirmation: values.dateOfConfirmation
-        ? values.dateOfConfirmation?.toISOString?.() ??
-          values.dateOfConfirmation?.format?.("YYYY-MM-DD") ??
-          String(values.dateOfConfirmation)
-        : undefined,
+      bankAccountNumber: (values.bankAccountNumber || "").trim(),
+      ifscCode: (values.ifscCode || "").trim(),
+      bankName: (values.bankName || "").trim(),
+      permanentAddress: (values.permanentAddress || "").trim(),
+      aadharNumber: (values.aadharNumber || "").trim(),
+      mobileNumber: (values.mobileNumber || "").trim(),
     };
 
-    postQuery({
-      url: "/api/v1/admin/salary-structures",
-      postData: payload,
-      onSuccess: () => {
-        toast.success("Salary record created successfully");
-        router.push(`${basePath}/salary-structure`);
-      },
-      onFail: (err) => {
-        toast.error(err?.message || "Failed to create salary record");
-      },
+    // Ensure no NaN for numeric fields (API/Mongoose fail on NaN)
+    const numericKeys = [
+      "payrollMonth",
+      "payrollYear",
+      "presentDays",
+      "nationalHoliday",
+      "payableDays",
+      "overtimeDays",
+      "overtimeAmount",
+      "labourWelfareFund",
+      "haryanaWelfareFund",
+      "groupTermLifeInsurance",
+      "miscellaneousDeduction",
+      "shoesDeduction",
+      "jacketDeduction",
+      "canteenDeduction",
+      "iCardDeduction",
+      "totalDeductions",
+    ];
+    numericKeys.forEach((k) => {
+      if (payload[k] === undefined) return;
+      const n = Number(payload[k]);
+      if (Number.isNaN(n)) payload[k] = 0;
     });
+
+    if (isEdit) {
+      patchQuery({
+        url: `/api/v1/admin/salary-components/${id}`,
+        patchData: payload,
+        onSuccess: () => {
+          toast.success("Salary component updated successfully");
+          router.push(`${basePath}/salary-component`);
+        },
+        onFail: (err) => {
+          toast.error(err?.message || "Failed to update salary component");
+        },
+      });
+    } else {
+      postQuery({
+        url: "/api/v1/admin/salary-components",
+        postData: payload,
+        onSuccess: () => {
+          toast.success("Salary component created successfully");
+          router.push(`${basePath}/salary-component`);
+        },
+        onFail: (err) => {
+          toast.error(err?.message || "Failed to create salary component");
+        },
+      });
+    }
   };
 
-  const initialCalculated = useMemo(() => {
-    return runAllCalculations({
-      basic: 0,
-      houseRentAllowance: 0,
-      otherAllowance: 0,
-      leaveEarnings: 0,
-      bonusEarnings: 0,
-      presentDays: 0,
-      nationalHoliday: 0,
-      payableDays: 0,
-      overtimeDays: 0,
-      labourWelfareFund: 0,
-      haryanaWelfareFund: 0,
-      groupTermLifeInsurance: 0,
-      miscellaneousDeduction: 0,
-      shoesDeduction: 0,
-      jacketDeduction: 0,
-      canteenDeduction: 0,
-      iCardDeduction: 0,
-    });
-  }, []);
+  if (isEdit && fetchLoading) {
+    return (
+      <PermissionGuard
+        permission="edit"
+        fallback={
+          <div className="p-4 text-gray-500">
+            You do not have permission to edit.
+          </div>
+        }
+      >
+        <BackHeader label="Back" href={`${basePath}/salary-component`} />
+        <Title title="Edit Salary Component" />
+        <div className="flex justify-center items-center h-64">
+          <Loader />
+        </div>
+      </PermissionGuard>
+    );
+  }
 
   return (
     <PermissionGuard
-      permission="create"
+      permission={isEdit ? "edit" : "create"}
       fallback={
         <div className="p-4 text-gray-500">
-          You do not have permission to add salary records.
+          You do not have permission to {isEdit ? "edit" : "add"} salary
+          components.
         </div>
       }
     >
-      <BackHeader label="Back" href={`${basePath}/salary-structure`} />
-      <Title title="Add Salary Record" />
+      <BackHeader label="Back" href={`${basePath}/salary-component`} />
+      <Title
+        title={isEdit ? "Edit Salary Component" : "Add Salary Component"}
+      />
 
       <Form
         form={form}
@@ -238,24 +281,7 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
           nationalHoliday: 0,
           payableDays: 0,
           overtimeDays: 0,
-          basic: 0,
-          houseRentAllowance: 0,
-          otherAllowance: 0,
-          leaveEarnings: 0,
-          bonusEarnings: 0,
-          basicEarned: initialCalculated.basicEarned,
-          hraEarned: initialCalculated.hraEarned,
-          totalEarning: initialCalculated.totalEarning,
-          incentive: initialCalculated.incentive,
-          gross: initialCalculated.gross,
-          esiApplicableGross: initialCalculated.esiApplicableGross,
-          pfDeduction: initialCalculated.pfDeduction,
-          esiDeduction: initialCalculated.esiDeduction,
-          totalDeductions: initialCalculated.totalDeductions,
-          netPayment: initialCalculated.netPayment,
-          roundedAmount: initialCalculated.roundedAmount,
-          totalPayable: initialCalculated.totalPayable,
-          amount: initialCalculated.amount,
+          overtimeAmount: 0,
           labourWelfareFund: 0,
           haryanaWelfareFund: 0,
           groupTermLifeInsurance: 0,
@@ -264,15 +290,27 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
           jacketDeduction: 0,
           canteenDeduction: 0,
           iCardDeduction: 0,
+          totalDeductions: 0,
+          bankAccountNumber: "",
+          ifscCode: "",
+          bankName: "",
+          permanentAddress: "",
+          aadharNumber: "",
+          mobileNumber: "",
         }}
       >
-        <Card title="Company & Period" className="shadow-md mb-4">
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
+        <Card
+          title="Company & Period"
+          className="shadow-md"
+          style={{ marginTop: "16px", marginBottom: "16px" }}
+        >
+          <Row gutter={[24, 24]}>
+            <Col xs={24} md={12} className="mb-4 md:mb-0">
               <Form.Item
                 name="company"
                 label="Company"
                 rules={[{ required: true, message: "Select company" }]}
+                className="mb-4"
               >
                 <Select
                   placeholder="Select company"
@@ -286,11 +324,12 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={6}>
+            <Col xs={24} md={6} className="mb-4 md:mb-0">
               <Form.Item
                 name="payrollMonth"
                 label="Payroll Month"
                 rules={[{ required: true }]}
+                className="mb-4"
               >
                 <Select
                   options={Array.from({ length: 12 }, (_, i) => ({
@@ -300,11 +339,12 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={6}>
+            <Col xs={24} md={6} className="mb-4 md:mb-0">
               <Form.Item
                 name="payrollYear"
                 label="Payroll Year"
                 rules={[{ required: true }]}
+                className="mb-4"
               >
                 <InputNumber
                   min={currentYear - 5}
@@ -316,125 +356,197 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
           </Row>
         </Card>
 
-        <Card title="Employee" className="shadow-md mb-4">
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="employeeName"
-                label="Employee Name"
-                rules={[{ required: true, message: "Enter employee name" }]}
+        <Card
+          title="Select salary components"
+          className="shadow-md"
+          style={{ marginTop: "16px", marginBottom: "16px" }}
+          extra={
+            <span className="text-gray-500 text-sm">
+              Earnings rates are defined per user via their assigned Skill.
+            </span>
+          }
+        >
+          <Row gutter={[32, 28]}>
+            <Col xs={24} md={12} className="mb-6">
+              <div className="font-medium mb-3">Earnings (structure only)</div>
+              <p className="text-gray-500 text-sm mb-3">
+                Select which earnings the company uses. Actual rates come from
+                each user&apos;s assigned Skill.
+              </p>
+              <Checkbox.Group
+                value={selectedEarnings}
+                onChange={(vals) => setSelectedEarnings(vals)}
+                className="flex flex-col gap-3"
               >
-                <Input placeholder="Full name" prefix={<UserOutlined />} />
-              </Form.Item>
+                {EARNINGS_OPTIONS.map(({ key, label }) => (
+                  <Checkbox key={key} value={key} className="mb-1">
+                    {label}
+                  </Checkbox>
+                ))}
+              </Checkbox.Group>
             </Col>
-            <Col xs={24} md={6}>
-              <Form.Item name="cardId" label="Card ID">
-                <Input placeholder="Card ID" />
-              </Form.Item>
+            <Col xs={24} md={12} className="mb-6">
+              <div className="font-medium mb-3">Deductions (optional)</div>
+              <Checkbox.Group
+                value={selectedDeductions}
+                onChange={(vals) => setSelectedDeductions(vals)}
+                className="flex flex-col gap-3"
+              >
+                {DEDUCTIONS_OPTIONS.map(({ key, label }) => (
+                  <Checkbox key={key} value={key} className="mb-1">
+                    {label}
+                  </Checkbox>
+                ))}
+              </Checkbox.Group>
             </Col>
-            <Col xs={24} md={6}>
-              <Form.Item name="payCode" label="Pay Code">
-                <Input placeholder="Pay Code" />
-              </Form.Item>
+            <Col xs={24} md={12} className="mt-2 mb-2">
+              <Checkbox
+                checked={showDays}
+                onChange={(e) => setShowDays(e.target.checked)}
+              >
+                Include Days (Present / Payable / OT)
+              </Checkbox>
             </Col>
-            <Col xs={24} md={12}>
-              <Form.Item name="employee" label="Link to User (optional)">
-                <Select
-                  placeholder="Select user"
-                  allowClear
-                  loading={usersLoading}
-                  showSearch
-                  optionFilterProp="label"
-                  options={usersForCompany.map((u) => ({
-                    value: u._id,
-                    label: `${u.name} (${u.email})`,
-                  }))}
+          </Row>
+        </Card>
+
+        {showDays && (
+          <Card
+            title="Days (Payable = Present + National Holiday if not set)"
+            className="shadow-md"
+            style={{ marginTop: "16px", marginBottom: "16px" }}
+          >
+            <Row gutter={[24, 20]}>
+              <Col xs={24} md={6}>
+                <Form.Item
+                  name="presentDays"
+                  label="Present Days (company default)"
+                >
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={6}>
+                <Form.Item
+                  name="nationalHoliday"
+                  label="National Holiday (company default)"
+                >
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={6}>
+                <Form.Item
+                  name="payableDays"
+                  label="Payable Days (auto or manual)"
+                >
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={6}>
+                <Form.Item
+                  name="overtimeDays"
+                  label="Overtime Days (company default)"
+                >
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            </Row>
+          </Card>
+        )}
+
+        <Card
+          title="Deductions (company rates). PF and ESI vary per employee."
+          className="shadow-md"
+          style={{ marginTop: "16px", marginBottom: "16px" }}
+        >
+          <Row gutter={[24, 20]}>
+            {selectedDeductions.includes("labourWelfareFund") && (
+              <Col xs={24} md={8}>
+                <Form.Item name="labourWelfareFund" label="Labour Welfare Fund">
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            )}
+            {selectedDeductions.includes("haryanaWelfareFund") && (
+              <Col xs={24} md={8}>
+                <Form.Item
+                  name="haryanaWelfareFund"
+                  label="Haryana Welfare Fund"
+                >
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            )}
+            {selectedDeductions.includes("groupTermLifeInsurance") && (
+              <Col xs={24} md={8}>
+                <Form.Item
+                  name="groupTermLifeInsurance"
+                  label="Group Term Life Insurance"
+                >
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            )}
+            {selectedDeductions.includes("miscellaneousDeduction") && (
+              <Col xs={24} md={8}>
+                <Form.Item
+                  name="miscellaneousDeduction"
+                  label="Misc. Deduction"
+                >
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            )}
+            {selectedDeductions.includes("shoesDeduction") && (
+              <Col xs={24} md={8}>
+                <Form.Item name="shoesDeduction" label="Shoes Deduction">
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            )}
+            {selectedDeductions.includes("jacketDeduction") && (
+              <Col xs={24} md={8}>
+                <Form.Item name="jacketDeduction" label="Jacket Deduction">
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            )}
+            {selectedDeductions.includes("canteenDeduction") && (
+              <Col xs={24} md={8}>
+                <Form.Item name="canteenDeduction" label="Canteen Deduction">
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            )}
+            {selectedDeductions.includes("iCardDeduction") && (
+              <Col xs={24} md={8}>
+                <Form.Item name="iCardDeduction" label="I Card Deduction">
+                  <InputNumber min={0} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            )}
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="totalDeductions"
+                label="Total Deductions (sum of above)"
+              >
+                <InputNumber
+                  readOnly
+                  style={{ width: "100%", background: "#f5f5f5" }}
                 />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item name="fathersName" label="Father's Name">
-                <Input placeholder="Father's name" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="site" label="Site / Location">
-                <Select
-                  placeholder="Select site"
-                  allowClear
-                  loading={sitesLoading}
-                  showSearch
-                  optionFilterProp="label"
-                  options={sitesForCompany.map((s) => ({
-                    value: s._id,
-                    label: s.name,
-                  }))}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="department" label="Department">
-                <Select
-                  placeholder="Select department"
-                  allowClear
-                  loading={deptLoading}
-                  showSearch
-                  optionFilterProp="label"
-                  options={departmentsForCompany.map((d) => ({
-                    value: d._id,
-                    label: d.name,
-                  }))}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="designation" label="Designation">
-                <Select
-                  placeholder="Select designation"
-                  allowClear
-                  loading={desigLoading}
-                  showSearch
-                  optionFilterProp="label"
-                  options={designations.map((d) => ({
-                    value: d._id,
-                    label: d.name,
-                  }))}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="grade" label="Grade">
-                <Select
-                  placeholder="Select grade"
-                  allowClear
-                  loading={gradesLoading}
-                  showSearch
-                  optionFilterProp="label"
-                  options={grades.map((g) => ({
-                    value: g._id,
-                    label: g.name,
-                  }))}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="area" label="Area">
-                <Input placeholder="Area" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="departmentId" label="Department ID">
-                <Input placeholder="Dept ID" />
               </Form.Item>
             </Col>
           </Row>
         </Card>
 
-        <Card title="Bank & Statutory" className="shadow-md mb-4">
-          <Row gutter={16}>
+        <Card
+          title="Bank details (company default)"
+          className="shadow-md"
+          style={{ marginTop: "16px", marginBottom: "16px" }}
+        >
+          <Row gutter={[24, 20]}>
             <Col xs={24} md={8}>
               <Form.Item name="bankAccountNumber" label="Bank Account No.">
-                <Input prefix={<BankOutlined />} placeholder="Account number" />
+                <Input placeholder="Account number" />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
@@ -448,18 +560,8 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="esiCode" label="ESI Code">
-                <Input placeholder="ESI" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="uan" label="UAN">
-                <Input placeholder="UAN" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="pfNumber" label="PF Number">
-                <Input placeholder="PF" />
+              <Form.Item name="permanentAddress" label="Permanent Address">
+                <Input placeholder="Address" />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
@@ -472,200 +574,17 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
                 <Input placeholder="Mobile" />
               </Form.Item>
             </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="dateOfBirth" label="DOB">
-                <DatePicker style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="dateOfJoining" label="DOJ">
-                <DatePicker style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="dateOfConfirmation" label="DOC">
-                <DatePicker style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
           </Row>
         </Card>
 
         <Card
-          title="Days (Payable = Present + National Holiday if not set)"
-          className="shadow-md mb-4"
+          className="shadow-md"
+          style={{ marginTop: "16px", marginBottom: "16px" }}
         >
-          <Row gutter={16}>
-            <Col xs={24} md={6}>
-              <Form.Item name="presentDays" label="Present Days">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item name="nationalHoliday" label="National Holiday">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item
-                name="payableDays"
-                label="Payable Days (auto or manual)"
-              >
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item name="overtimeDays" label="Overtime Days">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
-
-        <Card
-          title="Earnings (Monthly rates; earned = rate/26 × payable days)"
-          className="shadow-md mb-4"
-        >
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item name="basic" label="Basic (Monthly Rate)">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="houseRentAllowance" label="HRA (Monthly Rate)">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="otherAllowance"
-                label="Other Allowance (Monthly)"
-              >
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="leaveEarnings" label="Leave Earnings">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="bonusEarnings" label="Bonus Earnings">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8} />
-            <Col xs={24} md={8}>
-              <Form.Item name="basicEarned" label="Basic Earned (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f5f5f5" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="hraEarned" label="HRA Earned (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f5f5f5" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="totalEarning" label="Total Earning (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f5f5f5" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="incentive" label="Incentive Amt. (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f5f5f5" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="gross" label="Gross (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#e6f7ff" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
-
-        <Card
-          title="Deductions (PF 12%, ESI 0.75% if Gross &lt; 21000)"
-          className="shadow-md mb-4"
-        >
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item name="pfDeduction" label="PF @12% (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f5f5f5" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="esiDeduction" label="ESI 0.75% (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f5f5f5" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="labourWelfareFund" label="LWF">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="haryanaWelfareFund" label="HWF">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="miscellaneousDeduction" label="Misc. Deduction">
-                <InputNumber min={0} style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="totalDeductions" label="Total Deductions (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f5f5f5" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="netPayment" label="Net Payment (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f6ffed" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="amount" label="Amount / Rounded (calc)">
-                <InputNumber
-                  readOnly
-                  style={{ width: "100%", background: "#f6ffed" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
-
-        <Card className="shadow-md mb-4">
-          <Form.Item name="remarks" label="Remarks">
+          <Form.Item name="remarks" label="Remarks" className="mb-4">
             <Input.TextArea rows={2} placeholder="Remarks" />
           </Form.Item>
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-6 border-t mt-6">
             <Button
               type="primary"
               htmlType="submit"
@@ -674,7 +593,7 @@ export default function AddSalaryForm({ basePath = "/admin" }) {
               style={{ borderRadius: "8px" }}
               loading={loading}
             >
-              Create Salary Record
+              {isEdit ? "Update Salary Component" : "Create Salary Component"}
             </Button>
           </div>
         </Card>

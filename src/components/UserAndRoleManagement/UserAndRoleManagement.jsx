@@ -45,23 +45,45 @@ export default function UserAndRoleManagement({
         const dataList = Array.isArray(response?.users) ? response.users : [];
         setTotalDocuments(response.pagination?.total || 0);
 
-        const mappedData = dataList.map((item) => ({
-          name: item?.name || "N/A",
-          email: item?.email || "N/A",
-          role: item?.role || "N/A",
-          permissions: item?.permissions || {},
-          status: item?.softDelete
-            ? "Deleted"
-            : item?.active
+        const mappedData = dataList.map((item) => {
+          const skills = item?.skills;
+          let salaryDisplay = "Not set";
+          if (skills?.length) {
+            const first = skills[0];
+            const amts = [
+              first?.basic,
+              first?.houseRentAllowance,
+              first?.otherAllowance,
+              first?.leaveEarnings,
+              first?.bonusEarnings,
+              first?.arrear,
+            ].map((v) => Number(v) || 0);
+            const hasAny = amts.some((v) => v > 0);
+            if (hasAny) {
+              const basic = Number(first?.basic) || 0;
+              salaryDisplay =
+                basic > 0 ? `Basic: ₹${basic.toLocaleString()}` : "Configured";
+            }
+          }
+          return {
+            name: item?.name || "N/A",
+            email: item?.email || "N/A",
+            role: item?.role || "N/A",
+            permissions: item?.permissions || {},
+            status: item?.softDelete
+              ? "Deleted"
+              : item?.active
               ? "Active"
               : "Inactive",
-          active: item?.active,
-          softDelete: item?.softDelete,
-          company: item?.company?.name || "Not Assigned",
-          site: item?.site?.name || "Not Assigned",
-          date: moment(item?.createdAt).format("DD-MM-YYYY") || "N/A",
-          _id: item?._id,
-        }));
+            active: item?.active,
+            softDelete: item?.softDelete,
+            company: item?.company?.name || "Not Assigned",
+            site: item?.site?.name || "Not Assigned",
+            salary: salaryDisplay,
+            date: moment(item?.createdAt).format("DD-MM-YYYY") || "N/A",
+            _id: item?._id,
+          };
+        });
 
         setTableData(mappedData);
       },
@@ -89,7 +111,7 @@ export default function UserAndRoleManagement({
       putData: { active: !currentStatus },
       onSuccess: () => {
         toast.success(
-          `User ${!currentStatus ? "activated" : "deactivated"} successfully`,
+          `User ${!currentStatus ? "activated" : "deactivated"} successfully`
         );
         fetchData();
         setTogglingUserId(null);
@@ -161,6 +183,14 @@ export default function UserAndRoleManagement({
       width: 150,
       Cell: (value) => (
         <Tag color={value === "Not Assigned" ? "default" : "blue"}>{value}</Tag>
+      ),
+    },
+    {
+      Header: "Salary",
+      accessor: "salary",
+      width: 140,
+      Cell: (value) => (
+        <span className="text-gray-700">{value || "Not set"}</span>
       ),
     },
     {
@@ -244,7 +274,7 @@ export default function UserAndRoleManagement({
               canEdit()
                 ? (row) =>
                     router.push(
-                      `${basePath}/user-and-role-management/edit/${row._id}`,
+                      `${basePath}/user-and-role-management/edit/${row._id}`
                     )
                 : undefined
             }

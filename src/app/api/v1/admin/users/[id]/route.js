@@ -25,7 +25,7 @@ export async function GET(request, { params }) {
       .populate("department", "name code")
       .populate("designation", "name code level")
       .populate("grade", "name code minSalary maxSalary")
-      .populate("skills", "name category")
+      .populate("skills", "name category basic houseRentAllowance otherAllowance leaveEarnings bonusEarnings arrear")
       .populate("createdBy", "name email")
       .lean();
 

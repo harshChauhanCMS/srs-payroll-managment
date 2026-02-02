@@ -22,6 +22,7 @@ import {
   ClusterOutlined,
   StarOutlined,
   ToolOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 
 export default function ViewUser({ basePath = "/admin" }) {
@@ -98,7 +99,11 @@ export default function ViewUser({ basePath = "/admin" }) {
       <Title
         title="User Details"
         buttonText={user.softDelete ? undefined : "Edit User"}
-        destination={user.softDelete ? undefined : `${basePath}/user-and-role-management/edit/${id}`}
+        destination={
+          user.softDelete
+            ? undefined
+            : `${basePath}/user-and-role-management/edit/${id}`
+        }
       />
 
       <Card className="shadow-md" style={{ marginTop: "8px" }}>
@@ -141,8 +146,20 @@ export default function ViewUser({ basePath = "/admin" }) {
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Status">
-            <Tag color={user.softDelete ? "default" : user.active ? "success" : "default"}>
-              {user.softDelete ? "Deleted" : user.active ? "Active" : "Inactive"}
+            <Tag
+              color={
+                user.softDelete
+                  ? "default"
+                  : user.active
+                  ? "success"
+                  : "default"
+              }
+            >
+              {user.softDelete
+                ? "Deleted"
+                : user.active
+                ? "Active"
+                : "Inactive"}
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item
@@ -246,6 +263,56 @@ export default function ViewUser({ basePath = "/admin" }) {
               "N/A"
             )}
           </Descriptions.Item>
+        </Descriptions>
+
+        <Divider />
+
+        <Descriptions
+          title={
+            <span className="flex items-center gap-2">
+              <DollarOutlined /> Salary (from assigned skills)
+            </span>
+          }
+          bordered
+          column={{ xs: 1, sm: 2, md: 3 }}
+        >
+          {!user.skills?.length ? (
+            <Descriptions.Item label="Earnings" span={3}>
+              No skills assigned. Salary is determined by assigned skills.
+            </Descriptions.Item>
+          ) : (
+            user.skills.map((skill, idx) => {
+              const s = skill && typeof skill === "object" ? skill : {};
+              const basic = Number(s.basic) || 0;
+              const hra = Number(s.houseRentAllowance) || 0;
+              const other = Number(s.otherAllowance) || 0;
+              const leave = Number(s.leaveEarnings) || 0;
+              const bonus = Number(s.bonusEarnings) || 0;
+              const arrear = Number(s.arrear) || 0;
+              const hasAny = basic || hra || other || leave || bonus || arrear;
+              const fmt = (n) => `₹${Number(n).toLocaleString()}`;
+              return (
+                <Descriptions.Item
+                  key={s._id || idx}
+                  label={s.name || `Skill ${idx + 1}`}
+                  span={3}
+                >
+                  {!hasAny ? (
+                    "No salary configured"
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-gray-700">
+                      {basic > 0 && <span>Basic: {fmt(basic)}</span>}
+                      {hra > 0 && <span>HRA: {fmt(hra)}</span>}
+                      {other > 0 && <span>Other Allowance: {fmt(other)}</span>}
+                      {leave > 0 && <span>Leave Earnings: {fmt(leave)}</span>}
+                      {bonus > 0 && <span>Bonus Earnings: {fmt(bonus)}</span>}
+                      {arrear > 0 && <span>Arrear: {fmt(arrear)}</span>}
+                    </div>
+                  )}
+                </Descriptions.Item>
+              );
+            })
+          )}
         </Descriptions>
 
         <Divider />

@@ -48,7 +48,16 @@ export async function POST(request) {
     if (auth.error) return auth.error;
 
     const body = await request.json();
-    const { name, category } = body;
+    const {
+      name,
+      category,
+      basic = 0,
+      houseRentAllowance = 0,
+      otherAllowance = 0,
+      leaveEarnings = 0,
+      bonusEarnings = 0,
+      arrear = 0,
+    } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -71,7 +80,13 @@ export async function POST(request) {
     const skill = await Skill.create({
       name: name.trim(),
       category: (category || "General").trim(),
-      active: true,
+      active: body.active !== false,
+      basic: Number(basic) || 0,
+      houseRentAllowance: Number(houseRentAllowance) || 0,
+      otherAllowance: Number(otherAllowance) || 0,
+      leaveEarnings: Number(leaveEarnings) || 0,
+      bonusEarnings: Number(bonusEarnings) || 0,
+      arrear: Number(arrear) || 0,
     });
 
     return NextResponse.json(

@@ -16,6 +16,12 @@ const skillSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    basic: { type: Number, default: 0 },
+    houseRentAllowance: { type: Number, default: 0 },
+    otherAllowance: { type: Number, default: 0 },
+    leaveEarnings: { type: Number, default: 0 },
+    bonusEarnings: { type: Number, default: 0 },
+    arrear: { type: Number, default: 0 },
   },
   {
     timestamps: true,

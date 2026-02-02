@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const salaryStructureSchema = new mongoose.Schema(
+const salaryComponentSchema = new mongoose.Schema(
   {
     company: {
       type: mongoose.Schema.Types.ObjectId,
@@ -10,61 +10,6 @@ const salaryStructureSchema = new mongoose.Schema(
     },
     payrollMonth: { type: Number, min: 1, max: 12, required: true },
     payrollYear: { type: Number, required: true, index: true },
-
-    employee: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-      index: true,
-    },
-    cardId: { type: String, trim: true, default: "" },
-    payCode: { type: String, trim: true, default: "" },
-    employeeName: { type: String, trim: true, default: "" },
-    fathersName: { type: String, trim: true, default: "" },
-
-    site: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Site",
-      default: null,
-    },
-    department: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Department",
-      default: null,
-    },
-    departmentId: { type: String, trim: true, default: "" },
-    area: { type: String, trim: true, default: "" },
-    designation: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Designation",
-      default: null,
-    },
-    grade: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Grade",
-      default: null,
-    },
-    skills: [
-      { type: mongoose.Schema.Types.ObjectId, ref: "Skill", default: null },
-    ],
-    division: { type: String, trim: true, default: "" },
-    category: { type: String, trim: true, default: "" },
-    contractor: { type: String, trim: true, default: "" },
-
-    bankAccountNumber: { type: String, trim: true, default: "" },
-    ifscCode: { type: String, trim: true, default: "" },
-    bankName: { type: String, trim: true, default: "" },
-    permanentAddress: { type: String, trim: true, default: "" },
-    aadharNumber: { type: String, trim: true, default: "" },
-    mobileNumber: { type: String, trim: true, default: "" },
-    dateOfBirth: { type: Date, default: null },
-    dateOfJoining: { type: Date, default: null },
-    dateOfConfirmation: { type: Date, default: null },
-
-    esiCode: { type: String, trim: true, default: "" },
-    uan: { type: String, trim: true, default: "" },
-    pfNumber: { type: String, trim: true, default: "" },
-    skillLabel: { type: String, trim: true, default: "" },
 
     workingDays: { type: Number, default: 0 },
     overtimeDays: { type: Number, default: 0 },
@@ -119,35 +64,42 @@ const salaryStructureSchema = new mongoose.Schema(
 
     remarks: { type: String, trim: true, default: "" },
     active: { type: Boolean, default: true },
+
+    bankAccountNumber: { type: String, trim: true, default: "" },
+    ifscCode: { type: String, trim: true, default: "" },
+    bankName: { type: String, trim: true, default: "" },
+    permanentAddress: { type: String, trim: true, default: "" },
+    aadharNumber: { type: String, trim: true, default: "" },
+    mobileNumber: { type: String, trim: true, default: "" },
+    esiCode: { type: String, trim: true, default: "" },
+    uan: { type: String, trim: true, default: "" },
+    pfNumber: { type: String, trim: true, default: "" },
   },
   {
     timestamps: true,
   },
 );
 
-salaryStructureSchema.index({ company: 1, payrollYear: 1, payrollMonth: 1 });
-salaryStructureSchema.index({ employee: 1, payrollYear: 1, payrollMonth: 1 });
-salaryStructureSchema.index(
-  { company: 1, employee: 1, payrollYear: 1, payrollMonth: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { employee: { $exists: true, $ne: null } },
-  },
-);
-salaryStructureSchema.index(
-  { company: 1, cardId: 1, payrollYear: 1, payrollMonth: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { cardId: { $exists: true, $ne: "" } },
-  },
-);
+salaryComponentSchema.index({ company: 1, payrollYear: 1, payrollMonth: 1 });
 
-if (mongoose.models.SalaryStructure) {
-  delete mongoose.models.SalaryStructure;
+// Coerce NaN to 0 for all Number paths (Mongoose throws on NaN)
+// Mongoose 9: pre middleware no longer receives next(); use async or return.
+salaryComponentSchema.pre("save", function () {
+  const schemaPaths = this.schema.paths;
+  for (const key of Object.keys(schemaPaths)) {
+    const path = schemaPaths[key];
+    if (path.instance === "Number" && typeof this[key] === "number" && Number.isNaN(this[key])) {
+      this[key] = 0;
+    }
+  }
+});
+
+if (mongoose.models.SalaryComponent) {
+  delete mongoose.models.SalaryComponent;
 }
 
-const SalaryStructure = mongoose.model(
-  "SalaryStructure",
-  salaryStructureSchema,
+const SalaryComponent = mongoose.model(
+  "SalaryComponent",
+  salaryComponentSchema,
 );
-export default SalaryStructure;
+export default SalaryComponent;

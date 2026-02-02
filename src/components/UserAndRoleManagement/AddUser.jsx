@@ -66,7 +66,9 @@ export default function AddUser({ basePath = "/admin" }) {
       onSuccess: (response) => {
         const emailSent = response?.emailSent;
         toast.success(
-          `User created successfully${emailSent ? " and credentials sent via email" : ""}`,
+          `User created successfully${
+            emailSent ? " and credentials sent via email" : ""
+          }`
         );
         router.push(`${basePath}/user-and-role-management`);
       },
@@ -225,6 +227,11 @@ export default function AddUser({ basePath = "/admin" }) {
               </Form.Item>
             </div>
           </Form.Item>
+
+          <div className="my-4 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-gray-700">
+            Salary is determined by the user&apos;s assigned skills. Assign
+            skills in Edit User after creation.
+          </div>
 
           <Typography.Title level={5} className="mt-6! mb-4!">
             Additional Information

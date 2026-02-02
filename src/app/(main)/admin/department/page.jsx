@@ -21,6 +21,10 @@ import {
   Button,
   InputNumber,
   Select,
+  Typography,
+  Row,
+  Col,
+  Switch,
 } from "antd";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
@@ -87,7 +91,7 @@ const DepartmentMastersPage = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    []
   );
 
   // Fetch departments for designation dropdown
@@ -233,7 +237,7 @@ const DepartmentMastersPage = () => {
       },
       onFail: (err) => {
         toast.error(
-          err?.message || `Failed to create ${activeTab.slice(0, -1)}`,
+          err?.message || `Failed to create ${activeTab.slice(0, -1)}`
         );
       },
     });
@@ -296,7 +300,7 @@ const DepartmentMastersPage = () => {
       },
       onFail: (err) => {
         toast.error(
-          err?.message || `Failed to update ${activeTab.slice(0, -1)}`,
+          err?.message || `Failed to update ${activeTab.slice(0, -1)}`
         );
       },
     });
@@ -335,7 +339,7 @@ const DepartmentMastersPage = () => {
       },
       onFail: (err) => {
         toast.error(
-          err?.message || `Failed to delete ${activeTab.slice(0, -1)}`,
+          err?.message || `Failed to delete ${activeTab.slice(0, -1)}`
         );
       },
     });
@@ -427,6 +431,13 @@ const DepartmentMastersPage = () => {
   const skillColumns = [
     { Header: "Name", accessor: "name", width: 200 },
     { Header: "Category", accessor: "category", width: 150 },
+    {
+      Header: "Basic (₹)",
+      accessor: "basic",
+      width: 120,
+      Cell: (value) =>
+        value != null ? `₹${Number(value).toLocaleString()}` : "—",
+    },
     {
       Header: "Status",
       accessor: "active",
@@ -639,6 +650,101 @@ const DepartmentMastersPage = () => {
             <Form.Item name="category" label="Category">
               <Input placeholder="e.g., Technical" size="large" />
             </Form.Item>
+            <Form.Item
+              name="active"
+              label="Active"
+              valuePropName="checked"
+              initialValue={true}
+            >
+              <Switch checkedChildren="Yes" unCheckedChildren="No" />
+            </Form.Item>
+            <Typography.Title level={5} className="mt-2 mb-2">
+              Salary (Earnings – monthly rates)
+            </Typography.Title>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="basic" label="Basic (₹)" initialValue={0}>
+                  <InputNumber
+                    min={0}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: "100%" }}
+                    prefix="₹"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="houseRentAllowance"
+                  label="HRA (₹)"
+                  initialValue={0}
+                >
+                  <InputNumber
+                    min={0}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: "100%" }}
+                    prefix="₹"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="otherAllowance"
+                  label="Other Allowance (₹)"
+                  initialValue={0}
+                >
+                  <InputNumber
+                    min={0}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: "100%" }}
+                    prefix="₹"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="leaveEarnings"
+                  label="Leave Earnings (₹)"
+                  initialValue={0}
+                >
+                  <InputNumber
+                    min={0}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: "100%" }}
+                    prefix="₹"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="bonusEarnings"
+                  label="Bonus Earnings (₹)"
+                  initialValue={0}
+                >
+                  <InputNumber
+                    min={0}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: "100%" }}
+                    prefix="₹"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="arrear" label="Arrear (₹)" initialValue={0}>
+                  <InputNumber
+                    min={0}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: "100%" }}
+                    prefix="₹"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
           </>
         );
 

@@ -6,6 +6,7 @@ import {
   ClusterOutlined,
   UserOutlined,
   DollarOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 import { ROLES } from "./roles";
 
@@ -62,8 +63,14 @@ export const getSidebarItems = (role) => {
       requiresPermission: "view",
     },
     {
-      name: "Salary Structure",
-      link: `${basePath}/salary-structure`,
+      name: "Skills",
+      link: `${basePath}/skills`,
+      icon: ToolOutlined,
+      requiresPermission: "view",
+    },
+    {
+      name: "Salary Component",
+      link: `${basePath}/salary-component`,
       icon: DollarOutlined,
       requiresPermission: "view",
     },

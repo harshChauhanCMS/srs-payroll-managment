@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
-import SalaryStructure from "@/models/SalaryStructure";
+import SalaryComponent from "@/models/SalaryComponent";
 import { ROLES } from "@/constants/roles";
 import {
   requireViewPermission,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/apiAuth";
 
 /**
- * GET /api/v1/admin/salary-structures/[id]
+ * GET /api/v1/admin/salary-components/[id]
  */
 export async function GET(request, { params }) {
   try {
@@ -18,45 +18,39 @@ export async function GET(request, { params }) {
     const { id } = await params;
     await connectDB();
 
-    const salaryStructure = await SalaryStructure.findById(id)
+    const salaryComponent = await SalaryComponent.findById(id)
       .populate("company", "name")
-      .populate("employee", "name email")
-      .populate("site", "name siteCode")
-      .populate("department", "name code")
-      .populate("designation", "name code")
-      .populate("grade", "name code")
-      .populate("skills", "name category")
       .lean();
 
-    if (!salaryStructure) {
+    if (!salaryComponent) {
       return NextResponse.json(
-        { message: "Salary record not found" },
+        { message: "Salary component not found" },
         { status: 404 },
       );
     }
 
     if (
       auth.user.role === ROLES.HR &&
-      String(salaryStructure.company?._id) !== String(auth.user.company)
+      String(salaryComponent.company?._id) !== String(auth.user.company)
     ) {
       return NextResponse.json(
-        { message: "Forbidden. You can only view salary records of your company." },
+        { message: "Forbidden. You can only view salary components of your company." },
         { status: 403 },
       );
     }
 
-    return NextResponse.json({ salaryStructure });
+    return NextResponse.json({ salaryComponent });
   } catch (err) {
-    console.error("Get salary structure error:", err);
+    console.error("Get salary component error:", err);
     return NextResponse.json(
-      { message: err.message || "Failed to fetch salary record" },
+      { message: err.message || "Failed to fetch salary component" },
       { status: 500 },
     );
   }
 }
 
 /**
- * PATCH /api/v1/admin/salary-structures/[id]
+ * PATCH /api/v1/admin/salary-components/[id]
  */
 export async function PATCH(request, { params }) {
   try {
@@ -69,7 +63,7 @@ export async function PATCH(request, { params }) {
       !currentUser.permissions?.edit
     ) {
       return NextResponse.json(
-        { message: "Forbidden. You do not have permission to edit salary records." },
+        { message: "Forbidden. You do not have permission to edit salary components." },
         { status: 403 },
       );
     }
@@ -78,10 +72,10 @@ export async function PATCH(request, { params }) {
     const body = await request.json();
     await connectDB();
 
-    const doc = await SalaryStructure.findById(id);
+    const doc = await SalaryComponent.findById(id);
     if (!doc) {
       return NextResponse.json(
-        { message: "Salary record not found" },
+        { message: "Salary component not found" },
         { status: 404 },
       );
     }
@@ -91,7 +85,7 @@ export async function PATCH(request, { params }) {
       String(doc.company) !== String(currentUser.company)
     ) {
       return NextResponse.json(
-        { message: "Forbidden. You can only edit salary records of your company." },
+        { message: "Forbidden. You can only edit salary components of your company." },
         { status: 403 },
       );
     }
@@ -99,23 +93,18 @@ export async function PATCH(request, { params }) {
     Object.assign(doc, body);
     await doc.save();
 
-    const salaryStructure = await SalaryStructure.findById(id)
+    const salaryComponent = await SalaryComponent.findById(id)
       .populate("company", "name")
-      .populate("employee", "name email")
-      .populate("site", "name siteCode")
-      .populate("department", "name code")
-      .populate("designation", "name code")
-      .populate("grade", "name code")
       .lean();
 
     return NextResponse.json({
-      message: "Salary record updated successfully",
-      salaryStructure,
+      message: "Salary component updated successfully",
+      salaryComponent,
     });
   } catch (err) {
-    console.error("Update salary structure error:", err);
+    console.error("Update salary component error:", err);
     return NextResponse.json(
-      { message: err.message || "Failed to update salary record" },
+      { message: err.message || "Failed to update salary component" },
       { status: 500 },
     );
   }

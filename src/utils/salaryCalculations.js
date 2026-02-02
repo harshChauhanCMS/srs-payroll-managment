@@ -161,13 +161,15 @@ export function runAllCalculations(values) {
   const otherEarned = calcOtherEarned(values.otherAllowance, payableDays);
   const leaveEarnings = Number(values.leaveEarnings) || 0;
   const bonusEarnings = Number(values.bonusEarnings) || 0;
-  const totalEarning = calcTotalEarning(
-    basicEarned,
-    hraEarned,
-    otherEarned,
-    leaveEarnings,
-    bonusEarnings,
-  );
+  const arrear = Number(values.arrear) || 0;
+  const totalEarning =
+    calcTotalEarning(
+      basicEarned,
+      hraEarned,
+      otherEarned,
+      leaveEarnings,
+      bonusEarnings,
+    ) + arrear;
   const incentive = calcIncentive(values.basic, values.overtimeDays);
   const gross = calcGross(totalEarning, incentive);
   const esiApplicableGross = gross;
