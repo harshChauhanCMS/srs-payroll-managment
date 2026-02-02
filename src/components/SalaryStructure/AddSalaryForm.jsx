@@ -13,7 +13,6 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   Form,
-  Input,
   InputNumber,
   Select,
   Button,
@@ -23,24 +22,71 @@ import {
   Checkbox,
 } from "antd";
 
-const EARNINGS_OPTIONS = [
-  { key: "basic", label: "Basic (Monthly Rate)" },
-  { key: "houseRentAllowance", label: "HRA (Monthly Rate)" },
-  { key: "otherAllowance", label: "Other Allowance" },
-  { key: "leaveEarnings", label: "Leave Earnings" },
-  { key: "bonusEarnings", label: "Bonus Earnings" },
-  { key: "arrear", label: "Arrear" },
+const ALLOWANCE_OPTIONS = [
+  { key: "houseRentAllowance", label: "House Rent Allowance", short: "HRA" },
+  { key: "overtimeAmount", label: "Overtime Amount", short: "OT" },
+  { key: "incentive", label: "Incentive", short: "Incentive" },
+  { key: "exportAllowance", label: "Export Allowance", short: "Export" },
+  {
+    key: "basicSpecialAllowance",
+    label: "Basic Special Allowance",
+    short: "BSA",
+  },
+  {
+    key: "citySpecialAllowance",
+    label: "City Special Allowance",
+    short: "CSA",
+  },
+  { key: "conveyanceAllowance", label: "Conveyance Allowance", short: "Conv" },
+  { key: "bonusAllowance", label: "Bonus Allowance", short: "Bonus" },
+  {
+    key: "specialHeadConveyanceAllowance",
+    label: "Special Head Conveyance Allowance",
+    short: "SHCA",
+  },
+  { key: "arrear", label: "Arrear", short: "Arrear" },
+  { key: "medicalAllowance", label: "Medical Allowance", short: "Medical" },
+  { key: "leavePayment", label: "Leave Payment", short: "Leave Pay" },
+  { key: "specialAllowance", label: "Special Allowance", short: "Special" },
+  {
+    key: "uniformMaintenanceAllowance",
+    label: "Uniform Maintenance Allowance",
+    short: "UMA",
+  },
+  { key: "otherAllowance", label: "Other Allowance", short: "Other" },
+  { key: "leaveEarnings", label: "Leave Earnings", short: "Leave Earn" },
+  { key: "bonusEarnings", label: "Bonus Earnings", short: "Bonus Earn" },
 ];
 
-const DEDUCTIONS_OPTIONS = [
-  { key: "labourWelfareFund", label: "Labour Welfare Fund" },
-  { key: "haryanaWelfareFund", label: "Haryana Welfare Fund" },
-  { key: "groupTermLifeInsurance", label: "Group Term Life Insurance" },
-  { key: "miscellaneousDeduction", label: "Miscellaneous Deduction" },
-  { key: "shoesDeduction", label: "Shoes Deduction" },
-  { key: "jacketDeduction", label: "Jacket Deduction" },
-  { key: "canteenDeduction", label: "Canteen Deduction" },
-  { key: "iCardDeduction", label: "I Card Deduction" },
+const DEDUCTION_OPTIONS = [
+  { key: "pfPercentage", label: "PF (%)", short: "PF%" },
+  { key: "esiDeduction", label: "ESI Deduction", short: "ESI" },
+  { key: "haryanaWelfareFund", label: "Haryana Welfare Fund", short: "HWF" },
+  { key: "labourWelfareFund", label: "Labour Welfare Fund", short: "LWF" },
+  {
+    key: "groupTermLifeInsurance",
+    label: "Group Term Life Insurance",
+    short: "GTLI",
+  },
+  {
+    key: "miscellaneousDeduction",
+    label: "Miscellaneous Deduction",
+    short: "Misc",
+  },
+  { key: "shoesDeduction", label: "Shoes Deduction", short: "Shoes" },
+  { key: "jacketDeduction", label: "Jacket Deduction", short: "Jacket" },
+  { key: "canteenDeduction", label: "Canteen Deduction", short: "Canteen" },
+  { key: "iCardDeduction", label: "I Card Deduction", short: "I Card" },
+];
+
+const DAY_KEYS = [
+  "totalDays",
+  "workingDays",
+  "nationalHoliday",
+  "overtimeDays",
+  "presentDays",
+  "payableDays",
+  "halfDayPresent",
 ];
 
 export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
@@ -56,10 +102,9 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
   const { getQuery: getSalaryComponent, loading: fetchLoading } = useGetQuery();
 
   const [companies, setCompanies] = useState([]);
-
-  const [selectedEarnings, setSelectedEarnings] = useState(["basic"]);
-  const [selectedDeductions, setSelectedDeductions] = useState([]);
   const [showDays, setShowDays] = useState(true);
+  const [enabledAllowances, setEnabledAllowances] = useState([]);
+  const [enabledDeductions, setEnabledDeductions] = useState([]);
 
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
@@ -82,35 +127,47 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
         const sc = response?.salaryComponent;
         if (!sc) return;
         const companyId = sc.company?._id ?? sc.company;
-        const deductions = DEDUCTIONS_OPTIONS.map((o) => o.key).filter(
-          (key) => (Number(sc[key]) || 0) > 0
-        );
-        form.setFieldsValue({
+        const toNum = (v) => {
+          if (v === undefined || v === null || v === "") return undefined;
+          const n = Number(v);
+          if (Number.isNaN(n) || n === 0) return undefined;
+          return n;
+        };
+        const values = {
           company: companyId,
           payrollMonth: sc.payrollMonth ?? currentMonth,
           payrollYear: sc.payrollYear ?? currentYear,
-          presentDays: sc.presentDays ?? 0,
-          nationalHoliday: sc.nationalHoliday ?? 0,
-          payableDays: sc.payableDays ?? 0,
-          overtimeDays: sc.overtimeDays ?? 0,
-          labourWelfareFund: sc.labourWelfareFund ?? 0,
-          haryanaWelfareFund: sc.haryanaWelfareFund ?? 0,
-          groupTermLifeInsurance: sc.groupTermLifeInsurance ?? 0,
-          miscellaneousDeduction: sc.miscellaneousDeduction ?? 0,
-          shoesDeduction: sc.shoesDeduction ?? 0,
-          jacketDeduction: sc.jacketDeduction ?? 0,
-          canteenDeduction: sc.canteenDeduction ?? 0,
-          iCardDeduction: sc.iCardDeduction ?? 0,
-          totalDeductions: sc.totalDeductions ?? 0,
-          bankAccountNumber: sc.bankAccountNumber ?? "",
-          ifscCode: sc.ifscCode ?? "",
-          bankName: sc.bankName ?? "",
-          permanentAddress: sc.permanentAddress ?? "",
-          aadharNumber: sc.aadharNumber ?? "",
-          mobileNumber: sc.mobileNumber ?? "",
-          remarks: sc.remarks ?? "",
+          totalDays: toNum(sc.totalDays),
+          workingDays: toNum(sc.workingDays),
+          nationalHoliday: toNum(sc.nationalHoliday),
+          overtimeDays: toNum(sc.overtimeDays),
+          presentDays: toNum(sc.presentDays),
+          payableDays: toNum(sc.payableDays),
+          presentDays: toNum(sc.presentDays),
+          payableDays: toNum(sc.payableDays),
+          halfDayPresent: toNum(sc.halfDayPresent),
+          bankAccountNumber: sc.bankAccountNumber,
+          ifscCode: sc.ifscCode,
+          bankName: sc.bankName,
+          mobileNumber: sc.mobileNumber,
+        };
+        const enabledAllowancesNext = [];
+        ALLOWANCE_OPTIONS.forEach((o) => {
+          const v = toNum(sc[o.key]);
+          values[o.key] = v;
+          if (v !== undefined) enabledAllowancesNext.push(o.key);
         });
-        setSelectedDeductions(deductions.length > 0 ? deductions : []);
+        const enabledDeductionsNext = [];
+        DEDUCTION_OPTIONS.forEach((o) => {
+          const v = toNum(sc[o.key]);
+          values[o.key] = v;
+          if (o.key !== "totalDeductions" && v !== undefined)
+            enabledDeductionsNext.push(o.key);
+        });
+        values.active = sc.active !== false;
+        form.setFieldsValue(values);
+        setEnabledAllowances(enabledAllowancesNext);
+        setEnabledDeductions(enabledDeductionsNext);
         setShowDays(true);
       },
       onFail: () => {
@@ -125,88 +182,56 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
 
   const recalcDeductions = () => {
     const values = form.getFieldsValue();
-    const sum =
-      (Number(values.labourWelfareFund) || 0) +
-      (Number(values.haryanaWelfareFund) || 0) +
-      (Number(values.groupTermLifeInsurance) || 0) +
-      (Number(values.miscellaneousDeduction) || 0) +
-      (Number(values.shoesDeduction) || 0) +
-      (Number(values.jacketDeduction) || 0) +
-      (Number(values.canteenDeduction) || 0) +
-      (Number(values.iCardDeduction) || 0);
+    const sum = DEDUCTION_OPTIONS.filter(
+      (o) => o.key !== "totalDeductions",
+    ).reduce((acc, o) => acc + (Number(values[o.key]) || 0), 0);
     form.setFieldValue("totalDeductions", sum);
   };
 
   const handleValuesChange = (changedValues) => {
-    const deductionKeys = [
-      "labourWelfareFund",
-      "haryanaWelfareFund",
-      "groupTermLifeInsurance",
-      "miscellaneousDeduction",
-      "shoesDeduction",
-      "jacketDeduction",
-      "canteenDeduction",
-      "iCardDeduction",
-    ];
+    const deductionKeys = DEDUCTION_OPTIONS.map((o) => o.key).filter(
+      (k) => k !== "totalDeductions",
+    );
     if (Object.keys(changedValues).some((k) => deductionKeys.includes(k))) {
       setTimeout(recalcDeductions, 0);
     }
   };
 
   const handleSubmit = (values) => {
-    if (selectedEarnings.length === 0) {
-      toast.error(
-        "Select at least one earning (e.g. Basic) in salary components."
-      );
-      return;
-    }
-    const optionalEarningsAndDeductions = [
-      ...EARNINGS_OPTIONS.map((o) => o.key),
-      ...DEDUCTIONS_OPTIONS.map((o) => o.key),
-    ];
-    const defaults = {};
-    optionalEarningsAndDeductions.forEach((k) => {
-      defaults[k] = 0;
-    });
-
+    const toNum = (v) => {
+      if (v === undefined || v === null || v === "") return 0;
+      const n = Number(v);
+      return Number.isNaN(n) ? 0 : n;
+    };
     const payload = {
-      ...defaults,
-      ...values,
       company: values.company,
       payrollMonth: values.payrollMonth ?? currentMonth,
       payrollYear: values.payrollYear ?? currentYear,
-      bankAccountNumber: (values.bankAccountNumber || "").trim(),
-      ifscCode: (values.ifscCode || "").trim(),
-      bankName: (values.bankName || "").trim(),
-      permanentAddress: (values.permanentAddress || "").trim(),
-      aadharNumber: (values.aadharNumber || "").trim(),
-      mobileNumber: (values.mobileNumber || "").trim(),
+      payrollYear: values.payrollYear ?? currentYear,
+      active: values.active !== false,
+      bankAccountNumber: values.bankAccountNumber,
+      ifscCode: values.ifscCode,
+      bankName: values.bankName,
+      mobileNumber: values.mobileNumber,
     };
-
-    // Ensure no NaN for numeric fields (API/Mongoose fail on NaN)
-    const numericKeys = [
-      "payrollMonth",
-      "payrollYear",
-      "presentDays",
-      "nationalHoliday",
-      "payableDays",
-      "overtimeDays",
-      "overtimeAmount",
-      "labourWelfareFund",
-      "haryanaWelfareFund",
-      "groupTermLifeInsurance",
-      "miscellaneousDeduction",
-      "shoesDeduction",
-      "jacketDeduction",
-      "canteenDeduction",
-      "iCardDeduction",
-      "totalDeductions",
-    ];
-    numericKeys.forEach((k) => {
-      if (payload[k] === undefined) return;
-      const n = Number(payload[k]);
-      if (Number.isNaN(n)) payload[k] = 0;
+    DAY_KEYS.forEach((k) => {
+      payload[k] = toNum(values[k]);
     });
+    const enabledAllowancesSet = new Set(enabledAllowances);
+    ALLOWANCE_OPTIONS.forEach((o) => {
+      const raw = enabledAllowancesSet.has(o.key) ? values[o.key] : 0;
+      payload[o.key] = toNum(raw);
+    });
+    const enabledDeductionsSet = new Set(enabledDeductions);
+    DEDUCTION_OPTIONS.filter((o) => o.key !== "totalDeductions").forEach(
+      (o) => {
+        const raw = enabledDeductionsSet.has(o.key) ? values[o.key] : 0;
+        payload[o.key] = toNum(raw);
+      },
+    );
+    payload.totalDeductions = DEDUCTION_OPTIONS.filter(
+      (o) => o.key !== "totalDeductions",
+    ).reduce((acc, o) => acc + (Number(payload[o.key]) || 0), 0);
 
     if (isEdit) {
       patchQuery({
@@ -277,28 +302,90 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
         initialValues={{
           payrollMonth: currentMonth,
           payrollYear: currentYear,
-          presentDays: 0,
-          nationalHoliday: 0,
-          payableDays: 0,
-          overtimeDays: 0,
-          overtimeAmount: 0,
-          labourWelfareFund: 0,
-          haryanaWelfareFund: 0,
-          groupTermLifeInsurance: 0,
-          miscellaneousDeduction: 0,
-          shoesDeduction: 0,
-          jacketDeduction: 0,
-          canteenDeduction: 0,
-          iCardDeduction: 0,
-          totalDeductions: 0,
-          bankAccountNumber: "",
-          ifscCode: "",
-          bankName: "",
-          permanentAddress: "",
-          aadharNumber: "",
-          mobileNumber: "",
+          showDays: true,
+          active: true,
         }}
       >
+        <Card
+          title="Bank & Contact Details"
+          className="shadow-md"
+          style={{ marginTop: "16px", marginBottom: "16px" }}
+        >
+          <Row gutter={[24, 24]}>
+            <Col xs={24} md={6}>
+              <Form.Item name="bankName" label="Bank Name">
+                <Select
+                  showSearch
+                  placeholder="Select or type Bank Name"
+                  options={[
+                    { value: "HDFC Bank", label: "HDFC Bank" },
+                    { value: "ICICI Bank", label: "ICICI Bank" },
+                    { value: "SBI", label: "SBI" },
+                    { value: "Axis Bank", label: "Axis Bank" },
+                    {
+                      value: "Kotak Mahindra Bank",
+                      label: "Kotak Mahindra Bank",
+                    },
+                    {
+                      value: "Punjab National Bank",
+                      label: "Punjab National Bank",
+                    },
+                    { value: "Bank of Baroda", label: "Bank of Baroda" },
+                    { value: "Canara Bank", label: "Canara Bank" },
+                    {
+                      value: "Union Bank of India",
+                      label: "Union Bank of India",
+                    },
+                    { value: "Yes Bank", label: "Yes Bank" },
+                    { value: "IDFC First Bank", label: "IDFC First Bank" },
+                    { value: "IndusInd Bank", label: "IndusInd Bank" },
+                  ]}
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  allowClear
+                  mode="tags"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="bankAccountNumber" label="Account Number">
+                <InputNumber
+                  controls={false}
+                  style={{ width: "100%" }}
+                  placeholder="Account Number"
+                  stringMode
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="ifscCode" label="IFSC Code">
+                <Select
+                  showSearch
+                  placeholder="Enter or Select IFSC"
+                  mode="tags"
+                  style={{ width: "100%" }}
+                  options={[]}
+                  notFoundContent={null}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="mobileNumber" label="Mobile Number">
+                <InputNumber
+                  controls={false}
+                  style={{ width: "100%" }}
+                  placeholder="Mobile Number"
+                  stringMode
+                  maxLength={10}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
+
         <Card
           title="Company & Period"
           className="shadow-md"
@@ -349,6 +436,7 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                 <InputNumber
                   min={currentYear - 5}
                   max={currentYear + 1}
+                  controls={false}
                   style={{ width: "100%" }}
                 />
               </Form.Item>
@@ -357,57 +445,15 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
         </Card>
 
         <Card
-          title="Select salary components"
           className="shadow-md"
           style={{ marginTop: "16px", marginBottom: "16px" }}
-          extra={
-            <span className="text-gray-500 text-sm">
-              Earnings rates are defined per user via their assigned Skill.
-            </span>
-          }
         >
-          <Row gutter={[32, 28]}>
-            <Col xs={24} md={12} className="mb-6">
-              <div className="font-medium mb-3">Earnings (structure only)</div>
-              <p className="text-gray-500 text-sm mb-3">
-                Select which earnings the company uses. Actual rates come from
-                each user&apos;s assigned Skill.
-              </p>
-              <Checkbox.Group
-                value={selectedEarnings}
-                onChange={(vals) => setSelectedEarnings(vals)}
-                className="flex flex-col gap-3"
-              >
-                {EARNINGS_OPTIONS.map(({ key, label }) => (
-                  <Checkbox key={key} value={key} className="mb-1">
-                    {label}
-                  </Checkbox>
-                ))}
-              </Checkbox.Group>
-            </Col>
-            <Col xs={24} md={12} className="mb-6">
-              <div className="font-medium mb-3">Deductions (optional)</div>
-              <Checkbox.Group
-                value={selectedDeductions}
-                onChange={(vals) => setSelectedDeductions(vals)}
-                className="flex flex-col gap-3"
-              >
-                {DEDUCTIONS_OPTIONS.map(({ key, label }) => (
-                  <Checkbox key={key} value={key} className="mb-1">
-                    {label}
-                  </Checkbox>
-                ))}
-              </Checkbox.Group>
-            </Col>
-            <Col xs={24} md={12} className="mt-2 mb-2">
-              <Checkbox
-                checked={showDays}
-                onChange={(e) => setShowDays(e.target.checked)}
-              >
-                Include Days (Present / Payable / OT)
-              </Checkbox>
-            </Col>
-          </Row>
+          <Checkbox
+            checked={showDays}
+            onChange={(e) => setShowDays(e.target.checked)}
+          >
+            Include Days (Present / Payable / OT)
+          </Checkbox>
         </Card>
 
         {showDays && (
@@ -418,11 +464,36 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
           >
             <Row gutter={[24, 20]}>
               <Col xs={24} md={6}>
+                <Form.Item name="totalDays" label="Total Days">
+                  <InputNumber
+                    min={0}
+                    controls={false}
+                    style={{ width: "100%" }}
+                    placeholder="0"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={6}>
+                <Form.Item name="workingDays" label="Working Days">
+                  <InputNumber
+                    min={0}
+                    controls={false}
+                    style={{ width: "100%" }}
+                    placeholder="0"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={6}>
                 <Form.Item
                   name="presentDays"
                   label="Present Days (company default)"
                 >
-                  <InputNumber min={0} style={{ width: "100%" }} />
+                  <InputNumber
+                    min={0}
+                    controls={false}
+                    style={{ width: "100%" }}
+                    placeholder="0"
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={6}>
@@ -430,7 +501,12 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                   name="nationalHoliday"
                   label="National Holiday (company default)"
                 >
-                  <InputNumber min={0} style={{ width: "100%" }} />
+                  <InputNumber
+                    min={0}
+                    controls={false}
+                    style={{ width: "100%" }}
+                    placeholder="0"
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={6}>
@@ -438,7 +514,12 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                   name="payableDays"
                   label="Payable Days (auto or manual)"
                 >
-                  <InputNumber min={0} style={{ width: "100%" }} />
+                  <InputNumber
+                    min={0}
+                    controls={false}
+                    style={{ width: "100%" }}
+                    placeholder="0"
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} md={6}>
@@ -446,7 +527,22 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                   name="overtimeDays"
                   label="Overtime Days (company default)"
                 >
-                  <InputNumber min={0} style={{ width: "100%" }} />
+                  <InputNumber
+                    min={0}
+                    controls={false}
+                    style={{ width: "100%" }}
+                    placeholder="0"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={6}>
+                <Form.Item name="halfDayPresent" label="Half Day Present">
+                  <InputNumber
+                    min={0}
+                    controls={false}
+                    style={{ width: "100%" }}
+                    placeholder="0"
+                  />
                 </Form.Item>
               </Col>
             </Row>
@@ -454,75 +550,83 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
         )}
 
         <Card
-          title="Deductions (company rates). PF and ESI vary per employee."
+          title="Allowances (prices)"
           className="shadow-md"
           style={{ marginTop: "16px", marginBottom: "16px" }}
         >
           <Row gutter={[24, 20]}>
-            {selectedDeductions.includes("labourWelfareFund") && (
-              <Col xs={24} md={8}>
-                <Form.Item name="labourWelfareFund" label="Labour Welfare Fund">
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-            )}
-            {selectedDeductions.includes("haryanaWelfareFund") && (
-              <Col xs={24} md={8}>
-                <Form.Item
-                  name="haryanaWelfareFund"
-                  label="Haryana Welfare Fund"
-                >
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-            )}
-            {selectedDeductions.includes("groupTermLifeInsurance") && (
-              <Col xs={24} md={8}>
-                <Form.Item
-                  name="groupTermLifeInsurance"
-                  label="Group Term Life Insurance"
-                >
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-            )}
-            {selectedDeductions.includes("miscellaneousDeduction") && (
-              <Col xs={24} md={8}>
-                <Form.Item
-                  name="miscellaneousDeduction"
-                  label="Misc. Deduction"
-                >
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-            )}
-            {selectedDeductions.includes("shoesDeduction") && (
-              <Col xs={24} md={8}>
-                <Form.Item name="shoesDeduction" label="Shoes Deduction">
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-            )}
-            {selectedDeductions.includes("jacketDeduction") && (
-              <Col xs={24} md={8}>
-                <Form.Item name="jacketDeduction" label="Jacket Deduction">
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-            )}
-            {selectedDeductions.includes("canteenDeduction") && (
-              <Col xs={24} md={8}>
-                <Form.Item name="canteenDeduction" label="Canteen Deduction">
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
-            )}
-            {selectedDeductions.includes("iCardDeduction") && (
-              <Col xs={24} md={8}>
-                <Form.Item name="iCardDeduction" label="I Card Deduction">
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-              </Col>
+            {ALLOWANCE_OPTIONS.map(({ key, label, short }) => {
+              const checked = enabledAllowances.includes(key);
+              return (
+                <Col xs={24} md={8} key={key}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Checkbox
+                      checked={checked}
+                      onChange={(e) => {
+                        const isChecked = e.target.checked;
+                        setEnabledAllowances((prev) =>
+                          isChecked
+                            ? [...prev, key]
+                            : prev.filter((k) => k !== key),
+                        );
+                      }}
+                    >
+                      {label} ({short})
+                    </Checkbox>
+                  </div>
+                  <Form.Item name={key}>
+                    <InputNumber
+                      min={0}
+                      controls={false}
+                      style={{ width: "100%" }}
+                      placeholder="0"
+                      disabled={!checked}
+                    />
+                  </Form.Item>
+                </Col>
+              );
+            })}
+          </Row>
+        </Card>
+
+        <Card
+          title="Deductions (company rates)"
+          className="shadow-md"
+          style={{ marginTop: "16px", marginBottom: "16px" }}
+        >
+          <Row gutter={[24, 20]}>
+            {DEDUCTION_OPTIONS.filter((o) => o.key !== "totalDeductions").map(
+              ({ key, label, short }) => {
+                const checked = enabledDeductions.includes(key);
+                return (
+                  <Col xs={24} md={8} key={key}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Checkbox
+                        checked={checked}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          setEnabledDeductions((prev) =>
+                            isChecked
+                              ? [...prev, key]
+                              : prev.filter((k) => k !== key),
+                          );
+                        }}
+                      >
+                        {label} ({short})
+                      </Checkbox>
+                    </div>
+                    <Form.Item name={key}>
+                      <InputNumber
+                        min={0}
+                        controls={false}
+                        style={{ width: "100%" }}
+                        placeholder="0"
+                        disabled={!checked}
+                      />
+                    </Form.Item>
+                  </Col>
+                );
+              },
             )}
             <Col xs={24} md={8}>
               <Form.Item
@@ -531,7 +635,9 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
               >
                 <InputNumber
                   readOnly
+                  controls={false}
                   style={{ width: "100%", background: "#f5f5f5" }}
+                  placeholder="0"
                 />
               </Form.Item>
             </Col>
@@ -539,50 +645,16 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
         </Card>
 
         <Card
-          title="Bank details (company default)"
           className="shadow-md"
           style={{ marginTop: "16px", marginBottom: "16px" }}
         >
-          <Row gutter={[24, 20]}>
-            <Col xs={24} md={8}>
-              <Form.Item name="bankAccountNumber" label="Bank Account No.">
-                <Input placeholder="Account number" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="ifscCode" label="IFSC Code">
-                <Input placeholder="IFSC" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="bankName" label="Bank Name">
-                <Input placeholder="Bank name" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="permanentAddress" label="Permanent Address">
-                <Input placeholder="Address" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="aadharNumber" label="Aadhar No.">
-                <Input placeholder="Aadhar" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="mobileNumber" label="Mobile No.">
-                <Input placeholder="Mobile" />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
-
-        <Card
-          className="shadow-md"
-          style={{ marginTop: "16px", marginBottom: "16px" }}
-        >
-          <Form.Item name="remarks" label="Remarks" className="mb-4">
-            <Input.TextArea rows={2} placeholder="Remarks" />
+          <Form.Item
+            name="active"
+            label="Active"
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Checkbox>Active</Checkbox>
           </Form.Item>
           <div className="flex justify-end gap-3 pt-6 border-t mt-6">
             <Button

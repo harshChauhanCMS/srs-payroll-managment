@@ -18,16 +18,41 @@ import {
   IdcardOutlined,
 } from "@ant-design/icons";
 
-const DEDUCTION_LABELS = {
-  labourWelfareFund: "Labour Welfare Fund",
-  haryanaWelfareFund: "Haryana Welfare Fund",
-  groupTermLifeInsurance: "Group Term Life Insurance",
-  miscellaneousDeduction: "Miscellaneous Deduction",
-  shoesDeduction: "Shoes Deduction",
-  jacketDeduction: "Jacket Deduction",
-  canteenDeduction: "Canteen Deduction",
-  iCardDeduction: "I Card Deduction",
-};
+const ALLOWANCE_LABELS = [
+  { key: "houseRentAllowance", label: "House Rent Allowance (HRA)" },
+  { key: "overtimeAmount", label: "Overtime Amount (OT)" },
+  { key: "incentive", label: "Incentive" },
+  { key: "exportAllowance", label: "Export Allowance" },
+  { key: "basicSpecialAllowance", label: "Basic Special Allowance (BSA)" },
+  { key: "citySpecialAllowance", label: "City Special Allowance (CSA)" },
+  { key: "conveyanceAllowance", label: "Conveyance Allowance" },
+  { key: "bonusAllowance", label: "Bonus Allowance" },
+  {
+    key: "specialHeadConveyanceAllowance",
+    label: "Special Head Conveyance (SHCA)",
+  },
+  { key: "arrear", label: "Arrear" },
+  { key: "medicalAllowance", label: "Medical Allowance" },
+  { key: "leavePayment", label: "Leave Payment" },
+  { key: "specialAllowance", label: "Special Allowance" },
+  { key: "uniformMaintenanceAllowance", label: "Uniform Maintenance (UMA)" },
+  { key: "otherAllowance", label: "Other Allowance" },
+  { key: "leaveEarnings", label: "Leave Earnings" },
+  { key: "bonusEarnings", label: "Bonus Earnings" },
+];
+
+const DEDUCTION_LABELS = [
+  { key: "pfPercentage", label: "PF (%)" },
+  { key: "esiDeduction", label: "ESI Deduction (ESI)" },
+  { key: "haryanaWelfareFund", label: "Haryana Welfare Fund (HWF)" },
+  { key: "labourWelfareFund", label: "Labour Welfare Fund (LWF)" },
+  { key: "groupTermLifeInsurance", label: "Group Term Life Insurance (GTLI)" },
+  { key: "miscellaneousDeduction", label: "Miscellaneous (Misc)" },
+  { key: "shoesDeduction", label: "Shoes Deduction" },
+  { key: "jacketDeduction", label: "Jacket Deduction" },
+  { key: "canteenDeduction", label: "Canteen Deduction" },
+  { key: "iCardDeduction", label: "I Card Deduction" },
+];
 
 export default function ViewSalaryComponent({ basePath: basePathProp }) {
   const params = useParams();
@@ -99,8 +124,11 @@ export default function ViewSalaryComponent({ basePath: basePathProp }) {
   }
 
   const companyName = data.company?.name ?? (data.company ? "—" : "—");
-  const deductionEntries = Object.entries(DEDUCTION_LABELS).filter(
-    ([key]) => (Number(data[key]) || 0) > 0
+  const allowanceEntries = ALLOWANCE_LABELS.filter(
+    (o) => (Number(data[o.key]) || 0) > 0
+  );
+  const deductionEntries = DEDUCTION_LABELS.filter(
+    (o) => (Number(data[o.key]) || 0) > 0
   );
 
   return (
@@ -149,6 +177,12 @@ export default function ViewSalaryComponent({ basePath: basePathProp }) {
           bordered
           column={{ xs: 1, sm: 2, md: 4 }}
         >
+          <Descriptions.Item label="Total Days">
+            {data.totalDays ?? 0}
+          </Descriptions.Item>
+          <Descriptions.Item label="Working Days">
+            {data.workingDays ?? 0}
+          </Descriptions.Item>
           <Descriptions.Item label="Present Days">
             {data.presentDays ?? 0}
           </Descriptions.Item>
@@ -161,6 +195,9 @@ export default function ViewSalaryComponent({ basePath: basePathProp }) {
           <Descriptions.Item label="Overtime Days">
             {data.overtimeDays ?? 0}
           </Descriptions.Item>
+          <Descriptions.Item label="Half Day Present">
+            {data.halfDayPresent ?? 0}
+          </Descriptions.Item>
         </Descriptions>
 
         <Divider />
@@ -168,14 +205,38 @@ export default function ViewSalaryComponent({ basePath: basePathProp }) {
         <Descriptions
           title={
             <span className="flex items-center gap-2">
-              <DollarOutlined /> Deductions
+              <DollarOutlined /> Allowances
+            </span>
+          }
+          bordered
+          column={{ xs: 1, sm: 2, md: 3 }}
+        >
+          {allowanceEntries.length > 0 ? (
+            allowanceEntries.map(({ key, label }) => (
+              <Descriptions.Item key={key} label={label}>
+                ₹{Number(data[key]).toLocaleString()}
+              </Descriptions.Item>
+            ))
+          ) : (
+            <Descriptions.Item span={3}>
+              No allowances configured.
+            </Descriptions.Item>
+          )}
+        </Descriptions>
+
+        <Divider />
+
+        <Descriptions
+          title={
+            <span className="flex items-center gap-2">
+              <IdcardOutlined /> Deductions
             </span>
           }
           bordered
           column={{ xs: 1, sm: 2, md: 3 }}
         >
           {deductionEntries.length > 0 ? (
-            deductionEntries.map(([key, label]) => (
+            deductionEntries.map(({ key, label }) => (
               <Descriptions.Item key={key} label={label}>
                 ₹{Number(data[key]).toLocaleString()}
               </Descriptions.Item>
@@ -190,51 +251,13 @@ export default function ViewSalaryComponent({ basePath: basePathProp }) {
           </Descriptions.Item>
         </Descriptions>
 
-        <Divider />
-
-        <Descriptions
-          title={
-            <span className="flex items-center gap-2">
-              <IdcardOutlined /> Bank details (company default)
-            </span>
-          }
-          bordered
-          column={{ xs: 1, sm: 2, md: 3 }}
-        >
-          <Descriptions.Item label="Bank Account No.">
-            {data.bankAccountNumber || "—"}
-          </Descriptions.Item>
-          <Descriptions.Item label="IFSC Code">
-            {data.ifscCode || "—"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Bank Name">
-            {data.bankName || "—"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Permanent Address">
-            {data.permanentAddress || "—"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Aadhar No.">
-            {data.aadharNumber || "—"}
-          </Descriptions.Item>
-          <Descriptions.Item label="Mobile No.">
-            {data.mobileNumber || "—"}
-          </Descriptions.Item>
-        </Descriptions>
-
-        {(data.remarks || data.createdAt) && (
+        {data.createdAt && (
           <>
             <Divider />
             <Descriptions bordered column={{ xs: 1, sm: 2, md: 3 }}>
-              {data.remarks && (
-                <Descriptions.Item label="Remarks" span={3}>
-                  {data.remarks}
-                </Descriptions.Item>
-              )}
-              {data.createdAt && (
-                <Descriptions.Item label="Created">
-                  {moment(data.createdAt).format("DD-MM-YYYY HH:mm")}
-                </Descriptions.Item>
-              )}
+              <Descriptions.Item label="Created">
+                {moment(data.createdAt).format("DD-MM-YYYY HH:mm")}
+              </Descriptions.Item>
             </Descriptions>
           </>
         )}

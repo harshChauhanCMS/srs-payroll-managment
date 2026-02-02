@@ -16,19 +16,47 @@ function getPayableDays(body) {
   return (Number(body.presentDays) || 0) + (Number(body.nationalHoliday) || 0);
 }
 
-/** Sum of optional deduction fields (company-level rates). PF/ESI are per employee. */
-function getTotalDeductions(body) {
-  return (
-    (Number(body.labourWelfareFund) || 0) +
-    (Number(body.haryanaWelfareFund) || 0) +
-    (Number(body.groupTermLifeInsurance) || 0) +
-    (Number(body.miscellaneousDeduction) || 0) +
-    (Number(body.shoesDeduction) || 0) +
-    (Number(body.jacketDeduction) || 0) +
-    (Number(body.canteenDeduction) || 0) +
-    (Number(body.iCardDeduction) || 0)
-  );
-}
+const DAY_KEYS = [
+  "totalDays",
+  "workingDays",
+  "nationalHoliday",
+  "overtimeDays",
+  "presentDays",
+  "payableDays",
+  "halfDayPresent",
+];
+const ALLOWANCE_KEYS = [
+  "houseRentAllowance",
+  "overtimeAmount",
+  "incentive",
+  "exportAllowance",
+  "basicSpecialAllowance",
+  "citySpecialAllowance",
+  "conveyanceAllowance",
+  "bonusAllowance",
+  "specialHeadConveyanceAllowance",
+  "arrear",
+  "medicalAllowance",
+  "leavePayment",
+  "specialAllowance",
+  "uniformMaintenanceAllowance",
+  "otherAllowance",
+  "leaveEarnings",
+  "bonusEarnings",
+];
+const DEDUCTION_KEYS = [
+  "pfPercentage",
+  "esiDeduction",
+  "haryanaWelfareFund",
+  "labourWelfareFund",
+  "groupTermLifeInsurance",
+  "miscellaneousDeduction",
+  "shoesDeduction",
+  "jacketDeduction",
+  "canteenDeduction",
+  "iCardDeduction",
+  "totalDeductions",
+];
 
 /**
  * GET /api/v1/admin/salary-components
@@ -68,7 +96,7 @@ export async function GET(request) {
 
     const [salaryComponents, totalCount] = await Promise.all([
       SalaryComponent.find(query)
-        .populate("company", "name")
+        .populate("company", "name bankName mobileNumber address")
         .sort({ payrollYear: -1, payrollMonth: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -104,12 +132,12 @@ export async function POST(request) {
 
     const currentUser = auth.user;
 
-    if (
-      currentUser.role === ROLES.HR &&
-      !currentUser.permissions?.create
-    ) {
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.create) {
       return NextResponse.json(
-        { message: "Forbidden. You do not have permission to create salary components." },
+        {
+          message:
+            "Forbidden. You do not have permission to create salary components.",
+        },
         { status: 403 },
       );
     }
@@ -129,14 +157,25 @@ export async function POST(request) {
         String(currentUser.company) !== String(body.company)
       ) {
         return NextResponse.json(
-          { message: "You can only create salary components for your company." },
+          {
+            message: "You can only create salary components for your company.",
+          },
           { status: 403 },
         );
       }
     }
 
     const payableDays = getPayableDays(body);
-    const totalDeductions = getTotalDeductions(body);
+    const totalDeductionsSum =
+      safeNum(body.esiDeduction) +
+      safeNum(body.haryanaWelfareFund) +
+      safeNum(body.labourWelfareFund) +
+      safeNum(body.groupTermLifeInsurance) +
+      safeNum(body.miscellaneousDeduction) +
+      safeNum(body.shoesDeduction) +
+      safeNum(body.jacketDeduction) +
+      safeNum(body.canteenDeduction) +
+      safeNum(body.iCardDeduction);
 
     await connectDB();
 
@@ -145,64 +184,22 @@ export async function POST(request) {
       company: body.company,
       payrollMonth: body.payrollMonth ?? now.getMonth() + 1,
       payrollYear: body.payrollYear ?? now.getFullYear(),
-      workingDays: Number(body.workingDays) || 0,
-      overtimeDays: Number(body.overtimeDays) || 0,
-      totalDays: Number(body.totalDays) || 0,
-      presentDays: Number(body.presentDays) || 0,
-      nationalHoliday: Number(body.nationalHoliday) || 0,
-      payableDays,
-      halfDayPresent: Number(body.halfDayPresent) || 0,
-      basic: 0,
-      houseRentAllowance: 0,
-      overtimeAmount: 0,
-      incentive: 0,
-      exportAllowance: 0,
-      basicSpecialAllowance: 0,
-      citySpecialAllowance: 0,
-      conveyanceAllowance: 0,
-      bonusAllowance: 0,
-      specialHeadConveyanceAllowance: 0,
-      arrear: 0,
-      medicalAllowance: 0,
-      leavePayment: 0,
-      specialAllowance: 0,
-      uniformMaintenanceAllowance: 0,
-      otherAllowance: 0,
-      leaveEarnings: 0,
-      bonusEarnings: 0,
-      basicEarned: 0,
-      hraEarned: 0,
-      totalEarning: 0,
-      gross: 0,
-      esiApplicableGross: 0,
-      pfDeduction: 0,
-      esiEmployerContribution: 0,
-      esiDeduction: 0,
-      haryanaWelfareFund: Number(body.haryanaWelfareFund) || 0,
-      labourWelfareFund: Number(body.labourWelfareFund) || 0,
-      groupTermLifeInsurance: Number(body.groupTermLifeInsurance) || 0,
-      miscellaneousDeduction: Number(body.miscellaneousDeduction) || 0,
-      shoesDeduction: Number(body.shoesDeduction) || 0,
-      jacketDeduction: Number(body.jacketDeduction) || 0,
-      canteenDeduction: Number(body.canteenDeduction) || 0,
-      iCardDeduction: Number(body.iCardDeduction) || 0,
-      totalDeductions,
-      netPayment: 0,
-      roundedAmount: 0,
-      totalPayable: 0,
-      amount: 0,
-      remarks: (body.remarks || "").trim(),
       active: body.active !== false,
-      bankAccountNumber: (body.bankAccountNumber || "").trim(),
-      ifscCode: (body.ifscCode || "").trim(),
-      bankName: (body.bankName || "").trim(),
-      permanentAddress: (body.permanentAddress || "").trim(),
-      aadharNumber: (body.aadharNumber || "").trim(),
-      mobileNumber: (body.mobileNumber || "").trim(),
-      esiCode: (body.esiCode || "").trim(),
-      uan: (body.uan || "").trim(),
-      pfNumber: (body.pfNumber || "").trim(),
+      bankAccountNumber: body.bankAccountNumber || "",
+      ifscCode: body.ifscCode || "",
+      bankName: body.bankName || "",
+      mobileNumber: body.mobileNumber || "",
     };
+    DAY_KEYS.forEach((k) => {
+      payload[k] = k === "payableDays" ? payableDays : safeNum(body[k]);
+    });
+    ALLOWANCE_KEYS.forEach((k) => {
+      payload[k] = safeNum(body[k]);
+    });
+    DEDUCTION_KEYS.filter((k) => k !== "totalDeductions").forEach((k) => {
+      payload[k] = safeNum(body[k]);
+    });
+    payload.totalDeductions = totalDeductionsSum;
 
     const doc = await SalaryComponent.create(payload);
     const salaryComponent = await SalaryComponent.findById(doc._id)

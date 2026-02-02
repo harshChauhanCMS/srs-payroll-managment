@@ -1,57 +1,63 @@
 import { NextResponse } from "next/server";
 import { requireViewPermission } from "@/lib/apiAuth";
 
-/**
- * Salary component field keys (company-level template; no employee fields).
- */
+const DAY_KEYS = [
+  { key: "totalDays", label: "Total Days", type: "number" },
+  { key: "workingDays", label: "Working Days", type: "number" },
+  { key: "nationalHoliday", label: "National Holiday", type: "number" },
+  { key: "overtimeDays", label: "Overtime Days", type: "number" },
+  { key: "presentDays", label: "Present Days", type: "number" },
+  { key: "payableDays", label: "Payable Days", type: "number" },
+  { key: "halfDayPresent", label: "Half Day Present", type: "number" },
+];
+
+const ALLOWANCE_KEYS = [
+  { key: "houseRentAllowance", label: "House Rent Allowance (HRA)", type: "number" },
+  { key: "overtimeAmount", label: "Overtime Amount (OT)", type: "number" },
+  { key: "incentive", label: "Incentive", type: "number" },
+  { key: "exportAllowance", label: "Export Allowance", type: "number" },
+  { key: "basicSpecialAllowance", label: "Basic Special Allowance (BSA)", type: "number" },
+  { key: "citySpecialAllowance", label: "City Special Allowance (CSA)", type: "number" },
+  { key: "conveyanceAllowance", label: "Conveyance Allowance", type: "number" },
+  { key: "bonusAllowance", label: "Bonus Allowance", type: "number" },
+  { key: "specialHeadConveyanceAllowance", label: "Special Head Conveyance (SHCA)", type: "number" },
+  { key: "arrear", label: "Arrear", type: "number" },
+  { key: "medicalAllowance", label: "Medical Allowance", type: "number" },
+  { key: "leavePayment", label: "Leave Payment", type: "number" },
+  { key: "specialAllowance", label: "Special Allowance", type: "number" },
+  { key: "uniformMaintenanceAllowance", label: "Uniform Maintenance (UMA)", type: "number" },
+  { key: "otherAllowance", label: "Other Allowance", type: "number" },
+  { key: "leaveEarnings", label: "Leave Earnings", type: "number" },
+  { key: "bonusEarnings", label: "Bonus Earnings", type: "number" },
+  { key: "basicEarned", label: "Basic Earned", type: "number" },
+  { key: "hraEarned", label: "HRA Earned", type: "number" },
+  { key: "gross", label: "Gross", type: "number" },
+];
+
+const DEDUCTION_KEYS = [
+  { key: "pfDeduction", label: "PF Deduction (PF)", type: "number" },
+  { key: "esiEmployerContribution", label: "ESI Employer (ESI Emp)", type: "number" },
+  { key: "esiDeduction", label: "ESI Deduction (ESI)", type: "number" },
+  { key: "haryanaWelfareFund", label: "Haryana Welfare Fund (HWF)", type: "number" },
+  { key: "labourWelfareFund", label: "Labour Welfare Fund (LWF)", type: "number" },
+  { key: "groupTermLifeInsurance", label: "Group Term Life Insurance (GTLI)", type: "number" },
+  { key: "miscellaneousDeduction", label: "Miscellaneous (Misc)", type: "number" },
+  { key: "shoesDeduction", label: "Shoes Deduction", type: "number" },
+  { key: "jacketDeduction", label: "Jacket Deduction", type: "number" },
+  { key: "canteenDeduction", label: "Canteen Deduction", type: "number" },
+  { key: "iCardDeduction", label: "I Card Deduction", type: "number" },
+  { key: "totalDeductions", label: "Total Deductions", type: "number", calculated: true },
+];
+
 const SALARY_COMPONENT_KEYS = {
   required: [
     { key: "company", label: "Company", type: "ref", ref: "Company", required: true },
     { key: "payrollMonth", label: "Payroll Month", type: "number", required: true, min: 1, max: 12 },
     { key: "payrollYear", label: "Payroll Year", type: "number", required: true },
   ],
-  days: [
-    { key: "presentDays", label: "Present Days", type: "number" },
-    { key: "nationalHoliday", label: "National Holiday", type: "number" },
-    { key: "payableDays", label: "Payable Days", type: "number", calculated: true },
-    { key: "overtimeDays", label: "Overtime Days", type: "number" },
-  ],
-  earnings: [
-    { key: "basic", label: "Basic (Monthly Rate)", type: "number" },
-    { key: "houseRentAllowance", label: "HRA (Monthly Rate)", type: "number" },
-    { key: "otherAllowance", label: "Other Allowance (Monthly)", type: "number" },
-    { key: "leaveEarnings", label: "Leave Earnings", type: "number" },
-    { key: "bonusEarnings", label: "Bonus Earnings", type: "number" },
-    { key: "arrear", label: "Arrear", type: "number" },
-    { key: "basicEarned", label: "Basic Earned", type: "number", calculated: true },
-    { key: "hraEarned", label: "HRA Earned", type: "number", calculated: true },
-    { key: "totalEarning", label: "Total Earning", type: "number", calculated: true },
-    { key: "incentive", label: "Incentive Amt.", type: "number", calculated: true },
-    { key: "gross", label: "Gross", type: "number", calculated: true },
-  ],
-  deductions: [
-    { key: "labourWelfareFund", label: "Labour Welfare Fund", type: "number" },
-    { key: "haryanaWelfareFund", label: "Haryana Welfare Fund", type: "number" },
-    { key: "groupTermLifeInsurance", label: "Group Term Life Insurance", type: "number" },
-    { key: "miscellaneousDeduction", label: "Miscellaneous Deduction", type: "number" },
-    { key: "shoesDeduction", label: "Shoes Deduction", type: "number" },
-    { key: "jacketDeduction", label: "Jacket Deduction", type: "number" },
-    { key: "canteenDeduction", label: "Canteen Deduction", type: "number" },
-    { key: "iCardDeduction", label: "I Card Deduction", type: "number" },
-    { key: "totalDeductions", label: "Total Deductions", type: "number", calculated: true },
-  ],
-  bank: [
-    { key: "bankAccountNumber", label: "Bank Account No.", type: "string" },
-    { key: "ifscCode", label: "IFSC Code", type: "string" },
-    { key: "bankName", label: "Bank Name", type: "string" },
-    { key: "permanentAddress", label: "Permanent Address", type: "string" },
-    { key: "aadharNumber", label: "Aadhar No.", type: "string" },
-    { key: "mobileNumber", label: "Mobile No.", type: "string" },
-    { key: "esiCode", label: "ESI Code", type: "string" },
-    { key: "uan", label: "UAN", type: "string" },
-    { key: "pfNumber", label: "PF Number", type: "string" },
-  ],
-  meta: [{ key: "remarks", label: "Remarks", type: "string" }],
+  days: DAY_KEYS,
+  allowances: ALLOWANCE_KEYS,
+  deductions: DEDUCTION_KEYS,
 };
 
 /**

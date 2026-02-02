@@ -39,7 +39,7 @@ export default function SalaryComponentPage() {
             _id: item._id,
             company: item.company?.name || "—",
             payrollPeriod: `${item.payrollMonth}/${item.payrollYear}`,
-            permanentAddress: item.permanentAddress ?? "—",
+            address: item.company.address ?? "—",
             bankName: item.bankName ?? "—",
             mobileNumber: item.mobileNumber ?? "—",
             totalDeductions: item.totalDeductions ?? "—",
@@ -62,10 +62,10 @@ export default function SalaryComponentPage() {
 
   const columns = [
     { Header: "Company", accessor: "company", width: 200 },
-    { Header: "Address", accessor: "permanentAddress", width: 200 },
+    { Header: "Address", accessor: "address", width: 200 },
     { Header: "Period", accessor: "payrollPeriod", width: 120 },
     { Header: "Bank Name", accessor: "bankName", width: 120 },
-    { Header: "Mobile Number", accessor: "mobileNumber", width: 120 },
+    // { Header: "Mobile Number", accessor: "mobileNumber", width: 120 },
     { Header: "Deductions", accessor: "totalDeductions", width: 120 },
     { Header: "Created", accessor: "date", width: 120 },
   ];

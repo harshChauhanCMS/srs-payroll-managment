@@ -2,10 +2,67 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import SalaryComponent from "@/models/SalaryComponent";
 import { ROLES } from "@/constants/roles";
-import {
-  requireViewPermission,
-  requireEditPermission,
-} from "@/lib/apiAuth";
+import { requireViewPermission, requireEditPermission } from "@/lib/apiAuth";
+
+const DAY_KEYS = [
+  "totalDays",
+  "workingDays",
+  "nationalHoliday",
+  "overtimeDays",
+  "presentDays",
+  "payableDays",
+  "halfDayPresent",
+];
+const ALLOWANCE_KEYS = [
+  "houseRentAllowance",
+  "overtimeAmount",
+  "incentive",
+  "exportAllowance",
+  "basicSpecialAllowance",
+  "citySpecialAllowance",
+  "conveyanceAllowance",
+  "bonusAllowance",
+  "specialHeadConveyanceAllowance",
+  "arrear",
+  "medicalAllowance",
+  "leavePayment",
+  "specialAllowance",
+  "uniformMaintenanceAllowance",
+  "otherAllowance",
+  "leaveEarnings",
+  "bonusEarnings",
+];
+const DEDUCTION_KEYS = [
+  "pfPercentage",
+  "esiDeduction",
+  "haryanaWelfareFund",
+  "labourWelfareFund",
+  "groupTermLifeInsurance",
+  "miscellaneousDeduction",
+  "shoesDeduction",
+  "jacketDeduction",
+  "canteenDeduction",
+  "iCardDeduction",
+  "totalDeductions",
+];
+const ALLOWED_PATCH_KEYS = new Set([
+  "company",
+  "payrollMonth",
+  "payrollYear",
+  "active",
+  "bankAccountNumber",
+  "ifscCode",
+  "bankName",
+  "mobileNumber",
+  ...DAY_KEYS,
+  ...ALLOWANCE_KEYS,
+  ...DEDUCTION_KEYS,
+]);
+
+function safeNum(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isNaN(n) ? fallback : n;
+}
 
 /**
  * GET /api/v1/admin/salary-components/[id]
@@ -34,7 +91,10 @@ export async function GET(request, { params }) {
       String(salaryComponent.company?._id) !== String(auth.user.company)
     ) {
       return NextResponse.json(
-        { message: "Forbidden. You can only view salary components of your company." },
+        {
+          message:
+            "Forbidden. You can only view salary components of your company.",
+        },
         { status: 403 },
       );
     }
@@ -58,12 +118,12 @@ export async function PATCH(request, { params }) {
     if (auth.error) return auth.error;
 
     const currentUser = auth.user;
-    if (
-      currentUser.role === ROLES.HR &&
-      !currentUser.permissions?.edit
-    ) {
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.edit) {
       return NextResponse.json(
-        { message: "Forbidden. You do not have permission to edit salary components." },
+        {
+          message:
+            "Forbidden. You do not have permission to edit salary components.",
+        },
         { status: 403 },
       );
     }
@@ -85,12 +145,37 @@ export async function PATCH(request, { params }) {
       String(doc.company) !== String(currentUser.company)
     ) {
       return NextResponse.json(
-        { message: "Forbidden. You can only edit salary components of your company." },
+        {
+          message:
+            "Forbidden. You can only edit salary components of your company.",
+        },
         { status: 403 },
       );
     }
 
-    Object.assign(doc, body);
+    const updates = {};
+    for (const key of ALLOWED_PATCH_KEYS) {
+      if (!(key in body)) continue;
+      if (
+        DAY_KEYS.includes(key) ||
+        ALLOWANCE_KEYS.includes(key) ||
+        DEDUCTION_KEYS.includes(key)
+      ) {
+        updates[key] = safeNum(body[key]);
+      } else if (
+        key === "company" ||
+        key === "payrollMonth" ||
+        key === "payrollYear" ||
+        ["bankAccountNumber", "ifscCode", "bankName", "mobileNumber"].includes(
+          key,
+        )
+      ) {
+        updates[key] = body[key];
+      } else if (key === "active") {
+        updates[key] = body[key] !== false;
+      }
+    }
+    Object.assign(doc, updates);
     await doc.save();
 
     const salaryComponent = await SalaryComponent.findById(id)
