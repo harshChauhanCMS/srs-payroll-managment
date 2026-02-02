@@ -146,10 +146,6 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
           presentDays: toNum(sc.presentDays),
           payableDays: toNum(sc.payableDays),
           halfDayPresent: toNum(sc.halfDayPresent),
-          bankAccountNumber: sc.bankAccountNumber,
-          ifscCode: sc.ifscCode,
-          bankName: sc.bankName,
-          mobileNumber: sc.mobileNumber,
         };
         const enabledAllowancesNext = [];
         ALLOWANCE_OPTIONS.forEach((o) => {
@@ -178,19 +174,19 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
 
   useEffect(() => {
     if (isEdit && id) fetchForEdit();
-  }, [isEdit, id, fetchForEdit]);
+  }, []);
 
   const recalcDeductions = () => {
     const values = form.getFieldsValue();
     const sum = DEDUCTION_OPTIONS.filter(
-      (o) => o.key !== "totalDeductions",
+      (o) => o.key !== "totalDeductions"
     ).reduce((acc, o) => acc + (Number(values[o.key]) || 0), 0);
     form.setFieldValue("totalDeductions", sum);
   };
 
   const handleValuesChange = (changedValues) => {
     const deductionKeys = DEDUCTION_OPTIONS.map((o) => o.key).filter(
-      (k) => k !== "totalDeductions",
+      (k) => k !== "totalDeductions"
     );
     if (Object.keys(changedValues).some((k) => deductionKeys.includes(k))) {
       setTimeout(recalcDeductions, 0);
@@ -209,10 +205,6 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
       payrollYear: values.payrollYear ?? currentYear,
       payrollYear: values.payrollYear ?? currentYear,
       active: values.active !== false,
-      bankAccountNumber: values.bankAccountNumber,
-      ifscCode: values.ifscCode,
-      bankName: values.bankName,
-      mobileNumber: values.mobileNumber,
     };
     DAY_KEYS.forEach((k) => {
       payload[k] = toNum(values[k]);
@@ -227,10 +219,10 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
       (o) => {
         const raw = enabledDeductionsSet.has(o.key) ? values[o.key] : 0;
         payload[o.key] = toNum(raw);
-      },
+      }
     );
     payload.totalDeductions = DEDUCTION_OPTIONS.filter(
-      (o) => o.key !== "totalDeductions",
+      (o) => o.key !== "totalDeductions"
     ).reduce((acc, o) => acc + (Number(payload[o.key]) || 0), 0);
 
     if (isEdit) {
@@ -306,86 +298,6 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
           active: true,
         }}
       >
-        <Card
-          title="Bank & Contact Details"
-          className="shadow-md"
-          style={{ marginTop: "16px", marginBottom: "16px" }}
-        >
-          <Row gutter={[24, 24]}>
-            <Col xs={24} md={6}>
-              <Form.Item name="bankName" label="Bank Name">
-                <Select
-                  showSearch
-                  placeholder="Select or type Bank Name"
-                  options={[
-                    { value: "HDFC Bank", label: "HDFC Bank" },
-                    { value: "ICICI Bank", label: "ICICI Bank" },
-                    { value: "SBI", label: "SBI" },
-                    { value: "Axis Bank", label: "Axis Bank" },
-                    {
-                      value: "Kotak Mahindra Bank",
-                      label: "Kotak Mahindra Bank",
-                    },
-                    {
-                      value: "Punjab National Bank",
-                      label: "Punjab National Bank",
-                    },
-                    { value: "Bank of Baroda", label: "Bank of Baroda" },
-                    { value: "Canara Bank", label: "Canara Bank" },
-                    {
-                      value: "Union Bank of India",
-                      label: "Union Bank of India",
-                    },
-                    { value: "Yes Bank", label: "Yes Bank" },
-                    { value: "IDFC First Bank", label: "IDFC First Bank" },
-                    { value: "IndusInd Bank", label: "IndusInd Bank" },
-                  ]}
-                  filterOption={(input, option) =>
-                    (option?.label ?? "")
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
-                  allowClear
-                  mode="tags"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item name="bankAccountNumber" label="Account Number">
-                <InputNumber
-                  controls={false}
-                  style={{ width: "100%" }}
-                  placeholder="Account Number"
-                  stringMode
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item name="ifscCode" label="IFSC Code">
-                <Select
-                  showSearch
-                  placeholder="Enter or Select IFSC"
-                  mode="tags"
-                  style={{ width: "100%" }}
-                  options={[]}
-                  notFoundContent={null}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item name="mobileNumber" label="Mobile Number">
-                <InputNumber
-                  controls={false}
-                  style={{ width: "100%" }}
-                  placeholder="Mobile Number"
-                  stringMode
-                  maxLength={10}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
-
         <Card
           title="Company & Period"
           className="shadow-md"
@@ -567,7 +479,7 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                         setEnabledAllowances((prev) =>
                           isChecked
                             ? [...prev, key]
-                            : prev.filter((k) => k !== key),
+                            : prev.filter((k) => k !== key)
                         );
                       }}
                     >
@@ -608,7 +520,7 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                           setEnabledDeductions((prev) =>
                             isChecked
                               ? [...prev, key]
-                              : prev.filter((k) => k !== key),
+                              : prev.filter((k) => k !== key)
                           );
                         }}
                       >
@@ -626,7 +538,7 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                     </Form.Item>
                   </Col>
                 );
-              },
+              }
             )}
             <Col xs={24} md={8}>
               <Form.Item

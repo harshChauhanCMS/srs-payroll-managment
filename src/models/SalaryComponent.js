@@ -37,11 +37,6 @@ const salaryComponentSchema = new mongoose.Schema(
     leaveEarnings: { type: Number, default: 0 },
     bonusEarnings: { type: Number, default: 0 },
 
-    bankAccountNumber: { type: String, default: "" },
-    ifscCode: { type: String, default: "" },
-    bankName: { type: String, default: "" },
-    mobileNumber: { type: String, default: "" },
-
     pfPercentage: { type: Number, default: 0 },
     esiDeduction: { type: Number, default: 0 },
     haryanaWelfareFund: { type: Number, default: 0 },

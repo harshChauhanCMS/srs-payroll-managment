@@ -50,10 +50,6 @@ const ALLOWED_PATCH_KEYS = new Set([
   "payrollMonth",
   "payrollYear",
   "active",
-  "bankAccountNumber",
-  "ifscCode",
-  "bankName",
-  "mobileNumber",
   ...DAY_KEYS,
   ...ALLOWANCE_KEYS,
   ...DEDUCTION_KEYS,
@@ -165,10 +161,7 @@ export async function PATCH(request, { params }) {
       } else if (
         key === "company" ||
         key === "payrollMonth" ||
-        key === "payrollYear" ||
-        ["bankAccountNumber", "ifscCode", "bankName", "mobileNumber"].includes(
-          key,
-        )
+        key === "payrollYear"
       ) {
         updates[key] = body[key];
       } else if (key === "active") {

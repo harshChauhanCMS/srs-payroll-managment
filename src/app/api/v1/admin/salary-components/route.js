@@ -96,7 +96,7 @@ export async function GET(request) {
 
     const [salaryComponents, totalCount] = await Promise.all([
       SalaryComponent.find(query)
-        .populate("company", "name bankName mobileNumber address")
+        .populate("company", "name address")
         .sort({ payrollYear: -1, payrollMonth: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -185,10 +185,6 @@ export async function POST(request) {
       payrollMonth: body.payrollMonth ?? now.getMonth() + 1,
       payrollYear: body.payrollYear ?? now.getFullYear(),
       active: body.active !== false,
-      bankAccountNumber: body.bankAccountNumber || "",
-      ifscCode: body.ifscCode || "",
-      bankName: body.bankName || "",
-      mobileNumber: body.mobileNumber || "",
     };
     DAY_KEYS.forEach((k) => {
       payload[k] = k === "payableDays" ? payableDays : safeNum(body[k]);
