@@ -5,6 +5,7 @@ import {
   EnvironmentOutlined,
   ClusterOutlined,
   UserOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 import { ROLES } from "./roles";
 
@@ -58,6 +59,12 @@ export const getSidebarItems = (role) => {
       name: "Department",
       link: `${basePath}/department`,
       icon: ClusterOutlined,
+      requiresPermission: "view",
+    },
+    {
+      name: "Salary Structure",
+      link: `${basePath}/salary-structure`,
+      icon: DollarOutlined,
       requiresPermission: "view",
     },
     {
