@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import toast from "react-hot-toast";
@@ -35,7 +36,7 @@ export default function EditSkillPage() {
 
   const [skill, setSkill] = useState(null);
 
-  const fetchSkill = useCallback(() => {
+  const fetchSkill = () => {
     getQuery({
       url: `/api/v1/admin/skills/${id}`,
       onSuccess: (response) => {
@@ -59,11 +60,11 @@ export default function EditSkillPage() {
         toast.error("Failed to fetch skill");
       },
     });
-  }, [id, getQuery, form]);
+  };
 
   useEffect(() => {
     if (id) fetchSkill();
-  }, [id, fetchSkill]);
+  }, []);
 
   const handleSubmit = (values) => {
     putQuery({
