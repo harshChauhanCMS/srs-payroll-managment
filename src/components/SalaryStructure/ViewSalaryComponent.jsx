@@ -83,7 +83,7 @@ export default function ViewSalaryComponent({ basePath: basePathProp }) {
 
   useEffect(() => {
     if (id) fetchData();
-  }, [id, fetchData]);
+  }, []);
 
   if (loading) {
     return (

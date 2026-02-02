@@ -40,7 +40,7 @@ export default function SalaryComponentPage() {
             company: item.company?.name || "—",
             payrollPeriod: `${item.payrollMonth}/${item.payrollYear}`,
             address: item.company.address ?? "—",
-            bankName: item.bankName ?? "—",
+            bankName: item.company.bankName ?? "—",
             mobileNumber: item.mobileNumber ?? "—",
             totalDeductions: item.totalDeductions ?? "—",
             amount: item.amount ?? item.roundedAmount ?? "—",

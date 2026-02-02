@@ -9,8 +9,9 @@ import usePostQuery from "@/hooks/postQuery.hook";
 import usePutQuery from "@/hooks/putQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
-import { usePermissions } from "@/hooks/usePermissions";
+
 import { useEffect, useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Modal, Form, Input, Row, Col, Button, Switch, Tag } from "antd";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import {
@@ -57,6 +58,9 @@ export default function CompanyManagement({
           name: item?.name || "N/A",
           gstNumber: item?.gstNumber || "N/A",
           pan: item?.pan || "N/A",
+          bankName: item?.bankName || "N/A",
+          mobileNumber: item?.mobileNumber || "N/A",
+          address: item?.address || "N/A",
           status: item?.active ? "Active" : "Inactive",
           active: item?.active,
           createdAt: moment(item?.createdAt).format("DD-MM-YYYY"),
@@ -123,7 +127,7 @@ export default function CompanyManagement({
       onSuccess: () => {
         toast.success("Company deleted successfully");
         setTableData((prevData) =>
-          prevData.filter((item) => item._id !== companyToDelete._id),
+          prevData.filter((item) => item._id !== companyToDelete._id)
         );
         setDeleteModalVisible(false);
         setCompanyToDelete(null);
@@ -153,6 +157,16 @@ export default function CompanyManagement({
       Header: "PAN",
       accessor: "pan",
       width: 150,
+    },
+    {
+      Header: "Bank Name",
+      accessor: "bankName",
+      width: 180,
+    },
+    {
+      Header: "Mobile",
+      accessor: "mobileNumber",
+      width: 140,
     },
     {
       Header: "Status",

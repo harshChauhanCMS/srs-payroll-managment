@@ -87,7 +87,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { name, gstNumber, pan, address } = body;
+    const { name, gstNumber, pan, address, bankAccountNumber, ifscCode, bankName, mobileNumber } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -112,6 +112,10 @@ export async function POST(request) {
       gstNumber: gstNumber?.trim() || undefined,
       pan: pan?.trim() || undefined,
       address: (address || "").trim(),
+      bankAccountNumber: bankAccountNumber?.trim() || "",
+      ifscCode: ifscCode?.trim() || "",
+      bankName: bankName?.trim() || "",
+      mobileNumber: (mobileNumber || "").trim(),
       active: true,
     });
 

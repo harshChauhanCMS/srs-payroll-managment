@@ -64,7 +64,17 @@ export async function PUT(request, { params }) {
 
     const { id } = await params;
     const body = await request.json();
-    const { name, gstNumber, pan, address, active } = body;
+    const {
+      name,
+      gstNumber,
+      pan,
+      address,
+      bankAccountNumber,
+      ifscCode,
+      bankName,
+      mobileNumber,
+      active,
+    } = body;
 
     if (currentUser.role === ROLES.HR) {
       if (!currentUser.company || String(currentUser.company) !== String(id)) {
@@ -90,6 +100,11 @@ export async function PUT(request, { params }) {
       company.gstNumber = gstNumber.trim() || undefined;
     if (pan !== undefined) company.pan = pan.trim() || undefined;
     if (address !== undefined) company.address = address.trim();
+    if (bankAccountNumber !== undefined)
+      company.bankAccountNumber = bankAccountNumber.trim();
+    if (ifscCode !== undefined) company.ifscCode = ifscCode.trim();
+    if (bankName !== undefined) company.bankName = bankName.trim();
+    if (mobileNumber !== undefined) company.mobileNumber = mobileNumber.trim();
     if (active !== undefined) company.active = active;
 
     await company.save();

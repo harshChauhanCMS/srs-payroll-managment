@@ -93,6 +93,42 @@ const AddCompany = () => {
             </Col>
           </Row>
 
+          <Row gutter={16}>
+            <Col xs={24} md={6}>
+              <Form.Item name="bankAccountNumber" label="Bank Account Number">
+                <Input placeholder="Account number" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="ifscCode" label="IFSC Code">
+                <Input placeholder="IFSC" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="bankName" label="Bank Name">
+                <Input placeholder="Bank name" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="mobileNumber"
+                label="Mobile Number"
+                rules={[
+                  {
+                    pattern: /^\d{10}$/,
+                    message: "Mobile number must be exactly 10 digits",
+                  },
+                ]}
+              >
+                <Input
+                  placeholder="10 digit mobile"
+                  size="large"
+                  maxLength={10}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
             <Button
               type="primary"
