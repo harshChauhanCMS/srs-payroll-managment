@@ -39,10 +39,10 @@ export async function GET(request, { params }) {
 
     // HR can only view users in their company
     if (auth.user.role === ROLES.HR) {
-      if (
-        !auth.user.company ||
-        String(user.company) !== String(auth.user.company)
-      ) {
+      const userCompanyId = user.company?._id || user.company;
+      const authCompanyId = auth.user.company?._id || auth.user.company;
+
+      if (!authCompanyId || String(userCompanyId) !== String(authCompanyId)) {
         return NextResponse.json(
           { message: "Forbidden. You can only view users in your company." },
           { status: 403 },

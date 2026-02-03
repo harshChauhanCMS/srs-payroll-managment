@@ -25,6 +25,7 @@ import {
   ToolOutlined,
   DollarOutlined,
 } from "@ant-design/icons";
+import Image from "next/image";
 
 export default function ViewUser({ basePath = "/admin" }) {
   const params = useParams();
@@ -730,18 +731,38 @@ export default function ViewUser({ basePath = "/admin" }) {
             </span>
           }
           bordered
+          layout="vertical"
           column={1}
         >
           <Descriptions.Item label="Aadhar Card Photo">
             {user.aadharCardPhoto ? (
-              <a
-                href={user.aadharCardPhoto}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                View Document
-              </a>
+              <div className="relative w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                {user.aadharCardPhoto.toLowerCase().endsWith(".pdf") ? (
+                  <div className="flex flex-col items-center">
+                    <IdcardOutlined
+                      style={{ fontSize: "48px", color: "#1890ff" }}
+                    />
+                    <p className="mt-2 text-gray-600 font-medium">
+                      PDF Document Uploaded
+                    </p>
+                    <a
+                      href={user.aadharCardPhoto}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 text-blue-500 hover:underline z-10"
+                    >
+                      View PDF
+                    </a>
+                  </div>
+                ) : (
+                  <Image
+                    src={user.aadharCardPhoto}
+                    alt="Aadhar Card"
+                    fill
+                    className="object-contain"
+                  />
+                )}
+              </div>
             ) : (
               "N/A"
             )}

@@ -20,7 +20,9 @@ import {
   ToolOutlined,
   UploadOutlined,
   LoadingOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
+import Image from "next/image";
 import {
   Form,
   Input,
@@ -41,6 +43,7 @@ import {
 import { useEffect, useState, useCallback } from "react";
 
 const { Option } = Select;
+const { Dragger } = Upload;
 
 export default function AddUser({ basePath = "/admin" }) {
   const router = useRouter();
@@ -680,37 +683,81 @@ export default function AddUser({ basePath = "/admin" }) {
           </Typography.Title>
           <Row gutter={16}>
             <Col span={24}>
-              <Form.Item label="Aadhar Card Photo">
-                <div className="flex items-center gap-4">
-                  <Upload
+              <Form.Item
+                label="Aadhar Card Photo"
+                extra="Supports images and PDFs. Max 10MB."
+              >
+                <div className="w-full">
+                  <Dragger
+                    name="file"
+                    multiple={false}
                     beforeUpload={handleUpload}
                     showUploadList={false}
                     disabled={imageUploading}
                     accept="image/*,.pdf"
+                    style={{
+                      padding: "20px",
+                      background: "#fbfbfb",
+                      borderColor: "#d9d9d9",
+                    }}
                   >
-                    <Button
-                      icon={
-                        imageUploading ? (
-                          <LoadingOutlined />
+                    {aadharCardPhotoUrl ? (
+                      <div className="relative w-full h-[300px] flex flex-col items-center justify-center">
+                        {aadharCardPhotoUrl.toLowerCase().endsWith(".pdf") ? (
+                          <div className="flex flex-col items-center">
+                            <IdcardOutlined
+                              style={{ fontSize: "48px", color: "#1890ff" }}
+                            />
+                            <p className="mt-2 text-gray-600 font-medium">
+                              PDF Document Uploaded
+                            </p>
+                            <a
+                              href={aadharCardPhotoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 text-blue-500 hover:underline z-10"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Preview PDF
+                            </a>
+                          </div>
                         ) : (
-                          <UploadOutlined />
-                        )
-                      }
-                      size="large"
-                    >
-                      {imageUploading ? "Uploading..." : "Upload Document"}
-                    </Button>
-                  </Upload>
-                  {aadharCardPhotoUrl && (
-                    <a
-                      href={aadharCardPhotoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      View Uploaded Document
-                    </a>
-                  )}
+                          <div className="relative w-full h-full">
+                            <Image
+                              src={aadharCardPhotoUrl}
+                              alt="Aadhar Card Preview"
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              style={{ objectFit: "contain" }}
+                            />
+                          </div>
+                        )}
+                        <p className="ant-upload-text mt-4 text-gray-500">
+                          {imageUploading
+                            ? "Uploading..."
+                            : "Click or drag to replace"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-8">
+                        <p className="ant-upload-drag-icon">
+                          {imageUploading ? (
+                            <LoadingOutlined />
+                          ) : (
+                            <InboxOutlined />
+                          )}
+                        </p>
+                        <p className="ant-upload-text">
+                          {imageUploading
+                            ? "Uploading..."
+                            : "Click or drag file to this area to upload"}
+                        </p>
+                        <p className="ant-upload-hint">
+                          Support for a single image or PDF upload.
+                        </p>
+                      </div>
+                    )}
+                  </Dragger>
                 </div>
               </Form.Item>
             </Col>

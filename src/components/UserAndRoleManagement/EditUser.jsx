@@ -21,7 +21,11 @@ import {
   StarOutlined,
   ToolOutlined,
   DollarOutlined,
+  InboxOutlined,
+  UploadOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
+import Image from "next/image";
 import {
   Form,
   Input,
@@ -34,9 +38,12 @@ import {
   Col,
   Typography,
   Switch,
+  Upload,
+  message,
 } from "antd";
 
 const { Option } = Select;
+const { Dragger } = Upload;
 
 export default function EditUser({ basePath = "/admin" }) {
   const router = useRouter();
@@ -66,6 +73,10 @@ export default function EditUser({ basePath = "/admin" }) {
   const [hasSite, setHasSite] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
 
+  // Upload State
+  const [imageUploading, setImageUploading] = useState(false);
+  const [aadharCardPhotoUrl, setAadharCardPhotoUrl] = useState("");
+
   useEffect(() => {
     getCompanies({
       url: "/api/v1/admin/companies?active=true&limit=100",
@@ -86,7 +97,7 @@ export default function EditUser({ basePath = "/admin" }) {
         onFail: (err) => console.error("Failed to fetch departments", err),
       });
     },
-    [getDepartments]
+    [getDepartments],
   );
 
   useEffect(() => {
@@ -117,7 +128,7 @@ export default function EditUser({ basePath = "/admin" }) {
         onFail: (err) => console.error("Failed to fetch sites", err),
       });
     },
-    [getSites]
+    [getSites],
   );
 
   const fetchDesignations = useCallback(
@@ -132,7 +143,7 @@ export default function EditUser({ basePath = "/admin" }) {
         onFail: (err) => console.error("Failed to fetch designations", err),
       });
     },
-    [getDesignations]
+    [getDesignations],
   );
 
   const fetchUser = useCallback(() => {
@@ -237,6 +248,31 @@ export default function EditUser({ basePath = "/admin" }) {
     }
   };
 
+  const handleUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setImageUploading(true);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Upload failed");
+
+      setAadharCardPhotoUrl(data.url);
+      message.success("File uploaded successfully");
+    } catch (err) {
+      console.error(err);
+      message.error(err.message || "Upload failed");
+    } finally {
+      setImageUploading(false);
+    }
+    // Prevent default upload behavior
+    return false;
+  };
+
   const handleSubmit = (values) => {
     const payload = {
       name: values.name,
@@ -254,6 +290,8 @@ export default function EditUser({ basePath = "/admin" }) {
       esiCode: values.esiCode,
       uan: values.uan,
       pfNumber: values.pfNumber,
+      // Documents
+      aadharCardPhoto: aadharCardPhotoUrl,
       pfPercentage: values.pfPercentage ?? null,
       esiPercentage: values.esiPercentage ?? null,
       active: values.active,
@@ -785,6 +823,90 @@ export default function EditUser({ basePath = "/admin" }) {
             <Col xs={24} md={8}>
               <Form.Item name="pfNumber" label="PF Number">
                 <Input placeholder="PF Number" size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Documents
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                label="Aadhar Card Photo"
+                extra="Supports images and PDFs. Max 10MB."
+              >
+                <div className="w-full">
+                  <Dragger
+                    name="file"
+                    multiple={false}
+                    beforeUpload={handleUpload}
+                    showUploadList={false}
+                    disabled={imageUploading}
+                    accept="image/*,.pdf"
+                    style={{
+                      padding: "20px",
+                      background: "#fbfbfb",
+                      borderColor: "#d9d9d9",
+                    }}
+                  >
+                    {aadharCardPhotoUrl ? (
+                      <div className="relative w-full h-[300px] flex flex-col items-center justify-center">
+                        {aadharCardPhotoUrl.toLowerCase().endsWith(".pdf") ? (
+                          <div className="flex flex-col items-center">
+                            <IdcardOutlined
+                              style={{ fontSize: "48px", color: "#1890ff" }}
+                            />
+                            <p className="mt-2 text-gray-600 font-medium">
+                              PDF Document Uploaded
+                            </p>
+                            <a
+                              href={aadharCardPhotoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 text-blue-500 hover:underline z-10"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Preview PDF
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="relative w-full h-full">
+                            <Image
+                              src={aadharCardPhotoUrl}
+                              alt="Aadhar Card Preview"
+                              fill
+                              style={{ objectFit: "contain" }}
+                            />
+                          </div>
+                        )}
+                        <p className="ant-upload-text mt-4 text-gray-500">
+                          {imageUploading
+                            ? "Uploading..."
+                            : "Click or drag to replace"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-8">
+                        <p className="ant-upload-drag-icon">
+                          {imageUploading ? (
+                            <LoadingOutlined />
+                          ) : (
+                            <InboxOutlined />
+                          )}
+                        </p>
+                        <p className="ant-upload-text">
+                          {imageUploading
+                            ? "Uploading..."
+                            : "Click or drag file to this area to upload"}
+                        </p>
+                        <p className="ant-upload-hint">
+                          Support for a single image or PDF upload.
+                        </p>
+                      </div>
+                    )}
+                  </Dragger>
+                </div>
               </Form.Item>
             </Col>
           </Row>
