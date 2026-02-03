@@ -63,6 +63,7 @@ export default function EditUser({ basePath = "/admin" }) {
   const [grades, setGrades] = useState([]);
   const [skills, setSkills] = useState([]);
   const [hasCompany, setHasCompany] = useState(false);
+  const [hasSite, setHasSite] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
 
   useEffect(() => {
@@ -73,13 +74,20 @@ export default function EditUser({ basePath = "/admin" }) {
     });
   }, []);
 
-  useEffect(() => {
-    getDepartments({
-      url: "/api/v1/admin/departments?active=true&limit=100",
-      onSuccess: (res) => setDepartments(res.departments || []),
-      onFail: (err) => console.error("Failed to fetch departments", err),
-    });
-  }, []);
+  const fetchDepartments = useCallback(
+    (siteId) => {
+      if (!siteId) {
+        setDepartments([]);
+        return;
+      }
+      getDepartments({
+        url: `/api/v1/admin/departments?site=${siteId}&active=true&limit=100`,
+        onSuccess: (res) => setDepartments(res.departments || []),
+        onFail: (err) => console.error("Failed to fetch departments", err),
+      });
+    },
+    [getDepartments]
+  );
 
   useEffect(() => {
     getGrades({
@@ -143,6 +151,7 @@ export default function EditUser({ basePath = "/admin" }) {
           const skillIds = userData.skills?.map((s) => s._id || s) || [];
 
           setHasCompany(!!companyId);
+          setHasSite(!!siteId);
           setSelectedDepartment(departmentId);
 
           form.setFieldsValue({
@@ -173,6 +182,7 @@ export default function EditUser({ basePath = "/admin" }) {
           });
 
           if (companyId) fetchSites(companyId);
+          if (siteId) fetchDepartments(siteId);
           if (departmentId) fetchDesignations(departmentId);
         }
       },
@@ -181,7 +191,7 @@ export default function EditUser({ basePath = "/admin" }) {
         toast.error("Failed to fetch user details");
       },
     });
-  }, [id, getQuery, form, fetchSites, fetchDesignations]);
+  }, [id, getQuery, form, fetchSites, fetchDepartments, fetchDesignations]);
 
   useEffect(() => {
     if (id) fetchUser();
@@ -189,12 +199,32 @@ export default function EditUser({ basePath = "/admin" }) {
 
   const handleCompanyChange = (companyId) => {
     form.setFieldValue("site", undefined);
+    form.setFieldValue("department", undefined);
+    form.setFieldValue("designation", undefined);
     setSites([]);
+    setDepartments([]);
+    setDesignations([]);
+    setHasSite(false);
+    setSelectedDepartment(null);
     if (companyId) {
       setHasCompany(true);
       fetchSites(companyId);
     } else {
       setHasCompany(false);
+    }
+  };
+
+  const handleSiteChange = (siteId) => {
+    form.setFieldValue("department", undefined);
+    form.setFieldValue("designation", undefined);
+    setDepartments([]);
+    setDesignations([]);
+    setSelectedDepartment(null);
+    if (siteId) {
+      setHasSite(true);
+      fetchDepartments(siteId);
+    } else {
+      setHasSite(false);
     }
   };
 
@@ -428,6 +458,7 @@ export default function EditUser({ basePath = "/admin" }) {
                   showSearch
                   optionFilterProp="children"
                   disabled={!hasCompany}
+                  onChange={handleSiteChange}
                   allowClear
                 >
                   {sites.map((s) => (
@@ -439,14 +470,21 @@ export default function EditUser({ basePath = "/admin" }) {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="department" label="Department">
+              <Form.Item
+                name="department"
+                label="Department"
+                extra={!hasSite ? "Select site first" : ""}
+              >
                 <Select
-                  placeholder="Select department"
+                  placeholder={
+                    hasSite ? "Select department" : "Select site first"
+                  }
                   suffixIcon={<ClusterOutlined className="text-gray-400" />}
                   size="large"
                   loading={departmentsLoading}
                   showSearch
                   optionFilterProp="children"
+                  disabled={!hasSite}
                   onChange={handleDepartmentChange}
                   allowClear
                 >

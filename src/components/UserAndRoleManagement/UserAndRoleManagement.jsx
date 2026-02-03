@@ -8,12 +8,12 @@ import useGetQuery from "@/hooks/getQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import usePutQuery from "@/hooks/putQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
-import { usePermissions } from "@/hooks/usePermissions";
 
-import { Modal, Tag, Switch } from "antd";
-import { useEffect, useState } from "react";
-import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
+import { useEffect, useState } from "react";
+import { Modal, Tag, Switch, Button } from "antd";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
 export default function UserAndRoleManagement({
   basePath = "/admin",
@@ -73,8 +73,8 @@ export default function UserAndRoleManagement({
             status: item?.softDelete
               ? "Deleted"
               : item?.active
-              ? "Active"
-              : "Inactive",
+                ? "Active"
+                : "Inactive",
             active: item?.active,
             softDelete: item?.softDelete,
             company: item?.company?.name || "Not Assigned",
@@ -111,7 +111,7 @@ export default function UserAndRoleManagement({
       putData: { active: !currentStatus },
       onSuccess: () => {
         toast.success(
-          `User ${!currentStatus ? "activated" : "deactivated"} successfully`
+          `User ${!currentStatus ? "activated" : "deactivated"} successfully`,
         );
         fetchData();
         setTogglingUserId(null);
@@ -246,12 +246,31 @@ export default function UserAndRoleManagement({
 
   return (
     <>
-      <Title
-        title={"User & Role Management"}
-        showButton={canCreate()}
-        buttonText="Add User"
-        destination={`${basePath}/user-and-role-management/add`}
-      />
+      <div className="flex justify-between items-center">
+        <Title title={"User & Role Management"} showButton={canCreate()} />
+
+        <div className="flex gap-2">
+          <Button
+            className="white-button"
+            onClick={() => {
+              router.push(`${basePath}/user-and-role-management/bulk-upload`);
+            }}
+            style={{ borderRadius: "8px" }}
+          >
+            Bulk Upload
+          </Button>
+
+          <Button
+            className="simple-button"
+            onClick={() => {
+              router.push(`${basePath}/user-and-role-management/add`);
+            }}
+            style={{ borderRadius: "8px" }}
+          >
+            Add User
+          </Button>
+        </div>
+      </div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -274,7 +293,7 @@ export default function UserAndRoleManagement({
               canEdit()
                 ? (row) =>
                     router.push(
-                      `${basePath}/user-and-role-management/edit/${row._id}`
+                      `${basePath}/user-and-role-management/edit/${row._id}`,
                     )
                 : undefined
             }
