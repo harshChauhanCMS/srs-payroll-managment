@@ -43,6 +43,22 @@ export async function POST(request) {
       esiCode = "",
       uan = "",
       pfNumber = "",
+      // New fields
+      employeeCode,
+      fatherName,
+      gender,
+      dob,
+      doj,
+      contractEndDate,
+      mobile,
+      bankName,
+      accountNumber,
+      ifscCode,
+      pfApplicable,
+      esiApplicable,
+      category,
+      wageType,
+      aadharCardPhoto,
     } = body;
 
     // Validation
@@ -106,6 +122,19 @@ export async function POST(request) {
       );
     }
 
+    // Check if employee code exists
+    if (employeeCode) {
+      const existingCode = await User.findOne({
+        employeeCode: employeeCode.trim(),
+      });
+      if (existingCode) {
+        return NextResponse.json(
+          { message: "User with this employee code already exists" },
+          { status: 409 },
+        );
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -135,6 +164,27 @@ export async function POST(request) {
       active: true,
       createdBy,
       company: body.company || null,
+      site: body.site,
+      department: body.department || null,
+      designation: body.designation || null,
+      grade: body.grade || null,
+      skills: body.skills || [],
+      // New fields assignment
+      employeeCode: employeeCode ? employeeCode.trim() : undefined,
+      fatherName: fatherName ? fatherName.trim() : undefined,
+      gender,
+      dob,
+      doj,
+      contractEndDate,
+      mobile: mobile ? mobile.trim() : undefined,
+      bankName: bankName ? bankName.trim() : undefined,
+      accountNumber: accountNumber ? accountNumber.trim() : undefined,
+      ifscCode: ifscCode ? ifscCode.trim() : undefined,
+      pfApplicable: pfApplicable || false,
+      esiApplicable: esiApplicable || false,
+      category,
+      wageType,
+      aadharCardPhoto: aadharCardPhoto ? aadharCardPhoto.trim() : undefined,
     });
 
     // Send welcome email with credentials
@@ -234,7 +284,10 @@ export async function GET(request) {
         .populate("department", "name code")
         .populate("designation", "name code")
         .populate("grade", "name code")
-        .populate("skills", "name category basic houseRentAllowance otherAllowance leaveEarnings bonusEarnings arrear")
+        .populate(
+          "skills",
+          "name category basic houseRentAllowance otherAllowance leaveEarnings bonusEarnings arrear",
+        )
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

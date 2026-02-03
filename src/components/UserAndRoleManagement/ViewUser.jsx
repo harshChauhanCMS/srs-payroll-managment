@@ -119,31 +119,16 @@ export default function ViewUser({ basePath = "/admin" }) {
           bordered
           column={{ xs: 1, sm: 2, md: 3 }}
         >
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <UserOutlined /> Name
-              </span>
-            }
-          >
+          <Descriptions.Item label="Name">
             {user.name || "N/A"}
           </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <MailOutlined /> Email
-              </span>
-            }
-          >
+          <Descriptions.Item label="Email">
             {user.email || "N/A"}
           </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <SafetyOutlined /> Role
-              </span>
-            }
-          >
+          <Descriptions.Item label="Mobile">
+            {user.mobile || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Role">
             <Tag color={getRoleColor(user.role)}>
               {user.role?.toUpperCase()}
             </Tag>
@@ -154,38 +139,76 @@ export default function ViewUser({ basePath = "/admin" }) {
                 user.softDelete
                   ? "default"
                   : user.active
-                  ? "success"
-                  : "default"
+                    ? "success"
+                    : "default"
               }
             >
               {user.softDelete
                 ? "Deleted"
                 : user.active
-                ? "Active"
-                : "Inactive"}
+                  ? "Active"
+                  : "Inactive"}
             </Tag>
           </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <CalendarOutlined /> Created At
-              </span>
-            }
-          >
+          <Descriptions.Item label="Created At">
             {user.createdAt
               ? moment(user.createdAt).format("DD-MM-YYYY hh:mm A")
               : "N/A"}
           </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <CalendarOutlined /> Updated At
-              </span>
-            }
-          >
-            {user.updatedAt
-              ? moment(user.updatedAt).format("DD-MM-YYYY hh:mm A")
+        </Descriptions>
+
+        <Divider />
+
+        <Descriptions
+          title={
+            <span className="flex items-center gap-2">
+              <IdcardOutlined /> Professional Details
+            </span>
+          }
+          bordered
+          column={{ xs: 1, sm: 2, md: 3 }}
+        >
+          <Descriptions.Item label="Employee Code">
+            {user.employeeCode || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Date of Joining">
+            {user.doj ? moment(user.doj).format("DD-MM-YYYY") : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Contract End Date">
+            {user.contractEndDate
+              ? moment(user.contractEndDate).format("DD-MM-YYYY")
               : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Category">
+            {user.category ? user.category.toUpperCase() : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Wage Type">
+            {user.wageType ? user.wageType.toUpperCase() : "N/A"}
+          </Descriptions.Item>
+        </Descriptions>
+
+        <Divider />
+
+        <Descriptions
+          title={
+            <span className="flex items-center gap-2">
+              <UserOutlined /> Personal Details
+            </span>
+          }
+          bordered
+          column={{ xs: 1, sm: 2, md: 3 }}
+        >
+          <Descriptions.Item label="Father's Name">
+            {user.fatherName || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Gender">
+            {user.gender || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Date of Birth">
+            {user.dob ? moment(user.dob).format("DD-MM-YYYY") : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Address" span={3}>
+            {user.address || "N/A"}
           </Descriptions.Item>
         </Descriptions>
 
@@ -490,7 +513,7 @@ export default function ViewUser({ basePath = "/admin" }) {
                 arrear: acc.arrear + (Number(s.arrear) || 0),
               };
             },
-            { basic: 0, hra: 0, other: 0, leave: 0, bonus: 0, arrear: 0 }
+            { basic: 0, hra: 0, other: 0, leave: 0, bonus: 0, arrear: 0 },
           );
           const grossEarnings =
             skillTotals.basic +
@@ -506,13 +529,13 @@ export default function ViewUser({ basePath = "/admin" }) {
           const pfRate = pfFromUser
             ? user.pfPercentage / 100
             : salaryComponent?.pfPercentage != null
-            ? salaryComponent.pfPercentage / 100
-            : 0.12;
+              ? salaryComponent.pfPercentage / 100
+              : 0.12;
           const esiRate = esiFromUser
             ? user.esiPercentage / 100
             : salaryComponent?.esiDeduction != null
-            ? salaryComponent.esiDeduction / 100
-            : 0.0075;
+              ? salaryComponent.esiDeduction / 100
+              : 0.0075;
 
           const pfAmount = calcPfDeduction(skillTotals.basic, pfRate);
           const esiAmount = calcEsiDeduction(grossEarnings, esiRate);
@@ -535,7 +558,7 @@ export default function ViewUser({ basePath = "/admin" }) {
             : [];
           const otherDeductionsTotal = otherDeductionItems.reduce(
             (sum, d) => sum + (Number(salaryComponent[d.key]) || 0),
-            0
+            0,
           );
 
           const totalDeductions = pfAmount + esiAmount + otherDeductionsTotal;
@@ -544,13 +567,13 @@ export default function ViewUser({ basePath = "/admin" }) {
           const pfLabel = pfFromUser
             ? "from user"
             : salaryComponent?.pfPercentage != null
-            ? "from salary structure"
-            : "default";
+              ? "from salary structure"
+              : "default";
           const esiLabel = esiFromUser
             ? "from user"
             : salaryComponent?.esiDeduction != null
-            ? "from salary structure"
-            : "default";
+              ? "from salary structure"
+              : "default";
 
           return (
             <Descriptions
@@ -649,59 +672,79 @@ export default function ViewUser({ basePath = "/admin" }) {
           bordered
           column={{ xs: 1, sm: 2, md: 3 }}
         >
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <IdcardOutlined /> PAN Number
-              </span>
-            }
-          >
+          <Descriptions.Item label="PAN Number">
             {user.pan || "N/A"}
           </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <IdcardOutlined /> Aadhar Number
-              </span>
-            }
-          >
+          <Descriptions.Item label="Aadhar Number">
             {user.aadhar || "N/A"}
           </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <HomeOutlined /> Address
-              </span>
-            }
-          >
-            {user.address || "N/A"}
-          </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <IdcardOutlined /> ESI Code
-              </span>
-            }
-          >
-            {user.esiCode || "N/A"}
-          </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <IdcardOutlined /> UAN
-              </span>
-            }
-          >
+          <Descriptions.Item label="UAN Number">
             {user.uan || "N/A"}
           </Descriptions.Item>
-          <Descriptions.Item
-            label={
-              <span className="flex items-center gap-1">
-                <IdcardOutlined /> PF Number
-              </span>
-            }
-          >
+          <Descriptions.Item label="PF Number">
             {user.pfNumber || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="ESI Code">
+            {user.esiCode || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="PF Applicable">
+            <Tag color={user.pfApplicable ? "green" : "red"}>
+              {user.pfApplicable ? "Yes" : "No"}
+            </Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="ESI Applicable">
+            <Tag color={user.esiApplicable ? "green" : "red"}>
+              {user.esiApplicable ? "Yes" : "No"}
+            </Tag>
+          </Descriptions.Item>
+        </Descriptions>
+
+        <Divider />
+
+        <Descriptions
+          title={
+            <span className="flex items-center gap-2">
+              <BankOutlined /> Banking Details
+            </span>
+          }
+          bordered
+          column={{ xs: 1, sm: 2, md: 3 }}
+        >
+          <Descriptions.Item label="Bank Name">
+            {user.bankName || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Account Number">
+            {user.accountNumber || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="IFSC Code">
+            {user.ifscCode || "N/A"}
+          </Descriptions.Item>
+        </Descriptions>
+
+        <Divider />
+
+        <Descriptions
+          title={
+            <span className="flex items-center gap-2">
+              <IdcardOutlined /> Documents
+            </span>
+          }
+          bordered
+          column={1}
+        >
+          <Descriptions.Item label="Aadhar Card Photo">
+            {user.aadharCardPhoto ? (
+              <a
+                href={user.aadharCardPhoto}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                View Document
+              </a>
+            ) : (
+              "N/A"
+            )}
           </Descriptions.Item>
         </Descriptions>
       </Card>

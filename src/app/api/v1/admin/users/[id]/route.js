@@ -26,7 +26,10 @@ export async function GET(request, { params }) {
       .populate("department", "name code")
       .populate("designation", "name code level")
       .populate("grade", "name code minSalary maxSalary")
-      .populate("skills", "name category basic houseRentAllowance otherAllowance leaveEarnings bonusEarnings arrear")
+      .populate(
+        "skills",
+        "name category basic houseRentAllowance otherAllowance leaveEarnings bonusEarnings arrear",
+      )
       .populate("createdBy", "name email")
       .lean();
 
@@ -110,6 +113,22 @@ export async function PATCH(request, { params }) {
       skills,
       pfPercentage,
       esiPercentage,
+      // New fields
+      employeeCode,
+      fatherName,
+      gender,
+      dob,
+      doj,
+      contractEndDate,
+      mobile,
+      bankName,
+      accountNumber,
+      ifscCode,
+      pfApplicable,
+      esiApplicable,
+      category,
+      wageType,
+      aadharCardPhoto,
     } = body;
 
     await connectDB();
@@ -160,6 +179,19 @@ export async function PATCH(request, { params }) {
       }
     }
 
+    // Check if employee code is unique (if changing)
+    if (employeeCode && employeeCode.trim() !== user.employeeCode) {
+      const existingCode = await User.findOne({
+        employeeCode: employeeCode.trim(),
+      });
+      if (existingCode) {
+        return NextResponse.json(
+          { message: "User with this employee code already exists" },
+          { status: 409 },
+        );
+      }
+    }
+
     // Update fields if provided
     if (name !== undefined) user.name = name.trim();
     if (email !== undefined) user.email = email.trim().toLowerCase();
@@ -179,10 +211,33 @@ export async function PATCH(request, { params }) {
     if (skills !== undefined) user.skills = skills;
     if (pfPercentage !== undefined)
       user.pfPercentage =
-        pfPercentage === null || pfPercentage === "" ? null : Number(pfPercentage);
+        pfPercentage === null || pfPercentage === ""
+          ? null
+          : Number(pfPercentage);
     if (esiPercentage !== undefined)
       user.esiPercentage =
-        esiPercentage === null || esiPercentage === "" ? null : Number(esiPercentage);
+        esiPercentage === null || esiPercentage === ""
+          ? null
+          : Number(esiPercentage);
+
+    // Update new fields
+    if (employeeCode !== undefined)
+      user.employeeCode = employeeCode ? employeeCode.trim() : undefined;
+    if (fatherName !== undefined) user.fatherName = fatherName.trim();
+    if (gender !== undefined) user.gender = gender;
+    if (dob !== undefined) user.dob = dob;
+    if (doj !== undefined) user.doj = doj;
+    if (contractEndDate !== undefined) user.contractEndDate = contractEndDate;
+    if (mobile !== undefined) user.mobile = mobile.trim();
+    if (bankName !== undefined) user.bankName = bankName.trim();
+    if (accountNumber !== undefined) user.accountNumber = accountNumber.trim();
+    if (ifscCode !== undefined) user.ifscCode = ifscCode.trim();
+    if (pfApplicable !== undefined) user.pfApplicable = pfApplicable;
+    if (esiApplicable !== undefined) user.esiApplicable = esiApplicable;
+    if (category !== undefined) user.category = category;
+    if (wageType !== undefined) user.wageType = wageType;
+    if (aadharCardPhoto !== undefined)
+      user.aadharCardPhoto = aadharCardPhoto.trim();
 
     // Update password if provided
     if (password) {

@@ -5,6 +5,7 @@ import Title from "@/components/Title/Title";
 import useGetQuery from "@/hooks/getQuery.hook";
 import usePostQuery from "@/hooks/postQuery.hook";
 import BackHeader from "@/components/BackHeader/BackHeader";
+import moment from "moment";
 
 import { useRouter } from "next/navigation";
 import {
@@ -13,6 +14,12 @@ import {
   LockOutlined,
   BankOutlined,
   EnvironmentOutlined,
+  ClusterOutlined,
+  IdcardOutlined,
+  StarOutlined,
+  ToolOutlined,
+  UploadOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import {
   Form,
@@ -24,9 +31,14 @@ import {
   Row,
   Col,
   Typography,
+  Switch,
+  DatePicker,
+  Radio,
+  Upload,
+  message,
 } from "antd";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const { Option } = Select;
 
@@ -36,10 +48,27 @@ export default function AddUser({ basePath = "/admin" }) {
   const { postQuery, loading } = usePostQuery();
   const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
   const { getQuery: getSites, loading: sitesLoading } = useGetQuery();
+  const { getQuery: getDepartments, loading: departmentsLoading } =
+    useGetQuery();
+  const { getQuery: getDesignations, loading: designationsLoading } =
+    useGetQuery();
+  const { getQuery: getGrades, loading: gradesLoading } = useGetQuery();
+  const { getQuery: getSkills, loading: skillsLoading } = useGetQuery();
 
   const [companies, setCompanies] = useState([]);
   const [sites, setSites] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [skills, setSkills] = useState([]);
+
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedSite, setSelectedSite] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+
+  // Upload State
+  const [imageUploading, setImageUploading] = useState(false);
+  const [aadharCardPhotoUrl, setAadharCardPhotoUrl] = useState("");
 
   useEffect(() => {
     getCompanies({
@@ -53,18 +82,127 @@ export default function AddUser({ basePath = "/admin" }) {
     });
   }, []);
 
-  useEffect(() => {
-    if (selectedCompany) {
+  const fetchSites = useCallback(
+    (companyId) => {
+      if (!companyId) {
+        setSites([]);
+        return;
+      }
       getSites({
-        url: `/api/v1/admin/sites?company=${selectedCompany}&active=true&limit=100`,
+        url: `/api/v1/admin/sites?company=${companyId}&active=true&limit=100`,
         onSuccess: (res) => setSites(res.sites || []),
         onFail: (err) => console.error("Failed to fetch sites", err),
       });
-    } else {
-      setSites([]);
+    },
+    [getSites],
+  );
+
+  const fetchDepartments = useCallback(
+    (siteId) => {
+      if (!siteId) {
+        setDepartments([]);
+        return;
+      }
+      getDepartments({
+        url: `/api/v1/admin/departments?site=${siteId}&active=true&limit=100`,
+        onSuccess: (res) => setDepartments(res.departments || []),
+        onFail: (err) => console.error("Failed to fetch departments", err),
+      });
+    },
+    [getDepartments],
+  );
+
+  const fetchDesignations = useCallback(
+    (departmentId) => {
+      if (!departmentId) {
+        setDesignations([]);
+        return;
+      }
+      getDesignations({
+        url: `/api/v1/admin/designations?department=${departmentId}&active=true&limit=100`,
+        onSuccess: (res) => setDesignations(res.designations || []),
+        onFail: (err) => console.error("Failed to fetch designations", err),
+      });
+    },
+    [getDesignations],
+  );
+
+  useEffect(() => {
+    getGrades({
+      url: "/api/v1/admin/grades?active=true&limit=100",
+      onSuccess: (res) => setGrades(res.grades || []),
+      onFail: (err) => console.error("Failed to fetch grades", err),
+    });
+  }, []);
+
+  useEffect(() => {
+    getSkills({
+      url: "/api/v1/admin/skills?active=true&limit=100",
+      onSuccess: (res) => setSkills(res.skills || []),
+      onFail: (err) => console.error("Failed to fetch skills", err),
+    });
+  }, []);
+
+  const handleCompanyChange = (companyId) => {
+    form.setFieldValue("site", undefined);
+    form.setFieldValue("department", undefined);
+    form.setFieldValue("designation", undefined);
+    setSites([]);
+    setDepartments([]);
+    setDesignations([]);
+    setSelectedCompany(companyId);
+    setSelectedSite(null);
+    setSelectedDepartment(null);
+    if (companyId) {
+      fetchSites(companyId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCompany]);
+  };
+
+  const handleSiteChange = (siteId) => {
+    form.setFieldValue("department", undefined);
+    form.setFieldValue("designation", undefined);
+    setDepartments([]);
+    setDesignations([]);
+    setSelectedSite(siteId);
+    setSelectedDepartment(null);
+    if (siteId) {
+      fetchDepartments(siteId);
+    }
+  };
+
+  const handleDepartmentChange = (departmentId) => {
+    form.setFieldValue("designation", undefined);
+    setDesignations([]);
+    setSelectedDepartment(departmentId);
+    if (departmentId) {
+      fetchDesignations(departmentId);
+    }
+  };
+
+  const handleUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setImageUploading(true);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Upload failed");
+
+      setAadharCardPhotoUrl(data.url);
+      message.success("File uploaded successfully");
+    } catch (err) {
+      console.error(err);
+      message.error(err.message || "Upload failed");
+    } finally {
+      setImageUploading(false);
+    }
+    // Prevent default upload behavior
+    return false;
+  };
 
   const handleSubmit = (values) => {
     const payload = {
@@ -75,6 +213,16 @@ export default function AddUser({ basePath = "/admin" }) {
         delete: values.permissions?.delete || false,
         create: values.permissions?.create || false,
       },
+      // New Fields
+      dob: values.dob ? values.dob.toISOString() : null,
+      doj: values.doj ? values.doj.toISOString() : null,
+      contractEndDate: values.contractEndDate
+        ? values.contractEndDate.toISOString()
+        : null,
+      aadharCardPhoto: aadharCardPhotoUrl,
+      // Ensure defaults for switches if undefined
+      pfApplicable: values.pfApplicable || false,
+      esiApplicable: values.esiApplicable || false,
     };
 
     postQuery({
@@ -85,7 +233,7 @@ export default function AddUser({ basePath = "/admin" }) {
         toast.success(
           `User created successfully${
             emailSent ? " and credentials sent via email" : ""
-          }`
+          }`,
         );
         router.push(`${basePath}/user-and-role-management`);
       },
@@ -113,10 +261,17 @@ export default function AddUser({ basePath = "/admin" }) {
               delete: false,
               create: false,
             },
+            category: "payroll",
+            wageType: "monthly",
+            pfApplicable: false,
+            esiApplicable: false,
           }}
         >
+          <Typography.Title level={5} className="mb-4!">
+            Basic Information
+          </Typography.Title>
           <Row gutter={16}>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="name"
                 label="Full Name"
@@ -129,7 +284,7 @@ export default function AddUser({ basePath = "/admin" }) {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="email"
                 label="Email"
@@ -145,10 +300,24 @@ export default function AddUser({ basePath = "/admin" }) {
                 />
               </Form.Item>
             </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="mobile"
+                label="Mobile Number"
+                rules={[
+                  {
+                    pattern: /^\d{10}$/,
+                    message: "Mobile number must be exactly 10 digits",
+                  },
+                ]}
+              >
+                <Input placeholder="9876543210" size="large" maxLength={10} />
+              </Form.Item>
+            </Col>
           </Row>
 
           <Row gutter={16}>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="password"
                 label="Password"
@@ -165,7 +334,7 @@ export default function AddUser({ basePath = "/admin" }) {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="role"
                 label="Role"
@@ -177,10 +346,96 @@ export default function AddUser({ basePath = "/admin" }) {
                 </Select>
               </Form.Item>
             </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="active" label="Status" valuePropName="checked">
+                <Switch
+                  checkedChildren="Active"
+                  unCheckedChildren="Inactive"
+                  defaultChecked
+                />
+              </Form.Item>
+            </Col>
           </Row>
 
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Professional Details
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="employeeCode" label="Employee Code">
+                <Input placeholder="EMP001" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="doj" label="Date of Joining">
+                <DatePicker style={{ width: "100%" }} size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="contractEndDate" label="Contract End Date">
+                <DatePicker style={{ width: "100%" }} size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="category" label="Category">
+                <Select size="large">
+                  <Option value="payroll">Payroll</Option>
+                  <Option value="consultant">Consultant</Option>
+                  <Option value="contractor">Contractor</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="wageType" label="Wage Type">
+                <Select size="large">
+                  <Option value="weekly">Weekly</Option>
+                  <Option value="monthly">Monthly</Option>
+                  <Option value="quarterly">Quarterly</Option>
+                  <Option value="yearly">Yearly</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Personal Details
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="fatherName" label="Father's Name">
+                <Input placeholder="Father's Name" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="gender" label="Gender">
+                <Radio.Group>
+                  <Radio value="Male">Male</Radio>
+                  <Radio value="Female">Female</Radio>
+                  <Radio value="Other">Other</Radio>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="dob" label="Date of Birth">
+                <DatePicker style={{ width: "100%" }} size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Row gutter={16}>
             <Col xs={24} md={12}>
+              <Form.Item name="address" label="Address">
+                <Input.TextArea placeholder="Enter address" rows={2} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Organization Assignment
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="company"
                 label="Company"
@@ -193,10 +448,7 @@ export default function AddUser({ basePath = "/admin" }) {
                   loading={companiesLoading}
                   showSearch
                   optionFilterProp="children"
-                  onChange={(value) => {
-                    setSelectedCompany(value);
-                    form.setFieldValue("site", null);
-                  }}
+                  onChange={handleCompanyChange}
                 >
                   {companies.map((company) => (
                     <Option key={company._id} value={company._id}>
@@ -206,7 +458,7 @@ export default function AddUser({ basePath = "/admin" }) {
                 </Select>
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="site"
                 label="Site"
@@ -223,6 +475,8 @@ export default function AddUser({ basePath = "/admin" }) {
                   showSearch
                   optionFilterProp="children"
                   disabled={!selectedCompany}
+                  onChange={handleSiteChange}
+                  allowClear
                 >
                   {sites.map((s) => (
                     <Option key={s._id} value={s._id}>
@@ -230,6 +484,234 @@ export default function AddUser({ basePath = "/admin" }) {
                     </Option>
                   ))}
                 </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="department"
+                label="Department"
+                extra={!selectedSite ? "Select site first" : ""}
+              >
+                <Select
+                  placeholder={
+                    selectedSite ? "Select department" : "Select site first"
+                  }
+                  suffixIcon={<ClusterOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={departmentsLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={!selectedSite}
+                  onChange={handleDepartmentChange}
+                  allowClear
+                >
+                  {departments.map((d) => (
+                    <Option key={d._id} value={d._id}>
+                      {d.name} ({d.code})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="designation"
+                label="Designation"
+                extra={!selectedDepartment ? "Select department first" : ""}
+              >
+                <Select
+                  placeholder={
+                    selectedDepartment
+                      ? "Select designation"
+                      : "Select department first"
+                  }
+                  suffixIcon={<IdcardOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={designationsLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={!selectedDepartment}
+                  allowClear
+                >
+                  {designations.map((d) => (
+                    <Option key={d._id} value={d._id}>
+                      {d.name} ({d.code})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="grade" label="Grade">
+                <Select
+                  placeholder="Select grade"
+                  suffixIcon={<StarOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={gradesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  allowClear
+                >
+                  {grades.map((g) => (
+                    <Option key={g._id} value={g._id}>
+                      {g.name} ({g.code})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="skills" label="Skills">
+                <Select
+                  mode="multiple"
+                  placeholder="Select skills"
+                  suffixIcon={<ToolOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={skillsLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  allowClear
+                >
+                  {skills.map((s) => (
+                    <Option key={s._id} value={s._id}>
+                      {s.name} ({s.category})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Banking Details
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="bankName" label="Bank Name">
+                <Input placeholder="Bank Name" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="accountNumber" label="Account Number">
+                <Input placeholder="Account Number" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="ifscCode" label="IFSC Code">
+                <Input placeholder="IFSC Code" size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Statutory & Legal
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="pan"
+                label="PAN Number"
+                rules={[
+                  {
+                    pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+                    message: "Invalid PAN format",
+                  },
+                ]}
+              >
+                <Input placeholder="ABCDE1234F" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="aadhar"
+                label="Aadhar Number"
+                rules={[
+                  {
+                    pattern: /^\d{12}$/,
+                    message: "Aadhar must be exactly 12 digits",
+                  },
+                ]}
+              >
+                <Input placeholder="123456789012" size="large" maxLength={12} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="uan" label="UAN Number">
+                <Input placeholder="UAN" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="esiCode" label="ESI Code">
+                <Input placeholder="ESI Code" size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col xs={24} md={6}>
+              <Form.Item name="pfNumber" label="PF Number">
+                <Input placeholder="PF Number" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="pfApplicable"
+                label="PF Applicable"
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="esiApplicable"
+                label="ESI Applicable"
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Documents
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Aadhar Card Photo">
+                <div className="flex items-center gap-4">
+                  <Upload
+                    beforeUpload={handleUpload}
+                    showUploadList={false}
+                    disabled={imageUploading}
+                    accept="image/*,.pdf"
+                  >
+                    <Button
+                      icon={
+                        imageUploading ? (
+                          <LoadingOutlined />
+                        ) : (
+                          <UploadOutlined />
+                        )
+                      }
+                      size="large"
+                    >
+                      {imageUploading ? "Uploading..." : "Upload Document"}
+                    </Button>
+                  </Upload>
+                  {aadharCardPhotoUrl && (
+                    <a
+                      href={aadharCardPhotoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      View Uploaded Document
+                    </a>
+                  )}
+                </div>
               </Form.Item>
             </Col>
           </Row>
@@ -274,69 +756,6 @@ export default function AddUser({ basePath = "/admin" }) {
               </Form.Item>
             </div>
           </Form.Item>
-
-          <div className="my-4 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-gray-700">
-            Salary is determined by the user&apos;s assigned skills. Assign
-            skills in Edit User after creation.
-          </div>
-
-          <Typography.Title level={5} className="mt-6! mb-4!">
-            Additional Information
-          </Typography.Title>
-
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="pan"
-                label="PAN Number"
-                rules={[
-                  {
-                    pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-                    message: "Invalid PAN format (e.g., ABCDE1234F)",
-                  },
-                ]}
-              >
-                <Input placeholder="ABCDE1234F" size="large" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="aadhar"
-                label="Aadhar Number"
-                rules={[
-                  {
-                    pattern: /^\d{12}$/,
-                    message: "Aadhar must be exactly 12 digits",
-                  },
-                ]}
-              >
-                <Input placeholder="123456789012" size="large" maxLength={12} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="address" label="Address">
-                <Input placeholder="Enter address" size="large" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item name="esiCode" label="ESI Code">
-                <Input placeholder="ESI Code" size="large" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="uan" label="UAN">
-                <Input placeholder="UAN" size="large" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="pfNumber" label="PF Number">
-                <Input placeholder="PF Number" size="large" />
-              </Form.Item>
-            </Col>
-          </Row>
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
             <Button
