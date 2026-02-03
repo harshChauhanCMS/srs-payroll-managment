@@ -11,7 +11,7 @@ import EnhancedTable from "@/components/Table/EnhancedTable";
 
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-import { Modal, Tag, Switch, Button } from "antd";
+import { Modal, Tag, Switch, Button, Select } from "antd";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
@@ -35,12 +35,21 @@ export default function UserAndRoleManagement({
   const [userToDelete, setUserToDelete] = useState(null);
   const [togglingUserId, setTogglingUserId] = useState(null);
 
+  // Filter States
+  const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
 
   const fetchData = () => {
+    let url = `/api/v1/admin/users?page=${page}&limit=${limit}`;
+    if (roleFilter) url += `&role=${roleFilter}`;
+    if (statusFilter)
+      url += `&active=${statusFilter === "active" ? "true" : "false"}`;
+
     getQuery({
-      url: `/api/v1/admin/users?page=${page}&limit=${limit}`,
+      url,
       onSuccess: (response) => {
         const dataList = Array.isArray(response?.users) ? response.users : [];
         setTotalDocuments(response.pagination?.total || 0);
@@ -95,7 +104,7 @@ export default function UserAndRoleManagement({
 
   useEffect(() => {
     fetchData();
-  }, [page, limit]);
+  }, [page, limit, roleFilter, statusFilter]);
 
   const handleStatusToggle = (userId, currentStatus) => {
     // Prevent toggling own account
@@ -150,6 +159,16 @@ export default function UserAndRoleManagement({
         setUserToDelete(null);
       },
     });
+  };
+
+  const handleFilterChange = (key, value) => {
+    if (key === "role") setRoleFilter(value);
+    if (key === "status") setStatusFilter(value);
+
+    // Reset to page 1 on filter change
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.set("page", 1);
+    router.push(`${pathname}?${newSearchParams.toString()}`);
   };
 
   const columns = [
@@ -246,29 +265,55 @@ export default function UserAndRoleManagement({
 
   return (
     <>
-      <div className="flex justify-between items-center">
-        <Title title={"User & Role Management"} showButton={canCreate()} />
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <Title title={"User & Role Management"} showButton={canCreate()} />
 
-        <div className="flex gap-2">
-          <Button
-            className="white-button"
-            onClick={() => {
-              router.push(`${basePath}/user-and-role-management/bulk-upload`);
-            }}
-            style={{ borderRadius: "8px" }}
-          >
-            Bulk Upload
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="white-button"
+              onClick={() => {
+                router.push(`${basePath}/user-and-role-management/bulk-upload`);
+              }}
+              style={{ borderRadius: "8px" }}
+            >
+              Bulk Upload
+            </Button>
 
-          <Button
-            className="simple-button"
-            onClick={() => {
-              router.push(`${basePath}/user-and-role-management/add`);
-            }}
-            style={{ borderRadius: "8px" }}
-          >
-            Add User
-          </Button>
+            <Button
+              className="simple-button"
+              onClick={() => {
+                router.push(`${basePath}/user-and-role-management/add`);
+              }}
+              style={{ borderRadius: "8px" }}
+            >
+              Add User
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <Select
+            placeholder="Filter by Role"
+            style={{ width: 200 }}
+            allowClear
+            onChange={(val) => handleFilterChange("role", val)}
+            options={[
+              { value: "admin", label: "Admin" },
+              { value: "hr", label: "HR" },
+              { value: "employee", label: "Employee" },
+            ]}
+          />
+          <Select
+            placeholder="Filter by Status"
+            style={{ width: 200 }}
+            allowClear
+            onChange={(val) => handleFilterChange("status", val)}
+            options={[
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+            ]}
+          />
         </div>
       </div>
 
