@@ -2,10 +2,16 @@ import mongoose from "mongoose";
 
 const salaryComponentSchema = new mongoose.Schema(
   {
+    site: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Site",
+      required: false, // Temporarily optional during migration
+      index: true,
+    },
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
-      required: [true, "Company is required"],
+      required: false,
       index: true,
     },
     payrollMonth: { type: Number, min: 1, max: 12, required: true },
@@ -56,7 +62,14 @@ const salaryComponentSchema = new mongoose.Schema(
   },
 );
 
+// Keep old company index temporarily for migration period
 salaryComponentSchema.index({ company: 1, payrollYear: 1, payrollMonth: 1 });
+
+// New site-based index with uniqueness constraint (one salary component per site/month/year)
+salaryComponentSchema.index(
+  { site: 1, payrollYear: 1, payrollMonth: 1 },
+  { unique: true },
+);
 
 // Coerce NaN to 0 for all Number paths (Mongoose throws on NaN)
 // Mongoose 9: pre middleware no longer receives next(); use async or return.

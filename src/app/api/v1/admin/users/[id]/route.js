@@ -47,12 +47,12 @@ export async function GET(request, { params }) {
       }
     }
 
-    // Fetch the latest salary component for the user's company
+    // Fetch the latest salary component for the user's site
     let salaryComponent = null;
-    const companyId = user.company?._id || user.company;
-    if (companyId) {
+    const siteId = user.site?._id || user.site;
+    if (siteId) {
       salaryComponent = await SalaryComponent.findOne({
-        company: companyId,
+        site: siteId,
         active: true,
       })
         .sort({ payrollYear: -1, payrollMonth: -1 })
@@ -123,6 +123,14 @@ export async function PATCH(request, { params }) {
     if (user.softDelete) {
       return NextResponse.json(
         { message: "Cannot update a deleted user." },
+        { status: 400 },
+      );
+    }
+
+    // Validate site is provided (either existing or in update)
+    if (site === null || (site === undefined && !user.site)) {
+      return NextResponse.json(
+        { message: "Site assignment is required for all users" },
         { status: 400 },
       );
     }

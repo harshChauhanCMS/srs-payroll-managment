@@ -53,6 +53,13 @@ export async function POST(request) {
       );
     }
 
+    if (!body.site) {
+      return NextResponse.json(
+        { message: "Site assignment is required for all users" },
+        { status: 400 },
+      );
+    }
+
     // Only allow creating HR or Employee users
     if (role === ROLES.ADMIN) {
       return NextResponse.json(

@@ -415,6 +415,7 @@ export default function EditUser({ basePath = "/admin" }) {
               <Form.Item
                 name="site"
                 label="Site"
+                rules={[{ required: true, message: "Site is required" }]}
                 extra={!hasCompany ? "Select company first" : ""}
               >
                 <Select

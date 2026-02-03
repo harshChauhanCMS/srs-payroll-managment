@@ -40,10 +40,12 @@ export default function SalaryComponentPage() {
         setTableData(
           list.map((item) => ({
             _id: item._id,
-            company: item.company?.name || "—",
+            company: item.site?.company?.name || item.company?.name || "—",
+            site: item.site?.name || "—",
+            siteCode: item.site?.siteCode || "—",
             payrollPeriod: `${item.payrollMonth}/${item.payrollYear}`,
-            address: item.company.address ?? "—",
-            bankName: item.company.bankName ?? "—",
+            address: item.site?.address || item.company?.address || "—",
+            bankName: item.company?.bankName ?? "—",
             totalDeductions: item.totalDeductions ?? "—",
             amount: item.amount ?? item.roundedAmount ?? "—",
             status: item.active,
@@ -64,10 +66,12 @@ export default function SalaryComponentPage() {
   }, []);
 
   const columns = [
-    { Header: "Company", accessor: "company", width: 200 },
-    { Header: "Address", accessor: "address", width: 200 },
-    { Header: "Period", accessor: "payrollPeriod", width: 120 },
-    { Header: "Deductions", accessor: "totalDeductions", width: 120 },
+    { Header: "Company", accessor: "company", width: 150 },
+    { Header: "Site", accessor: "site", width: 150 },
+    { Header: "Site Code", accessor: "siteCode", width: 100 },
+    { Header: "Address", accessor: "address", width: 180 },
+    { Header: "Period", accessor: "payrollPeriod", width: 100 },
+    { Header: "Deductions", accessor: "totalDeductions", width: 110 },
     // {
     //   Header: "Status",
     //   accessor: "status",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import SalaryComponent from "@/models/SalaryComponent";
+import Site from "@/models/Site";
 import { ROLES } from "@/constants/roles";
 import { requireViewPermission, requireCreatePermission } from "@/lib/apiAuth";
 
@@ -68,6 +69,7 @@ export async function GET(request) {
 
     const currentUser = auth.user;
     const { searchParams } = new URL(request.url);
+    const site = searchParams.get("site");
     const company = searchParams.get("company");
     const payrollYear = searchParams.get("payrollYear");
     const payrollMonth = searchParams.get("payrollMonth");
@@ -79,15 +81,27 @@ export async function GET(request) {
     const query = {};
 
     if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
-      if (!currentUser.company) {
+      if (!currentUser.site) {
         return NextResponse.json({
           salaryComponents: [],
           pagination: { page: 1, limit, total: 0, pages: 0 },
         });
       }
-      query.company = currentUser.company;
+      query.site = currentUser.site;
     } else {
-      if (company) query.company = company;
+      if (site) {
+        query.site = site;
+      } else if (company) {
+        const sites = await Site.find({ company, active: true }).select("_id").lean();
+        if (sites.length > 0) {
+          query.site = { $in: sites.map((s) => s._id) };
+        } else {
+          return NextResponse.json({
+            salaryComponents: [],
+            pagination: { page: 1, limit, total: 0, pages: 0 },
+          });
+        }
+      }
     }
     if (payrollYear) query.payrollYear = parseInt(payrollYear, 10);
     if (payrollMonth) query.payrollMonth = parseInt(payrollMonth, 10);
@@ -96,7 +110,8 @@ export async function GET(request) {
 
     const [salaryComponents, totalCount] = await Promise.all([
       SalaryComponent.find(query)
-        .populate("company", "name address")
+        .populate("site", "name siteCode address")
+        .populate({ path: "site", populate: { path: "company", select: "name" } })
         .sort({ payrollYear: -1, payrollMonth: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -144,21 +159,42 @@ export async function POST(request) {
 
     const body = await request.json();
 
-    if (!body.company) {
+    if (!body.site) {
       return NextResponse.json(
-        { message: "Company is required" },
+        { message: "Site is required" },
         { status: 400 },
+      );
+    }
+
+    await connectDB();
+
+    const site = await Site.findById(body.site).lean();
+    if (!site) {
+      return NextResponse.json(
+        { message: "Site not found" },
+        { status: 404 },
       );
     }
 
     if (currentUser.role === ROLES.HR) {
       if (
         !currentUser.company ||
-        String(currentUser.company) !== String(body.company)
+        String(site.company) !== String(currentUser.company)
       ) {
         return NextResponse.json(
           {
-            message: "You can only create salary components for your company.",
+            message: "You can only create salary components for sites in your company.",
+          },
+          { status: 403 },
+        );
+      }
+      if (
+        !currentUser.site ||
+        String(site._id) !== String(currentUser.site)
+      ) {
+        return NextResponse.json(
+          {
+            message: "You can only create salary components for your assigned site.",
           },
           { status: 403 },
         );
@@ -177,11 +213,10 @@ export async function POST(request) {
       safeNum(body.canteenDeduction) +
       safeNum(body.iCardDeduction);
 
-    await connectDB();
-
     const now = new Date();
     const payload = {
-      company: body.company,
+      site: body.site,
+      company: site.company,
       payrollMonth: body.payrollMonth ?? now.getMonth() + 1,
       payrollYear: body.payrollYear ?? now.getFullYear(),
       active: body.active !== false,
@@ -199,7 +234,8 @@ export async function POST(request) {
 
     const doc = await SalaryComponent.create(payload);
     const salaryComponent = await SalaryComponent.findById(doc._id)
-      .populate("company", "name")
+      .populate("site", "name siteCode address")
+      .populate({ path: "site", populate: { path: "company", select: "name" } })
       .lean();
 
     return NextResponse.json(

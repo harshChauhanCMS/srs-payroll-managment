@@ -123,7 +123,10 @@ export default function ViewSalaryComponent({ basePath: basePathProp }) {
     );
   }
 
-  const companyName = data.company?.name ?? (data.company ? "—" : "—");
+  const companyName = data.site?.company?.name || data.company?.name || "—";
+  const siteName = data.site?.name || "—";
+  const siteCode = data.site?.siteCode || "—";
+  const siteAddress = data.site?.address || data.company?.address || "—";
   const allowanceEntries = ALLOWANCE_LABELS.filter(
     (o) => (Number(data[o.key]) || 0) > 0
   );
@@ -151,13 +154,16 @@ export default function ViewSalaryComponent({ basePath: basePathProp }) {
         <Descriptions
           title={
             <span className="flex items-center gap-2">
-              <BankOutlined /> Company & Period
+              <BankOutlined /> Company & Site Information
             </span>
           }
           bordered
           column={{ xs: 1, sm: 2, md: 3 }}
         >
           <Descriptions.Item label="Company">{companyName}</Descriptions.Item>
+          <Descriptions.Item label="Site">{siteName}</Descriptions.Item>
+          <Descriptions.Item label="Site Code">{siteCode}</Descriptions.Item>
+          <Descriptions.Item label="Address" span={2}>{siteAddress}</Descriptions.Item>
           <Descriptions.Item label="Payroll Month">
             {data.payrollMonth ?? "—"}
           </Descriptions.Item>

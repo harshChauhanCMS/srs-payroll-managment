@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import SalaryComponent from "@/models/SalaryComponent";
+import Site from "@/models/Site";
 import { ROLES } from "@/constants/roles";
 import {
   requireViewPermission,
@@ -50,7 +51,6 @@ const DEDUCTION_KEYS = [
   "totalDeductions",
 ];
 const ALLOWED_PATCH_KEYS = new Set([
-  "company",
   "payrollMonth",
   "payrollYear",
   "active",
@@ -76,7 +76,8 @@ export async function GET(request, { params }) {
     await connectDB();
 
     const salaryComponent = await SalaryComponent.findById(id)
-      .populate("company", "name")
+      .populate("site", "name siteCode address")
+      .populate({ path: "site", populate: { path: "company", select: "name" } })
       .lean();
 
     if (!salaryComponent) {
@@ -86,17 +87,20 @@ export async function GET(request, { params }) {
       );
     }
 
-    if (
-      auth.user.role === ROLES.HR &&
-      String(salaryComponent.company?._id) !== String(auth.user.company)
-    ) {
-      return NextResponse.json(
-        {
-          message:
-            "Forbidden. You can only view salary components of your company.",
-        },
-        { status: 403 },
-      );
+    if (auth.user.role === ROLES.HR) {
+      const site = salaryComponent.site;
+      if (
+        String(site?.company?._id) !== String(auth.user.company) ||
+        String(site?._id) !== String(auth.user.site)
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "Forbidden. You can only view salary components of your assigned site.",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     return NextResponse.json({ salaryComponent });
@@ -140,17 +144,21 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    if (
-      currentUser.role === ROLES.HR &&
-      String(doc.company) !== String(currentUser.company)
-    ) {
-      return NextResponse.json(
-        {
-          message:
-            "Forbidden. You can only edit salary components of your company.",
-        },
-        { status: 403 },
-      );
+    if (currentUser.role === ROLES.HR) {
+      const site = await Site.findById(doc.site).lean();
+      if (
+        !site ||
+        String(site.company) !== String(currentUser.company) ||
+        String(doc.site) !== String(currentUser.site)
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "Forbidden. You can only edit salary components of your assigned site.",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     const updates = {};
@@ -162,11 +170,7 @@ export async function PATCH(request, { params }) {
         DEDUCTION_KEYS.includes(key)
       ) {
         updates[key] = safeNum(body[key]);
-      } else if (
-        key === "company" ||
-        key === "payrollMonth" ||
-        key === "payrollYear"
-      ) {
+      } else if (key === "payrollMonth" || key === "payrollYear") {
         updates[key] = body[key];
       } else if (key === "active") {
         updates[key] = body[key] !== false;
@@ -176,7 +180,8 @@ export async function PATCH(request, { params }) {
     await doc.save();
 
     const salaryComponent = await SalaryComponent.findById(id)
-      .populate("company", "name")
+      .populate("site", "name siteCode address")
+      .populate({ path: "site", populate: { path: "company", select: "name" } })
       .lean();
 
     return NextResponse.json({
@@ -223,17 +228,21 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    if (
-      currentUser.role === ROLES.HR &&
-      String(doc.company) !== String(currentUser.company)
-    ) {
-      return NextResponse.json(
-        {
-          message:
-            "Forbidden. You can only delete salary components of your company.",
-        },
-        { status: 403 },
-      );
+    if (currentUser.role === ROLES.HR) {
+      const site = await Site.findById(doc.site).lean();
+      if (
+        !site ||
+        String(site.company) !== String(currentUser.company) ||
+        String(doc.site) !== String(currentUser.site)
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "Forbidden. You can only delete salary components of your assigned site.",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     await SalaryComponent.findByIdAndDelete(id);

@@ -12,6 +12,7 @@ import {
   MailOutlined,
   LockOutlined,
   BankOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import {
   Form,
@@ -34,8 +35,11 @@ export default function AddUser({ basePath = "/admin" }) {
   const [form] = Form.useForm();
   const { postQuery, loading } = usePostQuery();
   const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
+  const { getQuery: getSites, loading: sitesLoading } = useGetQuery();
 
   const [companies, setCompanies] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
 
   useEffect(() => {
     getCompanies({
@@ -48,6 +52,19 @@ export default function AddUser({ basePath = "/admin" }) {
       },
     });
   }, []);
+
+  useEffect(() => {
+    if (selectedCompany) {
+      getSites({
+        url: `/api/v1/admin/sites?company=${selectedCompany}&active=true&limit=100`,
+        onSuccess: (res) => setSites(res.sites || []),
+        onFail: (err) => console.error("Failed to fetch sites", err),
+      });
+    } else {
+      setSites([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCompany]);
 
   const handleSubmit = (values) => {
     const payload = {
@@ -176,10 +193,40 @@ export default function AddUser({ basePath = "/admin" }) {
                   loading={companiesLoading}
                   showSearch
                   optionFilterProp="children"
+                  onChange={(value) => {
+                    setSelectedCompany(value);
+                    form.setFieldValue("site", null);
+                  }}
                 >
                   {companies.map((company) => (
                     <Option key={company._id} value={company._id}>
                       {company.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="site"
+                label="Site"
+                rules={[{ required: true, message: "Site is required" }]}
+                extra={!selectedCompany ? "Select company first" : ""}
+              >
+                <Select
+                  placeholder={
+                    selectedCompany ? "Select site" : "Select company first"
+                  }
+                  suffixIcon={<EnvironmentOutlined className="text-gray-400" />}
+                  size="large"
+                  loading={sitesLoading}
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={!selectedCompany}
+                >
+                  {sites.map((s) => (
+                    <Option key={s._id} value={s._id}>
+                      {s.name} ({s.siteCode})
                     </Option>
                   ))}
                 </Select>

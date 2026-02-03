@@ -47,7 +47,7 @@ const userSchema = new mongoose.Schema(
     site: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Site",
-      default: null,
+      required: [true, "Site assignment is required"],
     },
     department: {
       type: mongoose.Schema.Types.ObjectId,

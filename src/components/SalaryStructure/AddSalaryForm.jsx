@@ -98,10 +98,13 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
   const [form] = Form.useForm();
   const { postQuery, loading: postLoading } = usePostQuery();
   const { patchQuery, loading: patchLoading } = usePatchQuery();
-  const { getQuery: getCompanies, loading: companiesLoading } = useGetQuery();
+  const { getQuery: getCompanies, loading: companiesLoading} = useGetQuery();
+  const { getQuery: getSites, loading: sitesLoading } = useGetQuery();
   const { getQuery: getSalaryComponent, loading: fetchLoading } = useGetQuery();
 
   const [companies, setCompanies] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [showDays, setShowDays] = useState(true);
   const [enabledAllowances, setEnabledAllowances] = useState([]);
   const [enabledDeductions, setEnabledDeductions] = useState([]);
@@ -119,6 +122,19 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
+  useEffect(() => {
+    if (selectedCompany) {
+      getSites({
+        url: `/api/v1/admin/sites?company=${selectedCompany}&active=true&limit=500`,
+        onSuccess: (res) => setSites(res.sites || []),
+        onFail: () => {},
+      });
+    } else {
+      setSites([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch sites when company changes
+  }, [selectedCompany]);
+
   const fetchForEdit = useCallback(() => {
     if (!id) return;
     getSalaryComponent({
@@ -126,7 +142,8 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
       onSuccess: (response) => {
         const sc = response?.salaryComponent;
         if (!sc) return;
-        const companyId = sc.company?._id ?? sc.company;
+        const companyId = sc.site?.company?._id || sc.site?.company || sc.company?._id || sc.company;
+        const siteId = sc.site?._id || sc.site;
         const toNum = (v) => {
           if (v === undefined || v === null || v === "") return undefined;
           const n = Number(v);
@@ -135,6 +152,7 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
         };
         const values = {
           company: companyId,
+          site: siteId,
           payrollMonth: sc.payrollMonth ?? currentMonth,
           payrollYear: sc.payrollYear ?? currentYear,
           totalDays: toNum(sc.totalDays),
@@ -165,6 +183,9 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
         setEnabledAllowances(enabledAllowancesNext);
         setEnabledDeductions(enabledDeductionsNext);
         setShowDays(true);
+        if (companyId) {
+          setSelectedCompany(companyId);
+        }
       },
       onFail: () => {
         toast.error("Failed to fetch salary component");
@@ -200,9 +221,8 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
       return Number.isNaN(n) ? 0 : n;
     };
     const payload = {
-      company: values.company,
+      site: values.site,
       payrollMonth: values.payrollMonth ?? currentMonth,
-      payrollYear: values.payrollYear ?? currentYear,
       payrollYear: values.payrollYear ?? currentYear,
       active: values.active !== false,
     };
@@ -304,7 +324,7 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
           style={{ marginTop: "16px", marginBottom: "16px" }}
         >
           <Row gutter={[24, 24]}>
-            <Col xs={24} md={12} className="mb-4 md:mb-0">
+            <Col xs={24} md={8} className="mb-4 md:mb-0">
               <Form.Item
                 name="company"
                 label="Company"
@@ -316,6 +336,10 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                   loading={companiesLoading}
                   showSearch
                   optionFilterProp="label"
+                  onChange={(value) => {
+                    setSelectedCompany(value);
+                    form.setFieldValue("site", null);
+                  }}
                   options={companies.map((c) => ({
                     value: c._id,
                     label: c.name,
@@ -323,7 +347,27 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={6} className="mb-4 md:mb-0">
+            <Col xs={24} md={8} className="mb-4 md:mb-0">
+              <Form.Item
+                name="site"
+                label="Site/Location"
+                rules={[{ required: true, message: "Select site" }]}
+                className="mb-4"
+              >
+                <Select
+                  placeholder="Select site"
+                  loading={sitesLoading}
+                  showSearch
+                  optionFilterProp="label"
+                  disabled={!selectedCompany}
+                  options={sites.map((s) => ({
+                    value: s._id,
+                    label: `${s.name} (${s.siteCode})`,
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={4} className="mb-4 md:mb-0">
               <Form.Item
                 name="payrollMonth"
                 label="Payroll Month"
@@ -338,7 +382,7 @@ export default function AddSalaryForm({ basePath = "/admin", editId = null }) {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={6} className="mb-4 md:mb-0">
+            <Col xs={24} md={4} className="mb-4 md:mb-0">
               <Form.Item
                 name="payrollYear"
                 label="Payroll Year"
