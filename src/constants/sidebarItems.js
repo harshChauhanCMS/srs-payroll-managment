@@ -7,6 +7,7 @@ import {
   UserOutlined,
   DollarOutlined,
   ToolOutlined,
+  CalculatorOutlined,
 } from "@ant-design/icons";
 import { ROLES } from "./roles";
 
@@ -73,6 +74,20 @@ export const getSidebarItems = (role) => {
       link: `${basePath}/salary-component`,
       icon: DollarOutlined,
       requiresPermission: "view",
+    },
+    {
+      name: "Payroll",
+      link: `${basePath}/payroll`,
+      icon: CalculatorOutlined,
+      requiresPermission: "view",
+      children: [
+        { name: "Attendance Import", link: `${basePath}/payroll/attendance-import` },
+        { name: "Attendance Review", link: `${basePath}/payroll/attendance-review` },
+        { name: "Exceptions", link: `${basePath}/payroll/exceptions` },
+        { name: "Run Payroll", link: `${basePath}/payroll/run` },
+        { name: "Approval", link: `${basePath}/payroll/approval` },
+      ],
+      matchRoutes: [`${basePath}/payroll`],
     },
     {
       name: "My Profile",
