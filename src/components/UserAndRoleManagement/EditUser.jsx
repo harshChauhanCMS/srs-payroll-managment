@@ -6,6 +6,7 @@ import Loader from "@/components/Loader/Loader";
 import useGetQuery from "@/hooks/getQuery.hook";
 import usePatchQuery from "@/hooks/patchQuery.hook";
 import BackHeader from "@/components/BackHeader/BackHeader";
+import moment from "moment";
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
@@ -22,7 +23,6 @@ import {
   ToolOutlined,
   DollarOutlined,
   InboxOutlined,
-  UploadOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
 import Image from "next/image";
@@ -38,6 +38,8 @@ import {
   Col,
   Typography,
   Switch,
+  DatePicker,
+  Radio,
   Upload,
   message,
 } from "antd";
@@ -85,6 +87,21 @@ export default function EditUser({ basePath = "/admin" }) {
     });
   }, []);
 
+  const fetchSites = useCallback(
+    (companyId) => {
+      if (!companyId) {
+        setSites([]);
+        return;
+      }
+      getSites({
+        url: `/api/v1/admin/sites?company=${companyId}&active=true&limit=100`,
+        onSuccess: (res) => setSites(res.sites || []),
+        onFail: (err) => console.error("Failed to fetch sites", err),
+      });
+    },
+    [getSites],
+  );
+
   const fetchDepartments = useCallback(
     (siteId) => {
       if (!siteId) {
@@ -98,6 +115,21 @@ export default function EditUser({ basePath = "/admin" }) {
       });
     },
     [getDepartments],
+  );
+
+  const fetchDesignations = useCallback(
+    (departmentId) => {
+      if (!departmentId) {
+        setDesignations([]);
+        return;
+      }
+      getDesignations({
+        url: `/api/v1/admin/designations?department=${departmentId}&active=true&limit=100`,
+        onSuccess: (res) => setDesignations(res.designations || []),
+        onFail: (err) => console.error("Failed to fetch designations", err),
+      });
+    },
+    [getDesignations],
   );
 
   useEffect(() => {
@@ -115,36 +147,6 @@ export default function EditUser({ basePath = "/admin" }) {
       onFail: (err) => console.error("Failed to fetch skills", err),
     });
   }, []);
-
-  const fetchSites = useCallback(
-    (companyId) => {
-      if (!companyId) {
-        setSites([]);
-        return;
-      }
-      getSites({
-        url: `/api/v1/admin/sites?company=${companyId}&active=true&limit=100`,
-        onSuccess: (res) => setSites(res.sites || []),
-        onFail: (err) => console.error("Failed to fetch sites", err),
-      });
-    },
-    [getSites],
-  );
-
-  const fetchDesignations = useCallback(
-    (departmentId) => {
-      if (!departmentId) {
-        setDesignations([]);
-        return;
-      }
-      getDesignations({
-        url: `/api/v1/admin/designations?department=${departmentId}&active=true&limit=100`,
-        onSuccess: (res) => setDesignations(res.designations || []),
-        onFail: (err) => console.error("Failed to fetch designations", err),
-      });
-    },
-    [getDesignations],
-  );
 
   const fetchUser = useCallback(() => {
     getQuery({
@@ -165,25 +167,52 @@ export default function EditUser({ basePath = "/admin" }) {
           setHasSite(!!siteId);
           setSelectedDepartment(departmentId);
 
+          // Initialize aadhar photo from existing data
+          if (userData.aadharCardPhoto) {
+            setAadharCardPhotoUrl(userData.aadharCardPhoto);
+          }
+
           form.setFieldsValue({
             name: userData.name,
             email: userData.email,
+            mobile: userData.mobile,
             role: userData.role,
-            pan: userData.pan,
+            active: userData.active,
+            // Professional Details
+            employeeCode: userData.employeeCode,
+            doj: userData.doj ? moment(userData.doj) : undefined,
+            contractEndDate: userData.contractEndDate
+              ? moment(userData.contractEndDate)
+              : undefined,
+            category: userData.category,
+            wageType: userData.wageType,
+            // Personal Details
+            fatherName: userData.fatherName,
+            gender: userData.gender,
+            dob: userData.dob ? moment(userData.dob) : undefined,
+            address: userData.address,
+            // Organization
             company: companyId || undefined,
             site: siteId || undefined,
             department: departmentId || undefined,
             designation: designationId || undefined,
             grade: gradeId || undefined,
             skills: skillIds,
+            // Banking
+            bankName: userData.bankName,
+            accountNumber: userData.accountNumber,
+            ifscCode: userData.ifscCode,
+            // Statutory
+            pan: userData.pan,
             aadhar: userData.aadhar,
-            address: userData.address,
-            esiCode: userData.esiCode,
             uan: userData.uan,
+            esiCode: userData.esiCode,
             pfNumber: userData.pfNumber,
+            pfApplicable: userData.pfApplicable || false,
+            esiApplicable: userData.esiApplicable || false,
             pfPercentage: userData.pfPercentage ?? undefined,
             esiPercentage: userData.esiPercentage ?? undefined,
-            active: userData.active,
+            // Permissions
             permissions: {
               view: userData.permissions?.view || false,
               edit: userData.permissions?.edit || false,
@@ -269,7 +298,6 @@ export default function EditUser({ basePath = "/admin" }) {
     } finally {
       setImageUploading(false);
     }
-    // Prevent default upload behavior
     return false;
   };
 
@@ -277,24 +305,46 @@ export default function EditUser({ basePath = "/admin" }) {
     const payload = {
       name: values.name,
       email: values.email,
+      mobile: values.mobile,
       role: values.role,
+      active: values.active,
+      // Professional Details
+      employeeCode: values.employeeCode,
+      doj: values.doj ? values.doj.toISOString() : null,
+      contractEndDate: values.contractEndDate
+        ? values.contractEndDate.toISOString()
+        : null,
+      category: values.category,
+      wageType: values.wageType,
+      // Personal Details
+      fatherName: values.fatherName,
+      gender: values.gender,
+      dob: values.dob ? values.dob.toISOString() : null,
+      address: values.address,
+      // Organization
       company: values.company || null,
       site: values.site || null,
       department: values.department || null,
       designation: values.designation || null,
       grade: values.grade || null,
       skills: values.skills || [],
+      // Banking
+      bankName: values.bankName,
+      accountNumber: values.accountNumber,
+      ifscCode: values.ifscCode,
+      // Statutory
       pan: values.pan,
       aadhar: values.aadhar,
-      address: values.address,
-      esiCode: values.esiCode,
       uan: values.uan,
+      esiCode: values.esiCode,
       pfNumber: values.pfNumber,
-      // Documents
-      aadharCardPhoto: aadharCardPhotoUrl,
+      pfApplicable: values.pfApplicable || false,
+      esiApplicable: values.esiApplicable || false,
       pfPercentage: values.pfPercentage ?? null,
       esiPercentage: values.esiPercentage ?? null,
-      active: values.active,
+      // Documents
+      aadharCardPhoto: aadharCardPhotoUrl,
+      // Permissions
       permissions: {
         view: values.permissions?.view || false,
         edit: values.permissions?.edit || false,
@@ -380,8 +430,11 @@ export default function EditUser({ basePath = "/admin" }) {
 
       <Card className="shadow-md" style={{ marginTop: "20px" }}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Typography.Title level={5} className="mb-4!">
+            Basic Information
+          </Typography.Title>
           <Row gutter={16}>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="name"
                 label="Full Name"
@@ -394,7 +447,7 @@ export default function EditUser({ basePath = "/admin" }) {
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="email"
                 label="Email"
@@ -410,10 +463,24 @@ export default function EditUser({ basePath = "/admin" }) {
                 />
               </Form.Item>
             </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="mobile"
+                label="Mobile Number"
+                rules={[
+                  {
+                    pattern: /^\d{10}$/,
+                    message: "Mobile number must be exactly 10 digits",
+                  },
+                ]}
+              >
+                <Input placeholder="9876543210" size="large" maxLength={10} />
+              </Form.Item>
+            </Col>
           </Row>
 
           <Row gutter={16}>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="password"
                 label="Password"
@@ -426,11 +493,10 @@ export default function EditUser({ basePath = "/admin" }) {
                   prefix={<LockOutlined className="text-gray-400" />}
                   placeholder="Enter new password (optional)"
                   size="large"
-                  disabled
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={6}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="role"
                 label="Role"
@@ -442,7 +508,7 @@ export default function EditUser({ basePath = "/admin" }) {
                 </Select>
               </Form.Item>
             </Col>
-            <Col xs={24} md={6}>
+            <Col xs={24} md={8}>
               <Form.Item name="active" label="Status" valuePropName="checked">
                 <Switch checkedChildren="Active" unCheckedChildren="Inactive" />
               </Form.Item>
@@ -450,9 +516,82 @@ export default function EditUser({ basePath = "/admin" }) {
           </Row>
 
           <Typography.Title level={5} className="mt-4! mb-3!">
+            Professional Details
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="employeeCode" label="Employee Code">
+                <Input placeholder="EMP001" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="doj" label="Date of Joining">
+                <DatePicker style={{ width: "100%" }} size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="contractEndDate" label="Contract End Date">
+                <DatePicker style={{ width: "100%" }} size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="category" label="Category">
+                <Select size="large">
+                  <Option value="payroll">Payroll</Option>
+                  <Option value="consultant">Consultant</Option>
+                  <Option value="contractor">Contractor</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="wageType" label="Wage Type">
+                <Select size="large">
+                  <Option value="weekly">Weekly</Option>
+                  <Option value="monthly">Monthly</Option>
+                  <Option value="quarterly">Quarterly</Option>
+                  <Option value="yearly">Yearly</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Personal Details
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="fatherName" label="Father's Name">
+                <Input placeholder="Father's Name" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="gender" label="Gender">
+                <Radio.Group>
+                  <Radio value="Male">Male</Radio>
+                  <Radio value="Female">Female</Radio>
+                  <Radio value="Other">Other</Radio>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="dob" label="Date of Birth">
+                <DatePicker style={{ width: "100%" }} size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item name="address" label="Address">
+                <Input.TextArea placeholder="Enter address" rows={2} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
             Organization Assignment
           </Typography.Title>
-
           <Row gutter={16}>
             <Col xs={24} md={8}>
               <Form.Item
@@ -668,11 +807,100 @@ export default function EditUser({ basePath = "/admin" }) {
           )}
 
           <Typography.Title level={5} className="mt-4! mb-3!">
+            Banking Details
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item name="bankName" label="Bank Name">
+                <Input placeholder="Bank Name" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="accountNumber" label="Account Number">
+                <Input placeholder="Account Number" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item name="ifscCode" label="IFSC Code">
+                <Input placeholder="IFSC Code" size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
+            Statutory & Legal
+          </Typography.Title>
+          <Row gutter={16}>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="pan"
+                label="PAN Number"
+                rules={[
+                  {
+                    pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+                    message: "Invalid PAN format (e.g., ABCDE1234F)",
+                  },
+                ]}
+              >
+                <Input placeholder="ABCDE1234F" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="aadhar"
+                label="Aadhar Number"
+                rules={[
+                  {
+                    pattern: /^\d{12}$/,
+                    message: "Aadhar must be exactly 12 digits",
+                  },
+                ]}
+              >
+                <Input placeholder="123456789012" size="large" maxLength={12} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="uan" label="UAN Number">
+                <Input placeholder="UAN" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item name="esiCode" label="ESI Code">
+                <Input placeholder="ESI Code" size="large" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col xs={24} md={6}>
+              <Form.Item name="pfNumber" label="PF Number">
+                <Input placeholder="PF Number" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="pfApplicable"
+                label="PF Applicable"
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={6}>
+              <Form.Item
+                name="esiApplicable"
+                label="ESI Applicable"
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Typography.Title level={5} className="mt-4! mb-3!">
             <span className="flex items-center gap-2">
               <DollarOutlined /> Salary Deduction Rates (per-user override)
             </span>
           </Typography.Title>
-
           <Row gutter={16}>
             <Col xs={24} md={8}>
               <Form.Item
@@ -728,105 +956,6 @@ export default function EditUser({ basePath = "/admin" }) {
             </Col>
           </Row>
 
-          <Form.Item label="Permissions" className="mb-4">
-            <div className="flex flex-wrap gap-6 p-4 bg-gray-50 rounded-lg">
-              <Form.Item
-                name={["permissions", "view"]}
-                valuePropName="checked"
-                noStyle
-              >
-                <Checkbox>
-                  <span className="ml-1">View</span>
-                </Checkbox>
-              </Form.Item>
-              <Form.Item
-                name={["permissions", "edit"]}
-                valuePropName="checked"
-                noStyle
-              >
-                <Checkbox>
-                  <span className="ml-1">Edit</span>
-                </Checkbox>
-              </Form.Item>
-              <Form.Item
-                name={["permissions", "delete"]}
-                valuePropName="checked"
-                noStyle
-              >
-                <Checkbox>
-                  <span className="ml-1">Delete</span>
-                </Checkbox>
-              </Form.Item>
-              <Form.Item
-                name={["permissions", "create"]}
-                valuePropName="checked"
-                noStyle
-              >
-                <Checkbox>
-                  <span className="ml-1">Create</span>
-                </Checkbox>
-              </Form.Item>
-            </div>
-          </Form.Item>
-
-          <Typography.Title level={5} className="mt-6! mb-4!">
-            Additional Information
-          </Typography.Title>
-
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="pan"
-                label="PAN Number"
-                rules={[
-                  {
-                    pattern: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-                    message: "Invalid PAN format (e.g., ABCDE1234F)",
-                  },
-                ]}
-              >
-                <Input placeholder="ABCDE1234F" size="large" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="aadhar"
-                label="Aadhar Number"
-                rules={[
-                  {
-                    pattern: /^\d{12}$/,
-                    message: "Aadhar must be exactly 12 digits",
-                  },
-                ]}
-              >
-                <Input placeholder="123456789012" size="large" maxLength={12} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="address" label="Address">
-                <Input placeholder="Enter address" size="large" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
-              <Form.Item name="esiCode" label="ESI Code">
-                <Input placeholder="ESI Code" size="large" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="uan" label="UAN">
-                <Input placeholder="UAN Number" size="large" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="pfNumber" label="PF Number">
-                <Input placeholder="PF Number" size="large" />
-              </Form.Item>
-            </Col>
-          </Row>
-
           <Typography.Title level={5} className="mt-4! mb-3!">
             Documents
           </Typography.Title>
@@ -876,6 +1005,7 @@ export default function EditUser({ basePath = "/admin" }) {
                               src={aadharCardPhotoUrl}
                               alt="Aadhar Card Preview"
                               fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               style={{ objectFit: "contain" }}
                             />
                           </div>
@@ -910,6 +1040,47 @@ export default function EditUser({ basePath = "/admin" }) {
               </Form.Item>
             </Col>
           </Row>
+
+          <Form.Item label="Permissions" className="mb-4">
+            <div className="flex flex-wrap gap-6 p-4 bg-gray-50 rounded-lg">
+              <Form.Item
+                name={["permissions", "view"]}
+                valuePropName="checked"
+                noStyle
+              >
+                <Checkbox>
+                  <span className="ml-1">View</span>
+                </Checkbox>
+              </Form.Item>
+              <Form.Item
+                name={["permissions", "edit"]}
+                valuePropName="checked"
+                noStyle
+              >
+                <Checkbox>
+                  <span className="ml-1">Edit</span>
+                </Checkbox>
+              </Form.Item>
+              <Form.Item
+                name={["permissions", "delete"]}
+                valuePropName="checked"
+                noStyle
+              >
+                <Checkbox>
+                  <span className="ml-1">Delete</span>
+                </Checkbox>
+              </Form.Item>
+              <Form.Item
+                name={["permissions", "create"]}
+                valuePropName="checked"
+                noStyle
+              >
+                <Checkbox>
+                  <span className="ml-1">Create</span>
+                </Checkbox>
+              </Form.Item>
+            </div>
+          </Form.Item>
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
             <Button

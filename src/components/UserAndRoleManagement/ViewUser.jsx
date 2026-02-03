@@ -538,8 +538,8 @@ export default function ViewUser({ basePath = "/admin" }) {
               ? salaryComponent.esiDeduction / 100
               : 0.0075;
 
-          const pfAmount = calcPfDeduction(skillTotals.basic, pfRate);
-          const esiAmount = calcEsiDeduction(grossEarnings, esiRate);
+          const pfAmount = user.pfApplicable ? calcPfDeduction(skillTotals.basic, pfRate) : 0;
+          const esiAmount = user.esiApplicable ? calcEsiDeduction(grossEarnings, esiRate) : 0;
 
           // Other deductions from salary component
           const otherDeductionItems = salaryComponent
@@ -587,23 +587,39 @@ export default function ViewUser({ basePath = "/admin" }) {
               column={{ xs: 1, sm: 2, md: 3 }}
             >
               <Descriptions.Item label="PF Rate">
-                {pfRate * 100}%{" "}
-                <Tag color={pfFromUser ? "blue" : "default"}>{pfLabel}</Tag>
+                {user.pfApplicable ? (
+                  <>
+                    {pfRate * 100}%{" "}
+                    <Tag color={pfFromUser ? "blue" : "default"}>{pfLabel}</Tag>
+                  </>
+                ) : (
+                  <Tag color="red">Not Applicable</Tag>
+                )}
               </Descriptions.Item>
               <Descriptions.Item label="ESI Rate">
-                {esiRate * 100}%{" "}
-                <Tag color={esiFromUser ? "blue" : "default"}>{esiLabel}</Tag>
+                {user.esiApplicable ? (
+                  <>
+                    {esiRate * 100}%{" "}
+                    <Tag color={esiFromUser ? "blue" : "default"}>{esiLabel}</Tag>
+                  </>
+                ) : (
+                  <Tag color="red">Not Applicable</Tag>
+                )}
               </Descriptions.Item>
               <Descriptions.Item label="Gross Earnings">
                 {fmt(grossEarnings)}
               </Descriptions.Item>
               <Descriptions.Item label="PF Deduction">
-                {fmt(pfAmount)}
+                {user.pfApplicable ? fmt(pfAmount) : <Tag color="red">Not Applicable</Tag>}
               </Descriptions.Item>
               <Descriptions.Item label="ESI Deduction">
-                {grossEarnings >= 21000
-                  ? `${fmt(0)} (Gross >= ₹21,000)`
-                  : fmt(esiAmount)}
+                {user.esiApplicable ? (
+                  grossEarnings >= 21000
+                    ? `${fmt(0)} (Gross >= ₹21,000)`
+                    : fmt(esiAmount)
+                ) : (
+                  <Tag color="red">Not Applicable</Tag>
+                )}
               </Descriptions.Item>
               {otherDeductionItems.map(({ key, label }) => (
                 <Descriptions.Item key={key} label={label}>
@@ -759,6 +775,8 @@ export default function ViewUser({ basePath = "/admin" }) {
                     src={user.aadharCardPhoto}
                     alt="Aadhar Card"
                     fill
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    quality={100}
                     className="object-contain"
                   />
                 )}
