@@ -1,6 +1,5 @@
 "use client";
 
-import Title from "@/components/Title/Title";
 import AttendanceImport from "@/components/Payroll/AttendanceImport";
 import PermissionGuard from "@/components/PermissionGuard/PermissionGuard";
 
@@ -14,10 +13,9 @@ export default function AttendanceImportPage() {
         </div>
       }
     >
-      <Title title="Attendance Import" />
-      <div className="pt-4">
+      <>
         <AttendanceImport />
-      </div>
+      </>
     </PermissionGuard>
   );
 }

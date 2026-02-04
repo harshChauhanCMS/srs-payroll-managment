@@ -107,6 +107,29 @@ body {
   cursor: not-allowed;
 }
 
+/* Green Button */
+.green-button {
+  background-color: #28a745 !important;
+  border: 1px solid #28a745 !important;
+  color: white !important;
+  padding: 4px 15px;
+  border-radius: 2px;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+.green-button:hover,
+.green-button:focus {
+  background-color: white !important;
+  color: #28a745 !important;
+  border: 1px solid #28a745 !important;
+  cursor: pointer;
+}
+.green-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Breadcrumb */
 /* Container for the breadcrumb */
 .breadcrumb-container {

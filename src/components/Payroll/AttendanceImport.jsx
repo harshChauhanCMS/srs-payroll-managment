@@ -243,6 +243,8 @@ export default function AttendanceImport() {
               <Button
                 icon={<DownloadOutlined />}
                 onClick={handleDownloadTemplate}
+                className="green-button"
+                style={{ borderRadius: "8px" }}
                 disabled={fetchLoading}
               >
                 Download Template

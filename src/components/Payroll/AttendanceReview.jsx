@@ -2,8 +2,23 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card, Row, Col, Select, Form, Button, Table, InputNumber, Space, Typography } from "antd";
-import { SaveOutlined, FileExcelOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Row,
+  Col,
+  Select,
+  Form,
+  Button,
+  Table,
+  InputNumber,
+  Space,
+  Typography,
+} from "antd";
+import {
+  SaveOutlined,
+  FileExcelOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import toast from "react-hot-toast";
 import useGetQuery from "@/hooks/getQuery.hook";
 import usePatchQuery from "@/hooks/patchQuery.hook";
@@ -31,7 +46,15 @@ const YEARS = Array.from({ length: 5 }, (_, i) => ({
   label: String(currentYear - 2 + i),
 }));
 
-const EDITABLE_FIELDS = ["workingDays", "presentDays", "payableDays", "leaveDays", "otHours", "incentive", "arrear"];
+const EDITABLE_FIELDS = [
+  "workingDays",
+  "presentDays",
+  "payableDays",
+  "leaveDays",
+  "otHours",
+  "incentive",
+  "arrear",
+];
 
 export default function AttendanceReview() {
   const [form] = Form.useForm();
@@ -52,7 +75,7 @@ export default function AttendanceReview() {
       url: "/api/v1/admin/companies?active=true",
       onSuccess: (res) => {
         setCompanies(
-          (res.companies || []).map((c) => ({ value: c._id, label: c.name }))
+          (res.companies || []).map((c) => ({ value: c._id, label: c.name })),
         );
       },
     });
@@ -68,7 +91,7 @@ export default function AttendanceReview() {
             (res.sites || []).map((s) => ({
               value: s._id,
               label: `${s.name} (${s.siteCode})`,
-            }))
+            })),
           );
         },
       });
@@ -115,8 +138,8 @@ export default function AttendanceReview() {
     // Update local state for display
     setAttendance((prev) =>
       prev.map((row) =>
-        row._id === recordId ? { ...row, [field]: value } : row
-      )
+        row._id === recordId ? { ...row, [field]: value } : row,
+      ),
     );
   };
 
@@ -176,7 +199,7 @@ export default function AttendanceReview() {
 
     window.open(
       `/api/v1/admin/attendance/export?site=${site}&payrollMonth=${month}&payrollYear=${year}`,
-      "_blank"
+      "_blank",
     );
   };
 
@@ -244,19 +267,34 @@ export default function AttendanceReview() {
   return (
     <div>
       <Card>
-        <Title level={4} style={{ marginBottom: 24 }}>Attendance Review & Edit</Title>
+        <Title level={4} style={{ marginBottom: 24 }}>
+          Attendance Review & Edit
+        </Title>
 
-        <Form form={form} layout="vertical" initialValues={{ payrollMonth: new Date().getMonth() + 1, payrollYear: currentYear }}>
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            payrollMonth: new Date().getMonth() + 1,
+            payrollYear: currentYear,
+          }}
+        >
           <Row gutter={16} align="bottom">
             <Col xs={24} md={5}>
-              <Form.Item name="company" label="Company" rules={[{ required: true }]}>
+              <Form.Item
+                name="company"
+                label="Company"
+                rules={[{ required: true }]}
+              >
                 <Select
                   placeholder="Select company"
                   options={companies}
                   onChange={handleCompanyChange}
                   showSearch
                   filterOption={(input, option) =>
-                    (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                 />
               </Form.Item>
@@ -264,23 +302,35 @@ export default function AttendanceReview() {
             <Col xs={24} md={5}>
               <Form.Item name="site" label="Site" rules={[{ required: true }]}>
                 <Select
-                  placeholder={selectedCompany ? "Select site" : "Select company first"}
+                  placeholder={
+                    selectedCompany ? "Select site" : "Select company first"
+                  }
                   options={sites}
                   disabled={!selectedCompany}
                   showSearch
                   filterOption={(input, option) =>
-                    (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                 />
               </Form.Item>
             </Col>
             <Col xs={24} md={4}>
-              <Form.Item name="payrollMonth" label="Month" rules={[{ required: true }]}>
+              <Form.Item
+                name="payrollMonth"
+                label="Month"
+                rules={[{ required: true }]}
+              >
                 <Select options={MONTHS} />
               </Form.Item>
             </Col>
             <Col xs={24} md={4}>
-              <Form.Item name="payrollYear" label="Year" rules={[{ required: true }]}>
+              <Form.Item
+                name="payrollYear"
+                label="Year"
+                rules={[{ required: true }]}
+              >
                 <Select options={YEARS} />
               </Form.Item>
             </Col>
@@ -289,6 +339,8 @@ export default function AttendanceReview() {
                 <Space>
                   <Button
                     type="primary"
+                    className="simple-button"
+                    style={{ borderRadius: "8px" }}
                     icon={<ReloadOutlined />}
                     onClick={loadAttendance}
                     loading={fetchLoading}
@@ -329,7 +381,10 @@ export default function AttendanceReview() {
             pagination={false}
             bordered
             loading={fetchLoading}
-            locale={{ emptyText: "No attendance records found. Import attendance data first." }}
+            locale={{
+              emptyText:
+                "No attendance records found. Import attendance data first.",
+            }}
           />
         )}
       </Card>

@@ -1,6 +1,5 @@
 "use client";
 
-import Title from "@/components/Title/Title";
 import AttendanceReview from "@/components/Payroll/AttendanceReview";
 import PermissionGuard from "@/components/PermissionGuard/PermissionGuard";
 
@@ -14,10 +13,9 @@ export default function AttendanceReviewPage() {
         </div>
       }
     >
-      <Title title="Attendance Review" />
-      <div className="pt-4">
+      <>
         <AttendanceReview />
-      </div>
+      </>
     </PermissionGuard>
   );
 }
