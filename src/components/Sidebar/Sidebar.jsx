@@ -161,14 +161,14 @@ export default function Sidebar({
               onClick={() => router.push(getDashboardLink())}
               className="cursor-pointer"
             />
-            {!isCollapsed && (
+            {/* {!isCollapsed && (
               <span
                 className="font-bold text-lg text-[#C2A368] cursor-pointer"
                 onClick={() => router.push(getDashboardLink())}
               >
                 {sidebarHeading}
               </span>
-            )}
+            )} */}
           </div>
 
           <nav className="p-4 space-y-2 overflow-y-auto overflow-x-hidden sidebar-scroll">

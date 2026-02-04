@@ -12,7 +12,7 @@ import {
 } from "@ant-design/icons";
 import { ROLES } from "./roles";
 
-export const sidebarHeading = "SRS Payroll";
+export const sidebarHeading = "SRS Manpower Portal";
 
 /**
  * Generate sidebar items with role-specific path prefixes
@@ -82,8 +82,14 @@ export const getSidebarItems = (role) => {
       icon: CalculatorOutlined,
       requiresPermission: "view",
       children: [
-        { name: "Attendance Import", link: `${basePath}/payroll/attendance-import` },
-        { name: "Attendance Review", link: `${basePath}/payroll/attendance-review` },
+        {
+          name: "Attendance Import",
+          link: `${basePath}/payroll/attendance-import`,
+        },
+        {
+          name: "Attendance Review",
+          link: `${basePath}/payroll/attendance-review`,
+        },
         { name: "Exceptions", link: `${basePath}/payroll/exceptions` },
         { name: "Run Payroll", link: `${basePath}/payroll/run` },
         { name: "Approval", link: `${basePath}/payroll/approval` },

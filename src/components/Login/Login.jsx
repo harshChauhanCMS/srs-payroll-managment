@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { setUser } from "@/helpers/slices/userSlice";
 import { setAuthTokens, setUserData } from "@/utils/storage";
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
-import { Form, Input, Button, Typography, Checkbox, Row, Col } from "antd";
+import { Form, Input, Button, Typography, Checkbox } from "antd";
 
 const { Title, Text } = Typography;
 
@@ -65,168 +65,130 @@ const Login = () => {
 
   return (
     <Fragment>
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #F39035, #FBA810)",
-          padding: "40px",
-        }}
-      >
-        <Row style={{ minHeight: "100%" }} align="middle" justify="center">
-          {/* LEFT CONTENT */}
-          <Col
-            xs={0}
-            md={12}
-            style={{
-              color: "#fff",
-              paddingRight: 48,
-            }}
-          >
-            <Title level={2} style={{ color: "#fff" }}>
+      <div className="min-h-screen w-full flex items-center justify-center bg-linear-to-br from-[#F39035] to-[#FBA810] p-4 sm:p-6 md:p-10">
+        <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          {/* LEFT CONTENT - Hidden on mobile */}
+          <div className="hidden md:block text-white pr-0 md:pr-12">
+            <Title
+              level={1}
+              style={{ color: "#fff", marginBottom: 24, fontWeight: 700 }}
+            >
               Welcome to SRS Manpower Portal
             </Title>
 
-            <Text style={{ color: "#fff", fontSize: 16 }}>
+            <Text
+              style={{
+                color: "#fff",
+                fontSize: "1.125rem",
+                display: "block",
+                marginBottom: 32,
+                opacity: 0.9,
+              }}
+            >
               Experience seamless access to your workspace. Manage company
               payslip, attendance, collaborate with teams, and achieve more with
               our powerful platform.
             </Text>
 
-            <div style={{ marginTop: 32 }}>
-              <ul
-                style={{
-                  listStyle: "disc",
-                  paddingLeft: 20,
-                  fontSize: 16,
-                }}
-              >
-                <li style={{ marginBottom: 16 }}>
-                  <strong>Secure & Reliable</strong>
-                  <br />
+            <ul className="list-none space-y-6">
+              <li className="flex flex-col">
+                <span className="font-bold text-lg mb-1">
+                  Secure & Reliable
+                </span>
+                <span className="opacity-80">
                   Enterprise-grade security to protect your data
-                </li>
-                <li style={{ marginBottom: 16 }}>
-                  <strong>Lightning Fast</strong>
-                  <br />
+                </span>
+              </li>
+              <li className="flex flex-col">
+                <span className="font-bold text-lg mb-1">Lightning Fast</span>
+                <span className="opacity-80">
                   Optimized performance for instant access
-                </li>
-                <li>
-                  <strong>Team Collaboration</strong>
-                  <br />
+                </span>
+              </li>
+              <li className="flex flex-col">
+                <span className="font-bold text-lg mb-1">
+                  Team Collaboration
+                </span>
+                <span className="opacity-80">
                   Work together seamlessly in real-time
-                </li>
-              </ul>
-            </div>
-          </Col>
+                </span>
+              </li>
+            </ul>
+          </div>
 
           {/* RIGHT LOGIN CARD */}
-          <Col xs={24} md={10}>
-            <div
+          <div className="w-full max-w-[420px] mx-auto bg-white rounded-2xl p-6 sm:p-8 md:p-10 shadow-xl">
+            <div className="flex justify-center mb-6">
+              <Image
+                src={images.srsLogo}
+                alt="SRS Logo"
+                width={90}
+                height={60}
+                style={{ objectFit: "contain" }}
+              />
+            </div>
+
+            <Title level={4} style={{ textAlign: "center", marginBottom: 8 }}>
+              Sign in to the portal
+            </Title>
+            <Text
               style={{
-                background: "#fff",
-                borderRadius: 16,
-                padding: "40px 32px",
-                maxWidth: 420,
-                margin: "0 auto",
+                display: "block",
+                textAlign: "center",
+                color: "#9ca3af",
+                marginBottom: 32,
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  marginBottom: 24,
-                }}
+              Enter Credentials to continue
+            </Text>
+
+            <Form form={form} layout="vertical" onFinish={handleLogin}>
+              <Form.Item
+                label="Email"
+                name="email"
+                rules={[
+                  { required: true, message: "Please enter your email" },
+                  { type: "email", message: "Invalid email format" },
+                ]}
               >
-                <Image
-                  src={images.srsLogo}
-                  alt="SRS Logo"
-                  width={90}
-                  height={60}
-                  style={{ objectFit: "contain" }}
-                />
-              </div>
-
-              <Title level={4} style={{ textAlign: "center" }}>
-                Sign in to the portal
-              </Title>
-              <Text
-                style={{
-                  display: "block",
-                  textAlign: "center",
-                  marginBottom: 24,
-                  color: "#8c8c8c",
-                }}
-              >
-                Enter Credentials to continue
-              </Text>
-
-              <Form form={form} layout="vertical" onFinish={handleLogin}>
-                <Form.Item
-                  label="Email"
-                  name="email"
-                  rules={[
-                    { required: true, message: "Please enter your email" },
-                    { type: "email", message: "Invalid email format" },
-                  ]}
-                >
-                  <Input
-                    size="large"
-                    prefix={<MailOutlined />}
-                    placeholder="Enter email ID"
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label="Password"
-                  name="password"
-                  rules={[
-                    { required: true, message: "Please enter your password" },
-                  ]}
-                >
-                  <Input.Password
-                    size="large"
-                    prefix={<LockOutlined />}
-                    placeholder="Enter password"
-                  />
-                </Form.Item>
-
-                <Row
-                  align="middle"
-                  justify="space-between"
-                  style={{ marginBottom: 24 }}
-                >
-                  <Checkbox>Remember Me</Checkbox>
-                  <Text
-                    style={{
-                      color: "#F39035",
-                      cursor: "pointer",
-                      fontWeight: 500,
-                    }}
-                  >
-                    Forgot Password?
-                  </Text>
-                </Row>
-
-                <Button
-                  htmlType="submit"
+                <Input
                   size="large"
-                  loading={loading}
-                  block
-                  style={{
-                    background: "#E89A4F",
-                    color: "#fff",
-                    borderRadius: 8,
-                    border: "none",
-                    height: 48,
-                    fontWeight: 600,
-                  }}
-                >
-                  Login
-                </Button>
-              </Form>
-            </div>
-          </Col>
-        </Row>
+                  prefix={<MailOutlined style={{ color: "#9ca3af" }} />}
+                  placeholder="Enter email ID"
+                  style={{ borderRadius: 8 }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Password"
+                name="password"
+                rules={[
+                  { required: true, message: "Please enter your password" },
+                ]}
+              >
+                <Input.Password
+                  size="large"
+                  prefix={<LockOutlined style={{ color: "#9ca3af" }} />}
+                  placeholder="Enter password"
+                  style={{ borderRadius: 8 }}
+                />
+              </Form.Item>
+
+              <Button
+                htmlType="submit"
+                size="large"
+                loading={loading}
+                className="simple-button"
+                block
+                style={{
+                  borderRadius: "8px",
+                }}
+              >
+                Login
+              </Button>
+            </Form>
+          </div>
+        </div>
       </div>
     </Fragment>
   );
