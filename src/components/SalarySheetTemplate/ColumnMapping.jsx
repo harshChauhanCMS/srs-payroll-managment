@@ -273,6 +273,14 @@ export default function ColumnMapping() {
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         width={600}
+        okButtonProps={{
+          className: "simple-button",
+          style: { borderRadius: "8px" },
+        }}
+        cancelButtonProps={{
+          className: "red-button",
+          style: { borderRadius: "8px" },
+        }}
       >
         <Form form={form} layout="vertical">
           <Form.Item
