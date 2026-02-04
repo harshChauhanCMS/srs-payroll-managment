@@ -19,7 +19,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full">
+    <header className="sticky top-0 z-10 w-full">
       {/* Glassmorphism container */}
       <div className="my-2 px-4 py-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
         <div className="flex items-center justify-between gap-4">

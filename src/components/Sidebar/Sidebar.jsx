@@ -140,7 +140,7 @@ export default function Sidebar({
         ref={sidebar}
         className={`fixed left-0 top-0 h-screen shadow-lg transition-all duration-300 ${
           isCollapsed ? "w-20" : "w-64"
-        } bg-[#1E3A5F] ${
+        } bg-[#FEB003]/20 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 flex flex-col z-40`}
       >
@@ -153,14 +153,14 @@ export default function Sidebar({
               {isCollapsed ? <ArrowRightOutlined /> : <ArrowLeftOutlined />}
             </button>
 
-            {/* <Image
-              src={images.vakeelLogo}
-              alt="Vakeel At Home"
+            <Image
+              src={images.srsLogo}
+              alt="SRS Payroll Management"
               width={120}
               height={120}
               onClick={() => router.push(getDashboardLink())}
               className="cursor-pointer"
-            /> */}
+            />
             {!isCollapsed && (
               <span
                 className="font-bold text-lg text-[#C2A368] cursor-pointer"
@@ -191,8 +191,8 @@ export default function Sidebar({
                     }}
                     className={`relative group flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-200 ${
                       active
-                        ? "bg-slate-400 text-white shadow-lg"
-                        : "text-white hover:bg-slate-600"
+                        ? "bg-[#F39035] text-white shadow-lg"
+                        : "text-[#1E3A5F] hover:bg-[#F39035]/10"
                     } ${isCollapsed && "justify-center"}`}
                   >
                     <item.icon />
@@ -222,8 +222,8 @@ export default function Sidebar({
                     }}
                     className={`relative group w-full text-left flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-200 ${
                       active
-                        ? "bg-slate-400 text-white shadow-lg"
-                        : "text-white hover:bg-slate-600"
+                        ? "bg-[#F39035] text-white shadow-lg"
+                        : "text-[#1E3A5F] hover:bg-[#F39035]/10"
                     } ${isCollapsed && "justify-center"}`}
                   >
                     <item.icon />
@@ -231,7 +231,7 @@ export default function Sidebar({
                       <span className="flex-1">{item.name}</span>
                     )}
                     {!isCollapsed && hasChildren && (
-                      <span className="ml-auto text-white/80">
+                      <span className="ml-auto text-[#1E3A5F]/80">
                         {isOpen ? (
                           <CaretDownOutlined />
                         ) : (
@@ -261,8 +261,8 @@ export default function Sidebar({
                             }}
                             className={`block px-3 py-1.5 rounded-md text-sm ${
                               childActive
-                                ? "bg-white/20 text-white"
-                                : "text-white/80 hover:bg-white/10 hover:text-white"
+                                ? "bg-[#F39035]/20 text-[#1E3A5F] font-medium"
+                                : "text-[#1E3A5F]/80 hover:bg-[#F39035]/10 hover:text-[#1E3A5F]"
                             }`}
                           >
                             <span>• {child.name}</span>
@@ -279,13 +279,13 @@ export default function Sidebar({
 
         <div className="mt-auto p-4">
           <div
-            className={`h-px bg-white mx-auto mb-4 ${
+            className={`h-px bg-[#1E3A5F]/20 mx-auto mb-4 ${
               isCollapsed ? "w-4/5" : "w-11/12"
             }`}
           ></div>
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-white hover:text-red-400 transition-colors duration-200 cursor-pointer ${
+            className={`w-full flex items-center gap-2 px-3 py-2 text-[#1E3A5F] hover:text-red-500 transition-colors duration-200 cursor-pointer ${
               isCollapsed ? "justify-center" : "justify-center"
             }`}
           >

@@ -1,7 +1,7 @@
 import userProfile from "./user.png";
-import vakeelLogo from "./vakeelLogo.png";
+import srsLogo from "./srsLogo.png";
 
 export const images = {
   userProfile,
-  vakeelLogo,
+  srsLogo,
 };
