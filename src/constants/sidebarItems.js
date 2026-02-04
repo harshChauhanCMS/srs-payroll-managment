@@ -8,6 +8,7 @@ import {
   DollarOutlined,
   ToolOutlined,
   CalculatorOutlined,
+  FileExcelOutlined,
 } from "@ant-design/icons";
 import { ROLES } from "./roles";
 
@@ -88,6 +89,13 @@ export const getSidebarItems = (role) => {
         { name: "Approval", link: `${basePath}/payroll/approval` },
       ],
       matchRoutes: [`${basePath}/payroll`],
+    },
+    {
+      name: "Salary Sheet Templates",
+      link: `${basePath}/salary-sheet-templates`,
+      icon: FileExcelOutlined,
+      requiresPermission: "view",
+      matchRoutes: [`${basePath}/salary-sheet-templates`],
     },
     {
       name: "My Profile",
