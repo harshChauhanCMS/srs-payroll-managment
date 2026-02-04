@@ -80,16 +80,17 @@ export default function MainLayout({ children }) {
         setIsCollapsed={setIsCollapsed}
       />
       <div
-        className={`flex flex-col flex-1 overflow-auto transition-all duration-300 ${isCollapsed ? "lg:ml-20" : "lg:ml-64"
-          }`}
+        className={`flex flex-col flex-1 overflow-auto transition-all duration-300 ${
+          isCollapsed ? "lg:ml-20" : "lg:ml-64"
+        }`}
       >
-        <div className="p-4">
+        <div className="px-4">
           <Header />
         </div>
         <main className="p-4">{children}</main>
         <button
           onClick={() => setSidebarOpen((prev) => !prev)}
-          className="fixed lg:hidden top-4.5 left-5 z-50 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-[#366598]"
+          className="fixed lg:hidden top-4.5 left-5 z-50 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-[#F39035]"
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
         >
           {sidebarOpen ? <CloseOutlined /> : <MenuOutlined />}

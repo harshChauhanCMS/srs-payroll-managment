@@ -4,14 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
-import { useAuth } from "@/hooks/useAuth";
-import { usePermissions } from "@/hooks/usePermissions";
-import { clearAuthData } from "@/utils/storage";
-import { ROLES } from "@/constants/roles";
-
 import { images } from "@/assets/images";
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { ROLES } from "@/constants/roles";
+import { clearAuthData } from "@/utils/storage";
+import { usePermissions } from "@/hooks/usePermissions";
 import { usePathname, useRouter } from "next/navigation";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { getSidebarItems, sidebarHeading } from "@/constants/sidebarItems";
 import {
   LogoutOutlined,
@@ -148,7 +147,7 @@ export default function Sidebar({
           <div className="p-4 flex flex-col items-center gap-2 relative">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 bg-white rounded-full items-center justify-center text-[#C2A368] shadow-md cursor-pointer"
+              className="hidden lg:flex absolute top-5 -right-3 w-6 h-6 bg-white rounded-full items-center justify-center text-[#F39035] shadow-md cursor-pointer"
             >
               {isCollapsed ? <ArrowRightOutlined /> : <ArrowLeftOutlined />}
             </button>

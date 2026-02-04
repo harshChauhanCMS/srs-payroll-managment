@@ -6,8 +6,8 @@ import { Toaster } from "react-hot-toast";
 const poppins = Poppins({ weight: "400", subsets: ["latin"] });
 
 export const metadata = {
-  title: "SRS Manpower Portal",
-  description: "SRS Manpower Portal",
+  title: "SRS Manpower Portalp",
+  description: "SRS Manpower Portalp",
 };
 
 export default function RootLayout({ children }) {
