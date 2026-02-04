@@ -41,6 +41,7 @@ export default function SkillsPage() {
         setTableData(
           dataList.map((item) => ({
             name: item?.name || "N/A",
+            skillCode: item?.skillCode || "N/A",
             category: item?.category || "N/A",
             basic: item?.basic != null ? Number(item.basic) : 0,
             status: item?.active ? "Active" : "Inactive",
@@ -85,6 +86,7 @@ export default function SkillsPage() {
 
   const columns = [
     { Header: "Name", accessor: "name", width: 180 },
+    { Header: "Skill Code", accessor: "skillCode", width: 120 },
     { Header: "Category", accessor: "category", width: 140 },
     {
       Header: "Basic (₹)",

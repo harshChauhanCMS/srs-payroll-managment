@@ -13,13 +13,15 @@ const gradeSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
-    minSalary: {
-      type: Number,
-      default: 0,
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: [true, "Department is required"],
     },
-    maxSalary: {
-      type: Number,
-      default: 0,
+    designation: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Designation",
+      required: [true, "Designation is required"],
     },
     active: {
       type: Boolean,
@@ -30,6 +32,8 @@ const gradeSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+gradeSchema.index({ designation: 1, code: 1 });
 
 // Avoid using a cached model
 if (mongoose.models.Grade) {

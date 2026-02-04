@@ -10,7 +10,10 @@ export async function GET(request, { params }) {
 
     const { id } = await params;
     await connectDB();
-    const grade = await Grade.findById(id).lean();
+    const grade = await Grade.findById(id)
+      .populate("department", "name code")
+      .populate("designation", "name code")
+      .lean();
     if (!grade) {
       return NextResponse.json({ message: "Grade not found" }, { status: 404 });
     }
@@ -27,7 +30,7 @@ export async function PUT(request, { params }) {
 
     const { id } = await params;
     const body = await request.json();
-    const { name, code, minSalary, maxSalary, active } = body;
+    const { name, code, department, designation, active } = body;
 
     await connectDB();
     const grade = await Grade.findById(id);
@@ -50,8 +53,8 @@ export async function PUT(request, { params }) {
 
     if (name !== undefined) grade.name = name.trim();
     if (code !== undefined) grade.code = code.trim().toUpperCase();
-    if (minSalary !== undefined) grade.minSalary = minSalary;
-    if (maxSalary !== undefined) grade.maxSalary = maxSalary;
+    if (department !== undefined) grade.department = department;
+    if (designation !== undefined) grade.designation = designation;
     if (active !== undefined) grade.active = active;
 
     await grade.save();

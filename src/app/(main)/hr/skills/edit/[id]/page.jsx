@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import toast from "react-hot-toast";
@@ -19,9 +20,11 @@ import {
   Col,
   Typography,
   Switch,
+  Select,
 } from "antd";
-import { ToolOutlined, DollarOutlined } from "@ant-design/icons";
+import { ToolOutlined, DollarOutlined, ApartmentOutlined } from "@ant-design/icons";
 
+const { Option } = Select;
 const basePath = "/hr";
 
 export default function EditSkillPage() {
@@ -34,24 +37,67 @@ export default function EditSkillPage() {
   const { putQuery, loading: updateLoading } = usePutQuery();
 
   const [skill, setSkill] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [selectedDesignation, setSelectedDesignation] = useState(null);
 
-  const fetchSkill = useCallback(() => {
+  useEffect(() => {
+    getQuery({
+      url: "/api/v1/admin/departments?active=true&limit=100",
+      onSuccess: (res) => setDepartments(res.departments || []),
+    });
+  }, []);
+
+  const fetchDesignations = useCallback(
+    (departmentId) => {
+      if (!departmentId) { setDesignations([]); return; }
+      getQuery({
+        url: `/api/v1/admin/designations?department=${departmentId}&active=true&limit=100`,
+        onSuccess: (res) => setDesignations(res.designations || []),
+      });
+    },
+    [getQuery],
+  );
+
+  const fetchGrades = useCallback(
+    (designationId) => {
+      if (!designationId) { setGrades([]); return; }
+      getQuery({
+        url: `/api/v1/admin/grades?designation=${designationId}&active=true&limit=100`,
+        onSuccess: (res) => setGrades(res.grades || []),
+      });
+    },
+    [getQuery],
+  );
+
+  const fetchSkill = () => {
     getQuery({
       url: `/api/v1/admin/skills/${id}`,
       onSuccess: (response) => {
         const data = response?.skill || null;
         setSkill(data);
         if (data) {
+          const departmentId = data.department?._id || data.department;
+          const designationId = data.designation?._id || data.designation;
+          const gradeId = data.grade?._id || data.grade;
+
+          setSelectedDepartment(departmentId);
+          setSelectedDesignation(designationId);
+
+          if (departmentId) fetchDesignations(departmentId);
+          if (designationId) fetchGrades(designationId);
+
           form.setFieldsValue({
             name: data.name,
+            skillCode: data.skillCode,
             category: data.category || "General",
+            department: departmentId,
+            designation: designationId,
+            grade: gradeId,
             active: data.active !== false,
             basic: data.basic ?? 0,
-            houseRentAllowance: data.houseRentAllowance ?? 0,
-            otherAllowance: data.otherAllowance ?? 0,
-            leaveEarnings: data.leaveEarnings ?? 0,
-            bonusEarnings: data.bonusEarnings ?? 0,
-            arrear: data.arrear ?? 0,
           });
         }
       },
@@ -59,25 +105,41 @@ export default function EditSkillPage() {
         toast.error("Failed to fetch skill");
       },
     });
-  }, [id, getQuery, form]);
+  };
 
   useEffect(() => {
     if (id) fetchSkill();
-  }, [id, fetchSkill]);
+  }, []);
+
+  const handleDepartmentChange = (departmentId) => {
+    setSelectedDepartment(departmentId);
+    setSelectedDesignation(null);
+    form.setFieldValue("designation", undefined);
+    form.setFieldValue("grade", undefined);
+    setDesignations([]);
+    setGrades([]);
+    if (departmentId) fetchDesignations(departmentId);
+  };
+
+  const handleDesignationChange = (designationId) => {
+    setSelectedDesignation(designationId);
+    form.setFieldValue("grade", undefined);
+    setGrades([]);
+    if (designationId) fetchGrades(designationId);
+  };
 
   const handleSubmit = (values) => {
     putQuery({
       url: `/api/v1/admin/skills/${id}`,
       putData: {
         name: values.name,
+        skillCode: values.skillCode,
         category: values.category || "General",
+        department: values.department,
+        designation: values.designation,
+        grade: values.grade,
         active: values.active !== false,
         basic: Number(values.basic) || 0,
-        houseRentAllowance: Number(values.houseRentAllowance) || 0,
-        otherAllowance: Number(values.otherAllowance) || 0,
-        leaveEarnings: Number(values.leaveEarnings) || 0,
-        bonusEarnings: Number(values.bonusEarnings) || 0,
-        arrear: Number(values.arrear) || 0,
       },
       onSuccess: () => {
         toast.success("Skill updated successfully");
@@ -126,7 +188,7 @@ export default function EditSkillPage() {
             </span>
           </Typography.Title>
           <Row gutter={16}>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={8}>
               <Form.Item
                 name="name"
                 label="Skill Name"
@@ -136,6 +198,15 @@ export default function EditSkillPage() {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
+              <Form.Item
+                name="skillCode"
+                label="Skill Code"
+                rules={[{ required: true, message: "Please enter skill code" }]}
+              >
+                <Input placeholder="e.g., WLD" size="large" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={4}>
               <Form.Item name="category" label="Category">
                 <Input placeholder="e.g., Technical" size="large" />
               </Form.Item>
@@ -149,72 +220,89 @@ export default function EditSkillPage() {
 
           <Typography.Title level={5} className="mt-6 mb-4">
             <span className="flex items-center gap-2">
-              <DollarOutlined /> Salary (Earnings – monthly rates)
+              <ApartmentOutlined /> Organization Hierarchy
             </span>
           </Typography.Title>
-          <p className="text-gray-600 text-sm mb-4">
-            These rates define the salary band for users assigned to this skill.
-          </p>
           <Row gutter={16}>
             <Col xs={24} md={8}>
-              <Form.Item name="basic" label="Basic (₹)">
-                <InputNumber
-                  min={0}
-                  placeholder="0"
+              <Form.Item
+                name="department"
+                label="Department"
+                rules={[{ required: true, message: "Please select department" }]}
+              >
+                <Select
+                  placeholder="Select department"
                   size="large"
-                  style={{ width: "100%" }}
-                  prefix="₹"
-                />
+                  showSearch
+                  optionFilterProp="children"
+                  onChange={handleDepartmentChange}
+                  allowClear
+                >
+                  {departments.map((d) => (
+                    <Option key={d._id} value={d._id}>
+                      {d.name} ({d.code})
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="houseRentAllowance" label="HRA (₹)">
-                <InputNumber
-                  min={0}
-                  placeholder="0"
+              <Form.Item
+                name="designation"
+                label="Designation"
+                rules={[{ required: true, message: "Please select designation" }]}
+                extra={!selectedDepartment ? "Select department first" : ""}
+              >
+                <Select
+                  placeholder={selectedDepartment ? "Select designation" : "Select department first"}
                   size="large"
-                  style={{ width: "100%" }}
-                  prefix="₹"
-                />
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={!selectedDepartment}
+                  onChange={handleDesignationChange}
+                  allowClear
+                >
+                  {designations.map((d) => (
+                    <Option key={d._id} value={d._id}>
+                      {d.name} ({d.code})
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="otherAllowance" label="Other Allowance (₹)">
-                <InputNumber
-                  min={0}
-                  placeholder="0"
+              <Form.Item
+                name="grade"
+                label="Grade"
+                rules={[{ required: true, message: "Please select grade" }]}
+                extra={!selectedDesignation ? "Select designation first" : ""}
+              >
+                <Select
+                  placeholder={selectedDesignation ? "Select grade" : "Select designation first"}
                   size="large"
-                  style={{ width: "100%" }}
-                  prefix="₹"
-                />
+                  showSearch
+                  optionFilterProp="children"
+                  disabled={!selectedDesignation}
+                  allowClear
+                >
+                  {grades.map((g) => (
+                    <Option key={g._id} value={g._id}>
+                      {g.name} ({g.code})
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>
+
+          <Typography.Title level={5} className="mt-6 mb-4">
+            <span className="flex items-center gap-2">
+              <DollarOutlined /> Salary
+            </span>
+          </Typography.Title>
           <Row gutter={16}>
             <Col xs={24} md={8}>
-              <Form.Item name="leaveEarnings" label="Leave Earnings (₹)">
-                <InputNumber
-                  min={0}
-                  placeholder="0"
-                  size="large"
-                  style={{ width: "100%" }}
-                  prefix="₹"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="bonusEarnings" label="Bonus Earnings (₹)">
-                <InputNumber
-                  min={0}
-                  placeholder="0"
-                  size="large"
-                  style={{ width: "100%" }}
-                  prefix="₹"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item name="arrear" label="Arrear (₹)">
+              <Form.Item name="basic" label="Basic (₹)">
                 <InputNumber
                   min={0}
                   placeholder="0"

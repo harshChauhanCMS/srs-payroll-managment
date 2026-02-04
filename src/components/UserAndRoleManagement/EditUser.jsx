@@ -74,6 +74,8 @@ export default function EditUser({ basePath = "/admin" }) {
   const [hasCompany, setHasCompany] = useState(false);
   const [hasSite, setHasSite] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [selectedDesignation, setSelectedDesignation] = useState(null);
+  const [selectedGrade, setSelectedGrade] = useState(null);
 
   // Upload State
   const [imageUploading, setImageUploading] = useState(false);
@@ -132,21 +134,35 @@ export default function EditUser({ basePath = "/admin" }) {
     [getDesignations],
   );
 
-  useEffect(() => {
-    getGrades({
-      url: "/api/v1/admin/grades?active=true&limit=100",
-      onSuccess: (res) => setGrades(res.grades || []),
-      onFail: (err) => console.error("Failed to fetch grades", err),
-    });
-  }, []);
+  const fetchGrades = useCallback(
+    (designationId) => {
+      if (!designationId) {
+        setGrades([]);
+        return;
+      }
+      getGrades({
+        url: `/api/v1/admin/grades?designation=${designationId}&active=true&limit=100`,
+        onSuccess: (res) => setGrades(res.grades || []),
+        onFail: (err) => console.error("Failed to fetch grades", err),
+      });
+    },
+    [getGrades],
+  );
 
-  useEffect(() => {
-    getSkills({
-      url: "/api/v1/admin/skills?active=true&limit=100",
-      onSuccess: (res) => setSkills(res.skills || []),
-      onFail: (err) => console.error("Failed to fetch skills", err),
-    });
-  }, []);
+  const fetchSkills = useCallback(
+    (gradeId) => {
+      if (!gradeId) {
+        setSkills([]);
+        return;
+      }
+      getSkills({
+        url: `/api/v1/admin/skills?grade=${gradeId}&active=true&limit=100`,
+        onSuccess: (res) => setSkills(res.skills || []),
+        onFail: (err) => console.error("Failed to fetch skills", err),
+      });
+    },
+    [getSkills],
+  );
 
   const fetchUser = useCallback(() => {
     getQuery({
@@ -166,6 +182,8 @@ export default function EditUser({ basePath = "/admin" }) {
           setHasCompany(!!companyId);
           setHasSite(!!siteId);
           setSelectedDepartment(departmentId);
+          setSelectedDesignation(designationId);
+          setSelectedGrade(gradeId);
 
           // Initialize aadhar photo from existing data
           if (userData.aadharCardPhoto) {
@@ -224,6 +242,8 @@ export default function EditUser({ basePath = "/admin" }) {
           if (companyId) fetchSites(companyId);
           if (siteId) fetchDepartments(siteId);
           if (departmentId) fetchDesignations(departmentId);
+          if (designationId) fetchGrades(designationId);
+          if (gradeId) fetchSkills(gradeId);
         }
       },
       onFail: (err) => {
@@ -231,7 +251,7 @@ export default function EditUser({ basePath = "/admin" }) {
         toast.error("Failed to fetch user details");
       },
     });
-  }, [id, getQuery, form, fetchSites, fetchDepartments, fetchDesignations]);
+  }, [id, getQuery, form, fetchSites, fetchDepartments, fetchDesignations, fetchGrades, fetchSkills]);
 
   useEffect(() => {
     if (id) fetchUser();
@@ -241,11 +261,17 @@ export default function EditUser({ basePath = "/admin" }) {
     form.setFieldValue("site", undefined);
     form.setFieldValue("department", undefined);
     form.setFieldValue("designation", undefined);
+    form.setFieldValue("grade", undefined);
+    form.setFieldValue("skills", []);
     setSites([]);
     setDepartments([]);
     setDesignations([]);
+    setGrades([]);
+    setSkills([]);
     setHasSite(false);
     setSelectedDepartment(null);
+    setSelectedDesignation(null);
+    setSelectedGrade(null);
     if (companyId) {
       setHasCompany(true);
       fetchSites(companyId);
@@ -257,9 +283,15 @@ export default function EditUser({ basePath = "/admin" }) {
   const handleSiteChange = (siteId) => {
     form.setFieldValue("department", undefined);
     form.setFieldValue("designation", undefined);
+    form.setFieldValue("grade", undefined);
+    form.setFieldValue("skills", []);
     setDepartments([]);
     setDesignations([]);
+    setGrades([]);
+    setSkills([]);
     setSelectedDepartment(null);
+    setSelectedDesignation(null);
+    setSelectedGrade(null);
     if (siteId) {
       setHasSite(true);
       fetchDepartments(siteId);
@@ -270,10 +302,37 @@ export default function EditUser({ basePath = "/admin" }) {
 
   const handleDepartmentChange = (departmentId) => {
     form.setFieldValue("designation", undefined);
+    form.setFieldValue("grade", undefined);
+    form.setFieldValue("skills", []);
     setDesignations([]);
+    setGrades([]);
+    setSkills([]);
     setSelectedDepartment(departmentId);
+    setSelectedDesignation(null);
+    setSelectedGrade(null);
     if (departmentId) {
       fetchDesignations(departmentId);
+    }
+  };
+
+  const handleDesignationChange = (designationId) => {
+    form.setFieldValue("grade", undefined);
+    form.setFieldValue("skills", []);
+    setGrades([]);
+    setSkills([]);
+    setSelectedDesignation(designationId);
+    setSelectedGrade(null);
+    if (designationId) {
+      fetchGrades(designationId);
+    }
+  };
+
+  const handleGradeChange = (gradeId) => {
+    form.setFieldValue("skills", []);
+    setSkills([]);
+    setSelectedGrade(gradeId);
+    if (gradeId) {
+      fetchSkills(gradeId);
     }
   };
 
@@ -694,6 +753,7 @@ export default function EditUser({ basePath = "/admin" }) {
                   showSearch
                   optionFilterProp="children"
                   disabled={!selectedDepartment}
+                  onChange={handleDesignationChange}
                   allowClear
                 >
                   {designations.map((d) => (
@@ -705,14 +765,24 @@ export default function EditUser({ basePath = "/admin" }) {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="grade" label="Grade">
+              <Form.Item
+                name="grade"
+                label="Grade"
+                extra={!selectedDesignation ? "Select designation first" : ""}
+              >
                 <Select
-                  placeholder="Select grade"
+                  placeholder={
+                    selectedDesignation
+                      ? "Select grade"
+                      : "Select designation first"
+                  }
                   suffixIcon={<StarOutlined className="text-gray-400" />}
                   size="large"
                   loading={gradesLoading}
                   showSearch
                   optionFilterProp="children"
+                  disabled={!selectedDesignation}
+                  onChange={handleGradeChange}
                   allowClear
                 >
                   {grades.map((g) => (
@@ -724,20 +794,27 @@ export default function EditUser({ basePath = "/admin" }) {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="skills" label="Skills">
+              <Form.Item
+                name="skills"
+                label="Skills"
+                extra={!selectedGrade ? "Select grade first" : ""}
+              >
                 <Select
                   mode="multiple"
-                  placeholder="Select skills"
+                  placeholder={
+                    selectedGrade ? "Select skills" : "Select grade first"
+                  }
                   suffixIcon={<ToolOutlined className="text-gray-400" />}
                   size="large"
                   loading={skillsLoading}
                   showSearch
                   optionFilterProp="children"
+                  disabled={!selectedGrade}
                   allowClear
                 >
                   {skills.map((s) => (
                     <Option key={s._id} value={s._id}>
-                      {s.name} ({s.category})
+                      {s.name} ({s.skillCode})
                     </Option>
                   ))}
                 </Select>
@@ -760,19 +837,13 @@ export default function EditUser({ basePath = "/admin" }) {
                 {user.skills.map((skill, idx) => {
                   const s = skill && typeof skill === "object" ? skill : {};
                   const basic = Number(s.basic) || 0;
-                  const hra = Number(s.houseRentAllowance) || 0;
-                  const other = Number(s.otherAllowance) || 0;
-                  const leave = Number(s.leaveEarnings) || 0;
-                  const bonus = Number(s.bonusEarnings) || 0;
-                  const arrear = Number(s.arrear) || 0;
-                  const hasAny =
-                    basic || hra || other || leave || bonus || arrear;
                   const fmt = (n) => `₹${Number(n).toLocaleString()}`;
                   return (
                     <div key={s._id || idx} className="mb-3 last:mb-0">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="font-medium text-gray-800">
                           {s.name || `Skill ${idx + 1}`}
+                          {s.skillCode ? ` (${s.skillCode})` : ""}
                         </span>
                         <Button
                           type="link"
@@ -785,18 +856,13 @@ export default function EditUser({ basePath = "/admin" }) {
                           Edit skill salary
                         </Button>
                       </div>
-                      {!hasAny ? (
+                      {!basic ? (
                         <span className="text-gray-500 text-sm">
                           No salary configured
                         </span>
                       ) : (
                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-700 text-sm">
-                          {basic > 0 && <span>Basic: {fmt(basic)}</span>}
-                          {hra > 0 && <span>HRA: {fmt(hra)}</span>}
-                          {other > 0 && <span>Other: {fmt(other)}</span>}
-                          {leave > 0 && <span>Leave: {fmt(leave)}</span>}
-                          {bonus > 0 && <span>Bonus: {fmt(bonus)}</span>}
-                          {arrear > 0 && <span>Arrear: {fmt(arrear)}</span>}
+                          <span>Basic: {fmt(basic)}</span>
                         </div>
                       )}
                     </div>

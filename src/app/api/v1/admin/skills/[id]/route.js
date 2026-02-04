@@ -10,7 +10,11 @@ export async function GET(request, { params }) {
 
     const { id } = await params;
     await connectDB();
-    const skill = await Skill.findById(id).lean();
+    const skill = await Skill.findById(id)
+      .populate("department", "name code")
+      .populate("designation", "name code")
+      .populate("grade", "name code")
+      .lean();
     if (!skill) {
       return NextResponse.json({ message: "Skill not found" }, { status: 404 });
     }
@@ -29,14 +33,13 @@ export async function PUT(request, { params }) {
     const body = await request.json();
     const {
       name,
+      skillCode,
       category,
+      department,
+      designation,
+      grade,
       active,
       basic,
-      houseRentAllowance,
-      otherAllowance,
-      leaveEarnings,
-      bonusEarnings,
-      arrear,
     } = body;
 
     await connectDB();
@@ -45,15 +48,27 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: "Skill not found" }, { status: 404 });
     }
 
+    if (skillCode && skillCode.trim().toUpperCase() !== skill.skillCode) {
+      const existing = await Skill.findOne({
+        skillCode: skillCode.trim().toUpperCase(),
+        _id: { $ne: id },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { message: "Skill code already exists" },
+          { status: 409 },
+        );
+      }
+    }
+
     if (name !== undefined) skill.name = name.trim();
+    if (skillCode !== undefined) skill.skillCode = skillCode.trim().toUpperCase();
     if (category !== undefined) skill.category = category.trim();
+    if (department !== undefined) skill.department = department;
+    if (designation !== undefined) skill.designation = designation;
+    if (grade !== undefined) skill.grade = grade;
     if (active !== undefined) skill.active = active;
     if (basic !== undefined) skill.basic = Number(basic) || 0;
-    if (houseRentAllowance !== undefined) skill.houseRentAllowance = Number(houseRentAllowance) || 0;
-    if (otherAllowance !== undefined) skill.otherAllowance = Number(otherAllowance) || 0;
-    if (leaveEarnings !== undefined) skill.leaveEarnings = Number(leaveEarnings) || 0;
-    if (bonusEarnings !== undefined) skill.bonusEarnings = Number(bonusEarnings) || 0;
-    if (arrear !== undefined) skill.arrear = Number(arrear) || 0;
 
     await skill.save();
     return NextResponse.json({ message: "Skill updated", skill });
@@ -73,7 +88,6 @@ export async function DELETE(request, { params }) {
     if (!skill) {
       return NextResponse.json({ message: "Skill not found" }, { status: 404 });
     }
-    // Permanently delete skill
     await Skill.findByIdAndDelete(id);
     return NextResponse.json({ message: "Skill deleted successfully" });
   } catch (err) {

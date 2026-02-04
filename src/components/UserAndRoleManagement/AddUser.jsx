@@ -68,6 +68,8 @@ export default function AddUser({ basePath = "/admin" }) {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedSite, setSelectedSite] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [selectedDesignation, setSelectedDesignation] = useState(null);
+  const [selectedGrade, setSelectedGrade] = useState(null);
 
   // Upload State
   const [imageUploading, setImageUploading] = useState(false);
@@ -130,32 +132,52 @@ export default function AddUser({ basePath = "/admin" }) {
     [getDesignations],
   );
 
-  useEffect(() => {
-    getGrades({
-      url: "/api/v1/admin/grades?active=true&limit=100",
-      onSuccess: (res) => setGrades(res.grades || []),
-      onFail: (err) => console.error("Failed to fetch grades", err),
-    });
-  }, []);
+  const fetchGrades = useCallback(
+    (designationId) => {
+      if (!designationId) {
+        setGrades([]);
+        return;
+      }
+      getGrades({
+        url: `/api/v1/admin/grades?designation=${designationId}&active=true&limit=100`,
+        onSuccess: (res) => setGrades(res.grades || []),
+        onFail: (err) => console.error("Failed to fetch grades", err),
+      });
+    },
+    [getGrades],
+  );
 
-  useEffect(() => {
-    getSkills({
-      url: "/api/v1/admin/skills?active=true&limit=100",
-      onSuccess: (res) => setSkills(res.skills || []),
-      onFail: (err) => console.error("Failed to fetch skills", err),
-    });
-  }, []);
+  const fetchSkills = useCallback(
+    (gradeId) => {
+      if (!gradeId) {
+        setSkills([]);
+        return;
+      }
+      getSkills({
+        url: `/api/v1/admin/skills?grade=${gradeId}&active=true&limit=100`,
+        onSuccess: (res) => setSkills(res.skills || []),
+        onFail: (err) => console.error("Failed to fetch skills", err),
+      });
+    },
+    [getSkills],
+  );
 
   const handleCompanyChange = (companyId) => {
     form.setFieldValue("site", undefined);
     form.setFieldValue("department", undefined);
     form.setFieldValue("designation", undefined);
+    form.setFieldValue("grade", undefined);
+    form.setFieldValue("skills", undefined);
     setSites([]);
     setDepartments([]);
     setDesignations([]);
+    setGrades([]);
+    setSkills([]);
     setSelectedCompany(companyId);
     setSelectedSite(null);
     setSelectedDepartment(null);
+    setSelectedDesignation(null);
+    setSelectedGrade(null);
     if (companyId) {
       fetchSites(companyId);
     }
@@ -164,10 +186,16 @@ export default function AddUser({ basePath = "/admin" }) {
   const handleSiteChange = (siteId) => {
     form.setFieldValue("department", undefined);
     form.setFieldValue("designation", undefined);
+    form.setFieldValue("grade", undefined);
+    form.setFieldValue("skills", undefined);
     setDepartments([]);
     setDesignations([]);
+    setGrades([]);
+    setSkills([]);
     setSelectedSite(siteId);
     setSelectedDepartment(null);
+    setSelectedDesignation(null);
+    setSelectedGrade(null);
     if (siteId) {
       fetchDepartments(siteId);
     }
@@ -175,10 +203,37 @@ export default function AddUser({ basePath = "/admin" }) {
 
   const handleDepartmentChange = (departmentId) => {
     form.setFieldValue("designation", undefined);
+    form.setFieldValue("grade", undefined);
+    form.setFieldValue("skills", undefined);
     setDesignations([]);
+    setGrades([]);
+    setSkills([]);
     setSelectedDepartment(departmentId);
+    setSelectedDesignation(null);
+    setSelectedGrade(null);
     if (departmentId) {
       fetchDesignations(departmentId);
+    }
+  };
+
+  const handleDesignationChange = (designationId) => {
+    form.setFieldValue("grade", undefined);
+    form.setFieldValue("skills", undefined);
+    setGrades([]);
+    setSkills([]);
+    setSelectedDesignation(designationId);
+    setSelectedGrade(null);
+    if (designationId) {
+      fetchGrades(designationId);
+    }
+  };
+
+  const handleGradeChange = (gradeId) => {
+    form.setFieldValue("skills", undefined);
+    setSkills([]);
+    setSelectedGrade(gradeId);
+    if (gradeId) {
+      fetchSkills(gradeId);
     }
   };
 
@@ -537,6 +592,7 @@ export default function AddUser({ basePath = "/admin" }) {
                   showSearch
                   optionFilterProp="children"
                   disabled={!selectedDepartment}
+                  onChange={handleDesignationChange}
                   allowClear
                 >
                   {designations.map((d) => (
@@ -548,14 +604,24 @@ export default function AddUser({ basePath = "/admin" }) {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="grade" label="Grade">
+              <Form.Item
+                name="grade"
+                label="Grade"
+                extra={!selectedDesignation ? "Select designation first" : ""}
+              >
                 <Select
-                  placeholder="Select grade"
+                  placeholder={
+                    selectedDesignation
+                      ? "Select grade"
+                      : "Select designation first"
+                  }
                   suffixIcon={<StarOutlined className="text-gray-400" />}
                   size="large"
                   loading={gradesLoading}
                   showSearch
                   optionFilterProp="children"
+                  disabled={!selectedDesignation}
+                  onChange={handleGradeChange}
                   allowClear
                 >
                   {grades.map((g) => (
@@ -567,20 +633,29 @@ export default function AddUser({ basePath = "/admin" }) {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item name="skills" label="Skills">
+              <Form.Item
+                name="skills"
+                label="Skills"
+                extra={!selectedGrade ? "Select grade first" : ""}
+              >
                 <Select
                   mode="multiple"
-                  placeholder="Select skills"
+                  placeholder={
+                    selectedGrade
+                      ? "Select skills"
+                      : "Select grade first"
+                  }
                   suffixIcon={<ToolOutlined className="text-gray-400" />}
                   size="large"
                   loading={skillsLoading}
                   showSearch
                   optionFilterProp="children"
+                  disabled={!selectedGrade}
                   allowClear
                 >
                   {skills.map((s) => (
                     <Option key={s._id} value={s._id}>
-                      {s.name} ({s.category})
+                      {s.name} ({s.skillCode})
                     </Option>
                   ))}
                 </Select>

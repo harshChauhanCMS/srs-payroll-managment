@@ -311,30 +311,19 @@ export default function ViewUser({ basePath = "/admin" }) {
             user.skills.map((skill, idx) => {
               const s = skill && typeof skill === "object" ? skill : {};
               const basic = Number(s.basic) || 0;
-              const hra = Number(s.houseRentAllowance) || 0;
-              const other = Number(s.otherAllowance) || 0;
-              const leave = Number(s.leaveEarnings) || 0;
-              const bonus = Number(s.bonusEarnings) || 0;
-              const arrear = Number(s.arrear) || 0;
-              const hasAny = basic || hra || other || leave || bonus || arrear;
               const fmt = (n) => `₹${Number(n).toLocaleString()}`;
               return (
                 <Descriptions.Item
                   key={s._id || idx}
-                  label={s.name || `Skill ${idx + 1}`}
+                  label={`${s.name || `Skill ${idx + 1}`}${s.skillCode ? ` (${s.skillCode})` : ""}`}
                   span={3}
                 >
-                  {!hasAny ? (
+                  {!basic ? (
                     "No salary configured"
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-gray-700">
-                      {basic > 0 && <span>Basic: {fmt(basic)}</span>}
-                      {hra > 0 && <span>HRA: {fmt(hra)}</span>}
-                      {other > 0 && <span>Other Allowance: {fmt(other)}</span>}
-                      {leave > 0 && <span>Leave Earnings: {fmt(leave)}</span>}
-                      {bonus > 0 && <span>Bonus Earnings: {fmt(bonus)}</span>}
-                      {arrear > 0 && <span>Arrear: {fmt(arrear)}</span>}
-                    </div>
+                    <span className="text-gray-700">
+                      Basic: {fmt(basic)}
+                    </span>
                   )}
                 </Descriptions.Item>
               );
@@ -507,22 +496,11 @@ export default function ViewUser({ basePath = "/admin" }) {
               if (!s || typeof s !== "object") return acc;
               return {
                 basic: acc.basic + (Number(s.basic) || 0),
-                hra: acc.hra + (Number(s.houseRentAllowance) || 0),
-                other: acc.other + (Number(s.otherAllowance) || 0),
-                leave: acc.leave + (Number(s.leaveEarnings) || 0),
-                bonus: acc.bonus + (Number(s.bonusEarnings) || 0),
-                arrear: acc.arrear + (Number(s.arrear) || 0),
               };
             },
-            { basic: 0, hra: 0, other: 0, leave: 0, bonus: 0, arrear: 0 },
+            { basic: 0 },
           );
-          const grossEarnings =
-            skillTotals.basic +
-            skillTotals.hra +
-            skillTotals.other +
-            skillTotals.leave +
-            skillTotals.bonus +
-            skillTotals.arrear;
+          const grossEarnings = skillTotals.basic;
 
           // Priority: user-defined > salary component > hardcoded default
           const pfFromUser = user.pfPercentage != null;

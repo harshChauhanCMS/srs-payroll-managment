@@ -209,14 +209,12 @@ export async function POST(request) {
       // Get salary rates from employee's first skill
       const skill = Array.isArray(emp.skills) && emp.skills.length > 0 ? emp.skills[0] : null;
       const basicRate = skill?.basic || 0;
-      const hraRate = skill?.houseRentAllowance || 0;
-      const otherRate = skill?.otherAllowance || 0;
 
       // Calculate earnings
       const payableDays = att.payableDays || 0;
       const basicEarned = round((basicRate / STANDARD_WORKING_DAYS) * payableDays);
-      const hraEarned = round((hraRate / STANDARD_WORKING_DAYS) * payableDays);
-      const otherEarned = round((otherRate / STANDARD_WORKING_DAYS) * payableDays);
+      const hraEarned = 0;
+      const otherEarned = 0;
 
       // OT amount: (basic / 26 / 8) * 2 * OT_hours
       const otHours = att.otHours || 0;
@@ -225,7 +223,7 @@ export async function POST(request) {
       const incentive = att.incentive || 0;
       const arrear = att.arrear || 0;
 
-      const grossEarning = basicEarned + hraEarned + otherEarned + otAmount + incentive + arrear;
+      const grossEarning = basicEarned + otAmount + incentive + arrear;
 
       // Calculate deductions
       let pfDeduction = 0;
