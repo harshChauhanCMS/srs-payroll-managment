@@ -24,6 +24,7 @@ import moment from "moment";
 import { useRouter, usePathname } from "next/navigation";
 import useGetQuery from "@/hooks/getQuery.hook";
 import usePatchQuery from "@/hooks/patchQuery.hook";
+import apiClient from "@/apis/apiClient";
 
 const { Title, Text } = Typography;
 
@@ -78,8 +79,32 @@ export default function PayrollPreview({ payrollRunId }) {
     });
   };
 
-  const handleExport = () => {
-    window.open(`/api/v1/admin/payroll-runs/${payrollRunId}/export`, "_blank");
+  const handleExport = async () => {
+    try {
+      const response = await apiClient.get(
+        `/api/v1/admin/payroll-runs/${payrollRunId}/export`,
+        {
+          responseType: "blob",
+        },
+      );
+
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Payroll_${payrollRun.site?.name}_${MONTH_NAMES[payrollRun.payrollMonth - 1]}_${payrollRun.payrollYear}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Export downloaded successfully");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to export payroll");
+    }
   };
 
   const handleStatusChange = async (newStatus) => {
@@ -310,7 +335,7 @@ export default function PayrollPreview({ payrollRunId }) {
             <Space>
               <Button
                 icon={<FileExcelOutlined />}
-                className="white-button"
+                className="green-button"
                 style={{ borderRadius: "8px" }}
                 onClick={handleExport}
               >
