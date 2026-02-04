@@ -1,11 +1,30 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Card, Row, Col, Select, Form, Button, Badge, Table, Tag, Statistic, Typography, Empty } from "antd";
-import { WarningOutlined, BankOutlined, SafetyCertificateOutlined, ClockCircleOutlined, UserDeleteOutlined, MinusCircleOutlined } from "@ant-design/icons";
 import toast from "react-hot-toast";
 import useGetQuery from "@/hooks/getQuery.hook";
+import { useState, useEffect, useCallback } from "react";
+import {
+  WarningOutlined,
+  BankOutlined,
+  SafetyCertificateOutlined,
+  ClockCircleOutlined,
+  UserDeleteOutlined,
+  MinusCircleOutlined,
+} from "@ant-design/icons";
+import {
+  Card,
+  Row,
+  Col,
+  Select,
+  Form,
+  Button,
+  Table,
+  Tag,
+  Statistic,
+  Typography,
+  Empty,
+} from "antd";
 
 const { Title } = Typography;
 
@@ -31,8 +50,18 @@ const YEARS = Array.from({ length: 5 }, (_, i) => ({
 }));
 
 const exceptionColumns = [
-  { title: "Emp Code", dataIndex: "employeeCode", key: "employeeCode", width: 120 },
-  { title: "Employee Name", dataIndex: "employeeName", key: "employeeName", width: 200 },
+  {
+    title: "Emp Code",
+    dataIndex: "employeeCode",
+    key: "employeeCode",
+    width: 120,
+  },
+  {
+    title: "Employee Name",
+    dataIndex: "employeeName",
+    key: "employeeName",
+    width: 200,
+  },
   { title: "Issue", dataIndex: "issue", key: "issue" },
 ];
 
@@ -90,7 +119,7 @@ export default function ExceptionsView() {
       url: "/api/v1/admin/companies?active=true",
       onSuccess: (res) => {
         setCompanies(
-          (res.companies || []).map((c) => ({ value: c._id, label: c.name }))
+          (res.companies || []).map((c) => ({ value: c._id, label: c.name })),
         );
       },
     });
@@ -105,7 +134,7 @@ export default function ExceptionsView() {
             (res.sites || []).map((s) => ({
               value: s._id,
               label: `${s.name} (${s.siteCode})`,
-            }))
+            })),
           );
         },
       });
@@ -141,19 +170,34 @@ export default function ExceptionsView() {
   return (
     <div>
       <Card>
-        <Title level={4} style={{ marginBottom: 24 }}>Input Exceptions</Title>
+        <Title level={4} style={{ marginBottom: 24 }}>
+          Input Exceptions
+        </Title>
 
-        <Form form={form} layout="vertical" initialValues={{ payrollMonth: new Date().getMonth() + 1, payrollYear: currentYear }}>
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            payrollMonth: new Date().getMonth() + 1,
+            payrollYear: currentYear,
+          }}
+        >
           <Row gutter={16} align="bottom">
             <Col xs={24} md={6}>
-              <Form.Item name="company" label="Company" rules={[{ required: true }]}>
+              <Form.Item
+                name="company"
+                label="Company"
+                rules={[{ required: true }]}
+              >
                 <Select
                   placeholder="Select company"
                   options={companies}
                   onChange={handleCompanyChange}
                   showSearch
                   filterOption={(input, option) =>
-                    (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                 />
               </Form.Item>
@@ -161,29 +205,47 @@ export default function ExceptionsView() {
             <Col xs={24} md={6}>
               <Form.Item name="site" label="Site" rules={[{ required: true }]}>
                 <Select
-                  placeholder={selectedCompany ? "Select site" : "Select company first"}
+                  placeholder={
+                    selectedCompany ? "Select site" : "Select company first"
+                  }
                   options={sites}
                   disabled={!selectedCompany}
                   showSearch
                   filterOption={(input, option) =>
-                    (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                 />
               </Form.Item>
             </Col>
             <Col xs={24} md={4}>
-              <Form.Item name="payrollMonth" label="Month" rules={[{ required: true }]}>
+              <Form.Item
+                name="payrollMonth"
+                label="Month"
+                rules={[{ required: true }]}
+              >
                 <Select options={MONTHS} />
               </Form.Item>
             </Col>
             <Col xs={24} md={4}>
-              <Form.Item name="payrollYear" label="Year" rules={[{ required: true }]}>
+              <Form.Item
+                name="payrollYear"
+                label="Year"
+                rules={[{ required: true }]}
+              >
                 <Select options={YEARS} />
               </Form.Item>
             </Col>
             <Col xs={24} md={4}>
               <Form.Item label=" ">
-                <Button type="primary" onClick={loadExceptions} loading={loading}>
+                <Button
+                  type="primary"
+                  onClick={loadExceptions}
+                  className="simple-button"
+                  style={{ borderRadius: "8px" }}
+                  loading={loading}
+                >
                   Check Exceptions
                 </Button>
               </Form.Item>
@@ -202,7 +264,10 @@ export default function ExceptionsView() {
                   title="Total Exceptions"
                   value={exceptionsData.summary?.total || 0}
                   prefix={<WarningOutlined />}
-                  valueStyle={{ color: exceptionsData.summary?.total > 0 ? "#cf1322" : "#3f8600" }}
+                  valueStyle={{
+                    color:
+                      exceptionsData.summary?.total > 0 ? "#cf1322" : "#3f8600",
+                  }}
                 />
               </Card>
             </Col>
@@ -213,7 +278,12 @@ export default function ExceptionsView() {
                     title={cat.title}
                     value={exceptionsData.summary?.[cat.key] || 0}
                     prefix={cat.icon}
-                    valueStyle={{ color: (exceptionsData.summary?.[cat.key] || 0) > 0 ? "#cf1322" : "#3f8600" }}
+                    valueStyle={{
+                      color:
+                        (exceptionsData.summary?.[cat.key] || 0) > 0
+                          ? "#cf1322"
+                          : "#3f8600",
+                    }}
                   />
                 </Card>
               </Col>
@@ -236,8 +306,7 @@ export default function ExceptionsView() {
                   style={{ marginTop: 16 }}
                   title={
                     <span>
-                      {cat.icon}{" "}
-                      {cat.title}{" "}
+                      {cat.icon} {cat.title}{" "}
                       <Tag color={cat.tagColor}>{items.length}</Tag>
                     </span>
                   }

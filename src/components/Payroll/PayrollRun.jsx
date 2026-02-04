@@ -2,8 +2,26 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card, Row, Col, Select, Form, Button, Checkbox, Table, Tag, Space, Typography, Divider, Modal } from "antd";
-import { PlayCircleOutlined, EyeOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Row,
+  Col,
+  Select,
+  Form,
+  Button,
+  Checkbox,
+  Table,
+  Tag,
+  Space,
+  Typography,
+  Divider,
+  Modal,
+} from "antd";
+import {
+  PlayCircleOutlined,
+  EyeOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import toast from "react-hot-toast";
 import moment from "moment";
 import { useRouter, usePathname } from "next/navigation";
@@ -65,8 +83,8 @@ export default function PayrollRunComponent() {
   const basePath = pathname?.startsWith("/hr")
     ? "/hr"
     : pathname?.startsWith("/employee")
-    ? "/employee"
-    : "/admin";
+      ? "/employee"
+      : "/admin";
 
   // Fetch companies
   useEffect(() => {
@@ -74,7 +92,7 @@ export default function PayrollRunComponent() {
       url: "/api/v1/admin/companies?active=true",
       onSuccess: (res) => {
         setCompanies(
-          (res.companies || []).map((c) => ({ value: c._id, label: c.name }))
+          (res.companies || []).map((c) => ({ value: c._id, label: c.name })),
         );
       },
     });
@@ -91,7 +109,7 @@ export default function PayrollRunComponent() {
             (res.sites || []).map((s) => ({
               value: s._id,
               label: `${s.name} (${s.siteCode})`,
-            }))
+            })),
           );
         },
       });
@@ -226,7 +244,7 @@ export default function PayrollRunComponent() {
       dataIndex: "runAt",
       key: "runAt",
       width: 110,
-      render: (v) => v ? moment(v).format("DD-MM-YYYY") : "—",
+      render: (v) => (v ? moment(v).format("DD-MM-YYYY") : "—"),
     },
     {
       title: "Actions",
@@ -238,7 +256,9 @@ export default function PayrollRunComponent() {
             size="small"
             type="link"
             icon={<EyeOutlined />}
-            onClick={() => router.push(`${basePath}/payroll/preview/${record._id}`)}
+            onClick={() =>
+              router.push(`${basePath}/payroll/preview/${record._id}`)
+            }
           >
             Preview
           </Button>
@@ -259,19 +279,34 @@ export default function PayrollRunComponent() {
   return (
     <div>
       <Card>
-        <Title level={4} style={{ marginBottom: 24 }}>Payroll Processing</Title>
+        <Title level={4} style={{ marginBottom: 24 }}>
+          Payroll Processing
+        </Title>
 
-        <Form form={form} layout="vertical" initialValues={{ payrollMonth: new Date().getMonth() + 1, payrollYear: currentYear }}>
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            payrollMonth: new Date().getMonth() + 1,
+            payrollYear: currentYear,
+          }}
+        >
           <Row gutter={16}>
             <Col xs={24} md={6}>
-              <Form.Item name="company" label="Company" rules={[{ required: true }]}>
+              <Form.Item
+                name="company"
+                label="Company"
+                rules={[{ required: true }]}
+              >
                 <Select
                   placeholder="Select company"
                   options={companies}
                   onChange={handleCompanyChange}
                   showSearch
                   filterOption={(input, option) =>
-                    (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                 />
               </Form.Item>
@@ -279,34 +314,55 @@ export default function PayrollRunComponent() {
             <Col xs={24} md={6}>
               <Form.Item name="site" label="Site" rules={[{ required: true }]}>
                 <Select
-                  placeholder={selectedCompany ? "Select site" : "Select company first"}
+                  placeholder={
+                    selectedCompany ? "Select site" : "Select company first"
+                  }
                   options={sites}
                   disabled={!selectedCompany}
                   showSearch
                   filterOption={(input, option) =>
-                    (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                 />
               </Form.Item>
             </Col>
             <Col xs={24} md={4}>
-              <Form.Item name="payrollMonth" label="Month" rules={[{ required: true }]}>
+              <Form.Item
+                name="payrollMonth"
+                label="Month"
+                rules={[{ required: true }]}
+              >
                 <Select options={MONTHS} />
               </Form.Item>
             </Col>
             <Col xs={24} md={4}>
-              <Form.Item name="payrollYear" label="Year" rules={[{ required: true }]}>
+              <Form.Item
+                name="payrollYear"
+                label="Year"
+                rules={[{ required: true }]}
+              >
                 <Select options={YEARS} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Card size="small" title="Payroll Settings" style={{ marginBottom: 16 }}>
+          <Card
+            size="small"
+            title="Payroll Settings"
+            style={{ marginBottom: 16 }}
+          >
             <Row gutter={[24, 8]}>
               <Col xs={24} md={6}>
                 <Checkbox
                   checked={settings.activeDeploymentsOnly}
-                  onChange={(e) => setSettings((s) => ({ ...s, activeDeploymentsOnly: e.target.checked }))}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      activeDeploymentsOnly: e.target.checked,
+                    }))
+                  }
                 >
                   Active Deployments Only
                 </Checkbox>
@@ -314,7 +370,12 @@ export default function PayrollRunComponent() {
               <Col xs={24} md={6}>
                 <Checkbox
                   checked={settings.autoCalculateStatutory}
-                  onChange={(e) => setSettings((s) => ({ ...s, autoCalculateStatutory: e.target.checked }))}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      autoCalculateStatutory: e.target.checked,
+                    }))
+                  }
                 >
                   Auto-calculate Statutory
                 </Checkbox>
@@ -322,7 +383,12 @@ export default function PayrollRunComponent() {
               <Col xs={24} md={6}>
                 <Checkbox
                   checked={settings.skipExceptions}
-                  onChange={(e) => setSettings((s) => ({ ...s, skipExceptions: e.target.checked }))}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      skipExceptions: e.target.checked,
+                    }))
+                  }
                 >
                   Skip Employees with Exceptions
                 </Checkbox>
@@ -330,7 +396,12 @@ export default function PayrollRunComponent() {
               <Col xs={24} md={6}>
                 <Checkbox
                   checked={settings.applyRounding}
-                  onChange={(e) => setSettings((s) => ({ ...s, applyRounding: e.target.checked }))}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      applyRounding: e.target.checked,
+                    }))
+                  }
                 >
                   Apply Rounding Rules
                 </Checkbox>
@@ -341,6 +412,8 @@ export default function PayrollRunComponent() {
           <Button
             type="primary"
             size="large"
+            className="green-button"
+            style={{ borderRadius: "8px" }}
             icon={<PlayCircleOutlined />}
             onClick={handleRunPayroll}
             loading={runLoading}

@@ -2,8 +2,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, Row, Col, Table, Tag, Button, Statistic, Space, Typography, Divider } from "antd";
-import { FileExcelOutlined, CheckCircleOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Row,
+  Col,
+  Table,
+  Tag,
+  Button,
+  Statistic,
+  Space,
+  Typography,
+  Divider,
+} from "antd";
+import {
+  FileExcelOutlined,
+  CheckCircleOutlined,
+  ArrowLeftOutlined,
+} from "@ant-design/icons";
 import toast from "react-hot-toast";
 import moment from "moment";
 import { useRouter, usePathname } from "next/navigation";
@@ -19,7 +34,20 @@ const STATUS_COLORS = {
   locked: "purple",
 };
 
-const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 export default function PayrollPreview({ payrollRunId }) {
   const router = useRouter();
@@ -32,8 +60,8 @@ export default function PayrollPreview({ payrollRunId }) {
   const basePath = pathname?.startsWith("/hr")
     ? "/hr"
     : pathname?.startsWith("/employee")
-    ? "/employee"
-    : "/admin";
+      ? "/employee"
+      : "/admin";
 
   useEffect(() => {
     if (payrollRunId) {
@@ -91,9 +119,17 @@ export default function PayrollPreview({ payrollRunId }) {
   // Determine next status action
   let nextAction = null;
   if (payrollRun.status === "draft") {
-    nextAction = { status: "reviewed", label: "Mark as Reviewed", color: "blue" };
+    nextAction = {
+      status: "reviewed",
+      label: "Mark as Reviewed",
+      color: "blue",
+    };
   } else if (payrollRun.status === "reviewed") {
-    nextAction = { status: "approved", label: "Approve Payroll", color: "green" };
+    nextAction = {
+      status: "approved",
+      label: "Approve Payroll",
+      color: "green",
+    };
   } else if (payrollRun.status === "approved") {
     nextAction = { status: "locked", label: "Lock Payroll", color: "purple" };
   }
@@ -213,7 +249,9 @@ export default function PayrollPreview({ payrollRunId }) {
       key: "totalDeductions",
       width: 100,
       align: "right",
-      render: (v) => <Text type="danger">{(v || 0).toLocaleString("en-IN")}</Text>,
+      render: (v) => (
+        <Text type="danger">{(v || 0).toLocaleString("en-IN")}</Text>
+      ),
     },
     {
       title: "Net Pay",
@@ -222,7 +260,11 @@ export default function PayrollPreview({ payrollRunId }) {
       width: 110,
       align: "right",
       fixed: "right",
-      render: (v) => <Text strong style={{ color: "#389e0d" }}>{(v || 0).toLocaleString("en-IN")}</Text>,
+      render: (v) => (
+        <Text strong style={{ color: "#389e0d" }}>
+          {(v || 0).toLocaleString("en-IN")}
+        </Text>
+      ),
     },
   ];
 
@@ -256,7 +298,8 @@ export default function PayrollPreview({ payrollRunId }) {
                 Back
               </Button>
               <Title level={4} style={{ margin: 0 }}>
-                Payroll Preview - {monthName} {payrollRun.payrollYear} - {siteName}
+                Payroll Preview - {monthName} {payrollRun.payrollYear} -{" "}
+                {siteName}
               </Title>
               <Tag color={STATUS_COLORS[payrollRun.status]}>
                 {(payrollRun.status || "").toUpperCase()}
@@ -265,7 +308,12 @@ export default function PayrollPreview({ payrollRunId }) {
           </Col>
           <Col>
             <Space>
-              <Button icon={<FileExcelOutlined />} onClick={handleExport}>
+              <Button
+                icon={<FileExcelOutlined />}
+                className="white-button"
+                style={{ borderRadius: "8px" }}
+                onClick={handleExport}
+              >
                 Export Preview
               </Button>
               {nextAction && (
@@ -287,7 +335,10 @@ export default function PayrollPreview({ payrollRunId }) {
       <Row gutter={16} style={{ marginTop: 16 }}>
         <Col xs={12} md={6}>
           <Card size="small">
-            <Statistic title="Total Employees" value={payrollRun.totalEmployees} />
+            <Statistic
+              title="Total Employees"
+              value={payrollRun.totalEmployees}
+            />
           </Card>
         </Col>
         <Col xs={12} md={6}>
@@ -339,20 +390,58 @@ export default function PayrollPreview({ payrollRunId }) {
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} />
                 <Table.Summary.Cell index={1} />
-                <Table.Summary.Cell index={2}><Text strong>TOTAL</Text></Table.Summary.Cell>
+                <Table.Summary.Cell index={2}>
+                  <Text strong>TOTAL</Text>
+                </Table.Summary.Cell>
                 <Table.Summary.Cell index={3} />
-                <Table.Summary.Cell index={4} align="right"><Text strong>{totals.basic.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={5} align="right"><Text strong>{totals.hra.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={6} align="right"><Text strong>{totals.otherAllowance.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={7} align="right"><Text strong>{totals.otAmount.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={8} align="right"><Text strong>{totals.incentive.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={9} align="right"><Text strong>{totals.arrear.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={10} align="right"><Text strong>{totals.grossEarning.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={11} align="right"><Text strong>{totals.pfDeduction.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={12} align="right"><Text strong>{totals.esiDeduction.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={13} align="right"><Text strong>{totals.lwf.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={14} align="right"><Text strong type="danger">{totals.totalDeductions.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={15} align="right"><Text strong style={{ color: "#389e0d" }}>{totals.netPay.toLocaleString("en-IN")}</Text></Table.Summary.Cell>
+                <Table.Summary.Cell index={4} align="right">
+                  <Text strong>{totals.basic.toLocaleString("en-IN")}</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={5} align="right">
+                  <Text strong>{totals.hra.toLocaleString("en-IN")}</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={6} align="right">
+                  <Text strong>
+                    {totals.otherAllowance.toLocaleString("en-IN")}
+                  </Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={7} align="right">
+                  <Text strong>{totals.otAmount.toLocaleString("en-IN")}</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={8} align="right">
+                  <Text strong>{totals.incentive.toLocaleString("en-IN")}</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={9} align="right">
+                  <Text strong>{totals.arrear.toLocaleString("en-IN")}</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={10} align="right">
+                  <Text strong>
+                    {totals.grossEarning.toLocaleString("en-IN")}
+                  </Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={11} align="right">
+                  <Text strong>
+                    {totals.pfDeduction.toLocaleString("en-IN")}
+                  </Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={12} align="right">
+                  <Text strong>
+                    {totals.esiDeduction.toLocaleString("en-IN")}
+                  </Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={13} align="right">
+                  <Text strong>{totals.lwf.toLocaleString("en-IN")}</Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={14} align="right">
+                  <Text strong type="danger">
+                    {totals.totalDeductions.toLocaleString("en-IN")}
+                  </Text>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={15} align="right">
+                  <Text strong style={{ color: "#389e0d" }}>
+                    {totals.netPay.toLocaleString("en-IN")}
+                  </Text>
+                </Table.Summary.Cell>
               </Table.Summary.Row>
             </Table.Summary>
           )}
@@ -368,23 +457,35 @@ export default function PayrollPreview({ payrollRunId }) {
           </Col>
           <Col>
             <Text type="secondary">Run Date: </Text>
-            <Text>{payrollRun.runAt ? moment(payrollRun.runAt).format("DD-MM-YYYY HH:mm") : "—"}</Text>
+            <Text>
+              {payrollRun.runAt
+                ? moment(payrollRun.runAt).format("DD-MM-YYYY HH:mm")
+                : "—"}
+            </Text>
           </Col>
           {payrollRun.reviewedBy && (
             <Col>
               <Text type="secondary">Reviewed By: </Text>
-              <Text>{payrollRun.reviewedBy?.name} ({moment(payrollRun.reviewedAt).format("DD-MM-YYYY")})</Text>
+              <Text>
+                {payrollRun.reviewedBy?.name} (
+                {moment(payrollRun.reviewedAt).format("DD-MM-YYYY")})
+              </Text>
             </Col>
           )}
           {payrollRun.approvedBy && (
             <Col>
               <Text type="secondary">Approved By: </Text>
-              <Text>{payrollRun.approvedBy?.name} ({moment(payrollRun.approvedAt).format("DD-MM-YYYY")})</Text>
+              <Text>
+                {payrollRun.approvedBy?.name} (
+                {moment(payrollRun.approvedAt).format("DD-MM-YYYY")})
+              </Text>
             </Col>
           )}
           {payrollRun.exceptionCount > 0 && (
             <Col>
-              <Text type="warning">Exceptions: {payrollRun.exceptionCount}</Text>
+              <Text type="warning">
+                Exceptions: {payrollRun.exceptionCount}
+              </Text>
             </Col>
           )}
         </Row>

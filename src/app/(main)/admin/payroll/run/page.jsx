@@ -1,6 +1,5 @@
 "use client";
 
-import Title from "@/components/Title/Title";
 import PayrollRunComponent from "@/components/Payroll/PayrollRun";
 import PermissionGuard from "@/components/PermissionGuard/PermissionGuard";
 
@@ -14,10 +13,9 @@ export default function PayrollRunPage() {
         </div>
       }
     >
-      <Title title="Run Payroll" />
-      <div className="pt-4">
+      <>
         <PayrollRunComponent />
-      </div>
+      </>
     </PermissionGuard>
   );
 }

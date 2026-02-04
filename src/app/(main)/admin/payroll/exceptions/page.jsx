@@ -1,6 +1,5 @@
 "use client";
 
-import Title from "@/components/Title/Title";
 import ExceptionsView from "@/components/Payroll/ExceptionsView";
 import PermissionGuard from "@/components/PermissionGuard/PermissionGuard";
 
@@ -14,10 +13,9 @@ export default function ExceptionsPage() {
         </div>
       }
     >
-      <Title title="Input Exceptions" />
-      <div className="pt-4">
+      <>
         <ExceptionsView />
-      </div>
+      </>
     </PermissionGuard>
   );
 }
