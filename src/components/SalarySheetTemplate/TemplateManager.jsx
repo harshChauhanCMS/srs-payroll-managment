@@ -1,18 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  Table,
-  Button,
-  Space,
-  Tag,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Switch,
-} from "antd";
+import { Modal, Form, Input, Select, Switch, Button, Space, Tag } from "antd";
 import { PlusOutlined, EditOutlined, SettingOutlined } from "@ant-design/icons";
 import { useRouter, usePathname } from "next/navigation";
 import toast from "react-hot-toast";
@@ -20,6 +9,7 @@ import useGetQuery from "@/hooks/getQuery.hook";
 import usePostQuery from "@/hooks/postQuery.hook";
 import usePatchQuery from "@/hooks/patchQuery.hook";
 import Title from "@/components/Title/Title";
+import EnhancedTable from "@/components/Table/EnhancedTable";
 
 export default function TemplateManager() {
   const router = useRouter();
@@ -37,17 +27,16 @@ export default function TemplateManager() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [form] = Form.useForm();
   const [selectedCompany, setSelectedCompany] = useState(null);
-
-  useEffect(() => {
-    fetchTemplates();
-    fetchCompanies();
-  }, []);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(10);
+  const [totalDocuments, setTotalDocuments] = useState(0);
 
   const fetchTemplates = useCallback(() => {
     getQuery({
       url: "/api/v1/admin/salary-sheet-templates",
       onSuccess: (res) => {
         setTemplates(res.templates || []);
+        setTotalDocuments(res.templates?.length || 0);
       },
       onFail: () => toast.error("Failed to fetch templates"),
     });
@@ -62,6 +51,11 @@ export default function TemplateManager() {
     });
   }, [getQuery]);
 
+  useEffect(() => {
+    fetchTemplates();
+    fetchCompanies();
+  }, []);
+
   const fetchSites = useCallback(
     (companyId) => {
       if (!companyId) {
@@ -75,7 +69,7 @@ export default function TemplateManager() {
         },
       });
     },
-    [getQuery]
+    [getQuery],
   );
 
   const handleAddTemplate = () => {
@@ -119,7 +113,7 @@ export default function TemplateManager() {
           },
           onFail: (err) => {
             toast.error(
-              err?.response?.data?.message || "Failed to update template"
+              err?.response?.data?.message || "Failed to update template",
             );
           },
         });
@@ -135,7 +129,7 @@ export default function TemplateManager() {
           },
           onFail: (err) => {
             toast.error(
-              err?.response?.data?.message || "Failed to create template"
+              err?.response?.data?.message || "Failed to create template",
             );
           },
         });
@@ -158,36 +152,42 @@ export default function TemplateManager() {
   const columns = [
     {
       title: "Template Name",
+      accessor: "templateName",
       dataIndex: "templateName",
       key: "templateName",
       width: 200,
     },
     {
       title: "Client",
-      dataIndex: ["company", "name"],
+      accessor: "company",
       key: "company",
       width: 150,
+      render: (_, record) => record.company?.name || "-",
     },
     {
       title: "Site",
+      accessor: "site",
       key: "site",
       width: 150,
       render: (_, record) => record.site?.name || "All Sites",
     },
     {
       title: "Filename Pattern",
+      accessor: "outputFilenamePattern",
       dataIndex: "outputFilenamePattern",
       key: "outputFilenamePattern",
       width: 250,
     },
     {
       title: "Sheet Name",
+      accessor: "sheetName",
       dataIndex: "sheetName",
       key: "sheetName",
       width: 150,
     },
     {
       title: "Status",
+      accessor: "active",
       key: "active",
       width: 100,
       render: (_, record) => (
@@ -200,7 +200,6 @@ export default function TemplateManager() {
       title: "Actions",
       key: "actions",
       width: 200,
-      fixed: "right",
       render: (_, record) => (
         <Space>
           <Button
@@ -216,7 +215,7 @@ export default function TemplateManager() {
             type="primary"
             onClick={() =>
               router.push(
-                `${basePath}/salary-sheet-templates/${record._id}/columns`
+                `${basePath}/salary-sheet-templates/${record._id}/columns`,
               )
             }
           >
@@ -228,107 +227,120 @@ export default function TemplateManager() {
   ];
 
   return (
-    <div>
+    <>
       <Title
         title="Salary Sheet Templates"
         buttonText="Add Template"
         buttonIcon={<PlusOutlined />}
         destination="#"
-        onClick={handleAddTemplate}
+        onButtonClick={handleAddTemplate}
       />
 
-      <Card>
-        <Table
-          dataSource={templates}
+      <div className="mt-8">
+        <EnhancedTable
           columns={columns}
-          rowKey="_id"
-          loading={loading}
-          scroll={{ x: 1200 }}
-          pagination={{ pageSize: 20 }}
+          data={templates}
+          showDate={true}
+          entryText={`Total Templates: ${totalDocuments}`}
+          currentPage={currentPage}
+          pageLimit={pageLimit}
+          onPageChange={setCurrentPage}
+          onLimitChange={setPageLimit}
+          totalDocuments={totalDocuments}
         />
-      </Card>
 
-      <Modal
-        title={editingTemplate ? "Edit Template" : "Add Template"}
-        open={modalVisible}
-        onOk={handleModalOk}
-        onCancel={() => setModalVisible(false)}
-        confirmLoading={creating || updating}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="Template Name"
-            name="templateName"
-            rules={[{ required: true, message: "Please enter template name" }]}
-          >
-            <Input placeholder="e.g., JBM Salary Sheet" />
-          </Form.Item>
-
-          <Form.Item
-            label="Client"
-            name="company"
-            rules={[{ required: true, message: "Please select client" }]}
-          >
-            <Select
-              placeholder="Select Client"
-              onChange={handleCompanyChange}
-              showSearch
-              optionFilterProp="children"
+        <Modal
+          title={editingTemplate ? "Edit Template" : "Add Template"}
+          open={modalVisible}
+          onOk={handleModalOk}
+          onCancel={() => setModalVisible(false)}
+          confirmLoading={creating || updating}
+          width={600}
+          okButtonProps={{
+            className: "simple-button",
+            style: { borderRadius: "8px" },
+          }}
+          cancelButtonProps={{
+            className: "red-button",
+            style: { borderRadius: "8px" },
+          }}
+        >
+          <Form form={form} layout="vertical">
+            <Form.Item
+              label="Template Name"
+              name="templateName"
+              rules={[
+                { required: true, message: "Please enter template name" },
+              ]}
             >
-              {companies.map((c) => (
-                <Select.Option key={c._id} value={c._id}>
-                  {c.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+              <Input placeholder="e.g., JBM Salary Sheet" />
+            </Form.Item>
 
-          <Form.Item label="Site" name="site">
-            <Select
-              placeholder="All Sites"
-              allowClear
-              showSearch
-              optionFilterProp="children"
-              disabled={!selectedCompany}
+            <Form.Item
+              label="Client"
+              name="company"
+              rules={[{ required: true, message: "Please select client" }]}
             >
-              {sites.map((s) => (
-                <Select.Option key={s._id} value={s._id}>
-                  {s.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+              <Select
+                placeholder="Select Client"
+                onChange={handleCompanyChange}
+                showSearch
+                optionFilterProp="children"
+              >
+                {companies.map((c) => (
+                  <Select.Option key={c._id} value={c._id}>
+                    {c.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
 
-          <Form.Item
-            label="Output Filename Pattern"
-            name="outputFilenamePattern"
-            rules={[
-              { required: true, message: "Please enter filename pattern" },
-            ]}
-            help="Use {MMM} for month, {YYYY} for year, {MM} for month number, {SITE} for site code"
-          >
-            <Input placeholder="e.g., JBM_1_SALARY_{MMM}_{YYYY}.xlsx" />
-          </Form.Item>
+            <Form.Item label="Site" name="site">
+              <Select
+                placeholder="All Sites"
+                allowClear
+                showSearch
+                optionFilterProp="children"
+                disabled={!selectedCompany}
+              >
+                {sites.map((s) => (
+                  <Select.Option key={s._id} value={s._id}>
+                    {s.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
 
-          <Form.Item
-            label="Sheet Name"
-            name="sheetName"
-            rules={[{ required: true, message: "Please enter sheet name" }]}
-          >
-            <Input placeholder="e.g., Salary Sheet" />
-          </Form.Item>
+            <Form.Item
+              label="Output Filename Pattern"
+              name="outputFilenamePattern"
+              rules={[
+                { required: true, message: "Please enter filename pattern" },
+              ]}
+              help="Use {MMM} for month, {YYYY} for year, {MM} for month number, {SITE} for site code"
+            >
+              <Input placeholder="e.g., JBM_1_SALARY_{MMM}_{YYYY}.xlsx" />
+            </Form.Item>
 
-          <Form.Item
-            label="Active"
-            name="active"
-            valuePropName="checked"
-            initialValue={true}
-          >
-            <Switch />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+            <Form.Item
+              label="Sheet Name"
+              name="sheetName"
+              rules={[{ required: true, message: "Please enter sheet name" }]}
+            >
+              <Input placeholder="e.g., Salary Sheet" />
+            </Form.Item>
+
+            <Form.Item
+              label="Active"
+              name="active"
+              valuePropName="checked"
+              initialValue={true}
+            >
+              <Switch />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
+    </>
   );
 }

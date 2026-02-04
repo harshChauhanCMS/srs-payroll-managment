@@ -54,13 +54,6 @@ export default function ColumnMapping() {
   const [editingIndex, setEditingIndex] = useState(null);
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    if (id) {
-      fetchTemplate();
-      fetchColumns();
-    }
-  }, [id]);
-
   const fetchTemplate = useCallback(() => {
     getQuery({
       url: `/api/v1/admin/salary-sheet-templates/${id}`,
@@ -81,11 +74,20 @@ export default function ColumnMapping() {
     });
   }, [id, getQuery]);
 
+  useEffect(() => {
+    fetchTemplate();
+    fetchColumns();
+  }, []);
+
   const handleAddColumn = () => {
     setEditingColumn(null);
     setEditingIndex(null);
     form.resetFields();
-    form.setFieldsValue({ order: columns.length + 1, dataType: "TEXT", roundTo: "NONE" });
+    form.setFieldsValue({
+      order: columns.length + 1,
+      dataType: "TEXT",
+      roundTo: "NONE",
+    });
     setModalVisible(true);
   };
 
@@ -132,9 +134,7 @@ export default function ColumnMapping() {
         fetchColumns();
       },
       onFail: (err) => {
-        toast.error(
-          err?.response?.data?.message || "Failed to save mappings"
-        );
+        toast.error(err?.response?.data?.message || "Failed to save mappings");
       },
     });
   };
@@ -235,7 +235,8 @@ export default function ColumnMapping() {
         <div style={{ marginBottom: 16 }}>
           <h3>
             Template: {template?.templateName} | Client:{" "}
-            {template?.company?.name} | Site: {template?.site?.name || "All Sites"}
+            {template?.company?.name} | Site:{" "}
+            {template?.site?.name || "All Sites"}
           </h3>
         </div>
 
