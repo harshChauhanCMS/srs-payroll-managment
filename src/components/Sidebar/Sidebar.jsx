@@ -139,9 +139,9 @@ export default function Sidebar({
         ref={sidebar}
         className={`fixed left-0 top-0 h-screen shadow-lg transition-all duration-300 ${
           isCollapsed ? "w-20" : "w-64"
-        } bg-[#FEB003]/20 ${
+        } bg-[#FEB00333] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 flex flex-col z-40`}
+        } lg:translate-x-0 flex flex-col z-50`}
       >
         <div className="flex-1 min-h-0 flex flex-col">
           <div className="p-4 flex flex-col items-center gap-2 relative">
@@ -191,7 +191,7 @@ export default function Sidebar({
                     className={`relative group flex items-center gap-3 px-3 py-2 rounded-md transition-colors duration-200 ${
                       active
                         ? "bg-[#F39035] text-white shadow-lg"
-                        : "text-[#1E3A5F] hover:bg-[#F39035]/10"
+                        : "text-slate-900 hover:bg-[#F39035]/40"
                     } ${isCollapsed && "justify-center"}`}
                   >
                     <item.icon />
