@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Site from "@/models/Site";
+import { ROLES } from "@/constants/roles";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 /**
  * GET /api/v1/admin/sites
- * List all sites with optional filtering by company
+ * List all sites (HR: only their company's sites)
  */
 export async function GET(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
     const { searchParams } = new URL(request.url);
-    const company = searchParams.get("company");
+    let company = searchParams.get("company");
     const active = searchParams.get("active");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
@@ -17,7 +23,21 @@ export async function GET(request) {
     await connectDB();
 
     const query = {};
-    if (company) query.company = company;
+
+    // HR and Employees: Only see sites from their company
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
+      if (!currentUser.company) {
+        return NextResponse.json({
+          sites: [],
+          pagination: { page: 1, limit, total: 0, pages: 0 },
+          message: "Sites fetched successfully",
+        });
+      }
+      query.company = currentUser.company;
+    } else {
+      // Admin: Can filter by company or see all
+      if (company) query.company = company;
+    }
     if (active !== null && active !== undefined) {
       query.active = active === "true";
     }
@@ -55,10 +75,21 @@ export async function GET(request) {
 
 /**
  * POST /api/v1/admin/sites
- * Create a new site
+ * Create a new site (HR: only for their company and permissions.create)
  */
 export async function POST(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.create) {
+      return NextResponse.json(
+        { message: "Forbidden. You do not have permission to create sites." },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const { name, siteCode, company, address } = body;
 
@@ -81,6 +112,18 @@ export async function POST(request) {
         { message: "Parent company is required" },
         { status: 400 },
       );
+    }
+
+    if (currentUser.role === ROLES.HR) {
+      if (String(company) !== String(currentUser.company)) {
+        return NextResponse.json(
+          {
+            message:
+              "Forbidden. You can only create sites for your own company.",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     await connectDB();

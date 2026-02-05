@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Department from "@/models/Department";
+import { ROLES } from "@/constants/roles";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 /**
  * GET /api/v1/admin/departments/[id]
- * Get a single department by ID
+ * Get a single department by ID (HR: only their company's departments)
  */
 export async function GET(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
 
     await connectDB();
@@ -24,6 +29,22 @@ export async function GET(request, { params }) {
       );
     }
 
+    if (auth.user.role === ROLES.HR) {
+      const deptCompanyId = department.company?._id ?? department.company;
+      if (
+        !auth.user.company ||
+        String(deptCompanyId) !== String(auth.user.company)
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "Forbidden. You can only view departments in your company.",
+          },
+          { status: 403 },
+        );
+      }
+    }
+
     return NextResponse.json({ department });
   } catch (err) {
     console.error("Get department error:", err);
@@ -36,10 +57,23 @@ export async function GET(request, { params }) {
 
 /**
  * PUT /api/v1/admin/departments/[id]
- * Update department details
+ * Update department details (HR: only their company and permissions.edit)
  */
 export async function PUT(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.edit) {
+      return NextResponse.json(
+        {
+          message: "Forbidden. You do not have permission to edit departments.",
+        },
+        { status: 403 },
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -54,6 +88,33 @@ export async function PUT(request, { params }) {
         { message: "Department not found" },
         { status: 404 },
       );
+    }
+
+    if (currentUser.role === ROLES.HR) {
+      if (
+        !currentUser.company ||
+        String(department.company) !== String(currentUser.company)
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "Forbidden. You can only edit departments in your company.",
+          },
+          { status: 403 },
+        );
+      }
+      if (
+        company !== undefined &&
+        String(company) !== String(currentUser.company)
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "Forbidden. You cannot assign departments to another company.",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     // Check if code is being changed and if new code already exists
@@ -99,10 +160,24 @@ export async function PUT(request, { params }) {
 
 /**
  * DELETE /api/v1/admin/departments/[id]
- * Soft delete department (set active = false)
+ * Hard delete department (HR: only their company and permissions.delete)
  */
 export async function DELETE(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.delete) {
+      return NextResponse.json(
+        {
+          message:
+            "Forbidden. You do not have permission to delete departments.",
+        },
+        { status: 403 },
+      );
+    }
+
     const { id } = await params;
 
     await connectDB();
@@ -116,12 +191,26 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Soft delete
-    department.active = false;
-    await department.save();
+    if (currentUser.role === ROLES.HR) {
+      if (
+        !currentUser.company ||
+        String(department.company) !== String(currentUser.company)
+      ) {
+        return NextResponse.json(
+          {
+            message:
+              "Forbidden. You can only delete departments in your company.",
+          },
+          { status: 403 },
+        );
+      }
+    }
+
+    // Permanently delete department
+    await Department.findByIdAndDelete(id);
 
     return NextResponse.json({
-      message: "Department deactivated successfully",
+      message: "Department deleted successfully",
     });
   } catch (err) {
     console.error("Delete department error:", err);

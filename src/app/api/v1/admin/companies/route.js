@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Company from "@/models/Company";
+import { ROLES } from "@/constants/roles";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 /**
  * GET /api/v1/admin/companies
- * List all companies
+ * List all companies (HR: only their company)
  */
 export async function GET(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
     const { searchParams } = new URL(request.url);
     const active = searchParams.get("active");
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -16,8 +22,22 @@ export async function GET(request) {
     await connectDB();
 
     const query = {};
-    if (active !== null && active !== undefined) {
-      query.active = active === "true";
+
+    // HR and Employees: Only see their own company
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
+      if (!currentUser.company) {
+        return NextResponse.json({
+          companies: [],
+          pagination: { page: 1, limit, total: 0, pages: 0 },
+          message: "Companies fetched successfully",
+        });
+      }
+      query._id = currentUser.company;
+    } else {
+      // Admin: Can see all companies
+      if (active !== null && active !== undefined) {
+        query.active = active === "true";
+      }
     }
 
     const skip = (page - 1) * limit;
@@ -52,12 +72,22 @@ export async function GET(request) {
 
 /**
  * POST /api/v1/admin/companies
- * Create a new company
+ * Create a new company (Admin only; HR gets 403)
  */
 export async function POST(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    if (auth.user.role === ROLES.HR) {
+      return NextResponse.json(
+        { message: "Forbidden. HR cannot create companies." },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
-    const { name, gstNumber, pan, address } = body;
+    const { name, gstNumber, pan, address, bankAccountNumber, ifscCode, bankName, mobileNumber } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -79,9 +109,13 @@ export async function POST(request) {
 
     const company = await Company.create({
       name: name.trim(),
-      gstNumber: (gstNumber || "").trim(),
-      pan: (pan || "").trim(),
+      gstNumber: gstNumber?.trim() || undefined,
+      pan: pan?.trim() || undefined,
       address: (address || "").trim(),
+      bankAccountNumber: bankAccountNumber?.trim() || "",
+      ifscCode: ifscCode?.trim() || "",
+      bankName: bankName?.trim() || "",
+      mobileNumber: (mobileNumber || "").trim(),
       active: true,
     });
 
@@ -94,6 +128,19 @@ export async function POST(request) {
     );
   } catch (err) {
     console.error("Create company error:", err);
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern)[0];
+      const fieldName =
+        field === "gstNumber"
+          ? "GST Number"
+          : field === "pan"
+            ? "PAN Number"
+            : field;
+      return NextResponse.json(
+        { message: `${fieldName} already exists.` },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { message: err.message || "Failed to create company" },
       { status: 500 },

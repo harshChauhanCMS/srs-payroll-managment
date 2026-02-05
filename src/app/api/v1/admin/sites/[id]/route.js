@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Site from "@/models/Site";
+import { ROLES } from "@/constants/roles";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 /**
  * GET /api/v1/admin/sites/[id]
- * Get a single site by ID
+ * Get a single site by ID (HR: only their company's sites)
  */
 export async function GET(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
 
     await connectDB();
@@ -16,6 +21,18 @@ export async function GET(request, { params }) {
 
     if (!site) {
       return NextResponse.json({ message: "Site not found" }, { status: 404 });
+    }
+
+    if (auth.user.role === ROLES.HR) {
+      if (
+        !auth.user.company ||
+        String(site.company?._id ?? site.company) !== String(auth.user.company)
+      ) {
+        return NextResponse.json(
+          { message: "Forbidden. You can only view sites in your company." },
+          { status: 403 },
+        );
+      }
     }
 
     return NextResponse.json({ site });
@@ -30,10 +47,21 @@ export async function GET(request, { params }) {
 
 /**
  * PUT /api/v1/admin/sites/[id]
- * Update site details
+ * Update site details (HR: only their company's sites and permissions.edit)
  */
 export async function PUT(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.edit) {
+      return NextResponse.json(
+        { message: "Forbidden. You do not have permission to edit sites." },
+        { status: 403 },
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -45,6 +73,27 @@ export async function PUT(request, { params }) {
 
     if (!site) {
       return NextResponse.json({ message: "Site not found" }, { status: 404 });
+    }
+
+    if (currentUser.role === ROLES.HR) {
+      if (
+        !currentUser.company ||
+        String(site.company) !== String(currentUser.company)
+      ) {
+        return NextResponse.json(
+          { message: "Forbidden. You can only edit sites in your company." },
+          { status: 403 },
+        );
+      }
+      if (
+        company !== undefined &&
+        String(company) !== String(currentUser.company)
+      ) {
+        return NextResponse.json(
+          { message: "Forbidden. You cannot assign sites to another company." },
+          { status: 403 },
+        );
+      }
     }
 
     // Check if siteCode is being changed and if new code already exists
@@ -86,10 +135,21 @@ export async function PUT(request, { params }) {
 
 /**
  * DELETE /api/v1/admin/sites/[id]
- * Soft delete site (set active = false)
+ * Hard delete site (HR: only their company's sites and permissions.delete)
  */
 export async function DELETE(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
+    if (currentUser.role === ROLES.HR && !currentUser.permissions?.delete) {
+      return NextResponse.json(
+        { message: "Forbidden. You do not have permission to delete sites." },
+        { status: 403 },
+      );
+    }
+
     const { id } = await params;
 
     await connectDB();
@@ -100,12 +160,23 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ message: "Site not found" }, { status: 404 });
     }
 
-    // Soft delete
-    site.active = false;
-    await site.save();
+    if (currentUser.role === ROLES.HR) {
+      if (
+        !currentUser.company ||
+        String(site.company) !== String(currentUser.company)
+      ) {
+        return NextResponse.json(
+          { message: "Forbidden. You can only delete sites in your company." },
+          { status: 403 },
+        );
+      }
+    }
+
+    // Permanently delete site
+    await Site.findByIdAndDelete(id);
 
     return NextResponse.json({
-      message: "Site deactivated successfully",
+      message: "Site deleted successfully",
     });
   } catch (err) {
     console.error("Delete site error:", err);

@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Department from "@/models/Department";
+import { ROLES } from "@/constants/roles";
+import { requireViewPermission, requireCreatePermission } from "@/lib/apiAuth";
 
 /**
  * GET /api/v1/admin/departments
- * List all departments with optional filtering
+ * List all departments (HR: only their company's departments, Employees: based on view permission)
  */
 export async function GET(request) {
   try {
+    const auth = await requireViewPermission(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
     const { searchParams } = new URL(request.url);
     const active = searchParams.get("active");
-    const company = searchParams.get("company");
+    let company = searchParams.get("company");
     const site = searchParams.get("site");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
@@ -18,11 +24,21 @@ export async function GET(request) {
     await connectDB();
 
     const query = {};
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
+      if (!currentUser.company) {
+        return NextResponse.json({
+          departments: [],
+          pagination: { page: 1, limit, total: 0, pages: 0 },
+        });
+      }
+      query.company = currentUser.company;
+    } else {
+      if (company) query.company = company;
+      if (site) query.site = site;
+    }
     if (active !== null && active !== undefined && active !== "") {
       query.active = active === "true";
     }
-    if (company) query.company = company;
-    if (site) query.site = site;
 
     const skip = (page - 1) * limit;
 
@@ -57,10 +73,14 @@ export async function GET(request) {
 
 /**
  * POST /api/v1/admin/departments
- * Create a new department
+ * Create a new department (requires create permission)
  */
 export async function POST(request) {
   try {
+    const auth = await requireCreatePermission(request);
+    if (auth.error) return auth.error;
+
+    const currentUser = auth.user;
     const body = await request.json();
     const { name, code, company, site, description } = body;
 
@@ -90,6 +110,15 @@ export async function POST(request) {
         { message: "Site is required" },
         { status: 400 },
       );
+    }
+
+    if (currentUser.role === ROLES.HR || currentUser.role === ROLES.EMPLOYEE) {
+      if (String(company) !== String(currentUser.company)) {
+        return NextResponse.json(
+          { message: "You can only create departments for your own company." },
+          { status: 403 },
+        );
+      }
     }
 
     await connectDB();

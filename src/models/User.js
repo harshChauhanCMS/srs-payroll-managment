@@ -47,7 +47,7 @@ const userSchema = new mongoose.Schema(
     site: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Site",
-      default: null,
+      required: [true, "Site assignment is required"],
     },
     department: {
       type: mongoose.Schema.Types.ObjectId,
@@ -70,6 +70,26 @@ const userSchema = new mongoose.Schema(
         ref: "Skill",
       },
     ],
+    employeeCode: { type: String, unique: true, sparse: true, trim: true },
+    doj: { type: Date },
+    contractEndDate: { type: Date },
+    category: {
+      type: String,
+      enum: ["payroll", "consultant", "contractor"],
+      default: "payroll",
+    },
+    wageType: {
+      type: String,
+      enum: ["weekly", "monthly", "quarterly", "yearly"],
+      default: "monthly",
+    },
+    // Personal Details
+    fatherName: { type: String, trim: true },
+    gender: { type: String, enum: ["Male", "Female", "Other"] },
+    dob: { type: Date },
+    mobile: { type: String, trim: true, maxlength: 10 },
+    // Documents
+    aadharCardPhoto: { type: String, trim: true }, // URL
     pan: {
       type: String,
       trim: true,
@@ -85,9 +105,26 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    // Statutory Details
+    esiCode: { type: String, trim: true, default: "" },
+    uan: { type: String, trim: true, default: "" }, // Used as UAN Number
+    pfNumber: { type: String, trim: true, default: "" },
+    pfApplicable: { type: Boolean, default: false },
+    esiApplicable: { type: Boolean, default: false },
+    pfPercentage: { type: Number, default: null },
+    esiPercentage: { type: Number, default: null },
+    // Bank Details
+    bankName: { type: String, trim: true },
+    accountNumber: { type: String, trim: true },
+    ifscCode: { type: String, trim: true },
+
     active: {
       type: Boolean,
       default: true,
+    },
+    softDelete: {
+      type: Boolean,
+      default: false,
     },
   },
   {

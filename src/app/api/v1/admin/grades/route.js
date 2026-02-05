@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Grade from "@/models/Grade";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 export async function GET(request) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { searchParams } = new URL(request.url);
     const active = searchParams.get("active");
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -11,15 +15,26 @@ export async function GET(request) {
 
     await connectDB();
 
+    const department = searchParams.get("department");
+    const designation = searchParams.get("designation");
+
     const query = {};
     if (active !== null && active !== undefined) {
       query.active = active === "true";
     }
+    if (department) query.department = department;
+    if (designation) query.designation = designation;
 
     const skip = (page - 1) * limit;
 
     const [grades, total] = await Promise.all([
-      Grade.find(query).sort({ minSalary: 1 }).skip(skip).limit(limit).lean(),
+      Grade.find(query)
+        .populate("department", "name code")
+        .populate("designation", "name code")
+        .sort({ name: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
       Grade.countDocuments(query),
     ]);
 
@@ -34,12 +49,15 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { name, code, minSalary, maxSalary } = body;
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
 
-    if (!name || !code) {
+    const body = await request.json();
+    const { name, code, department, designation } = body;
+
+    if (!name || !code || !department || !designation) {
       return NextResponse.json(
-        { message: "Name and code are required" },
+        { message: "Name, code, department and designation are required" },
         { status: 400 },
       );
     }
@@ -57,8 +75,8 @@ export async function POST(request) {
     const grade = await Grade.create({
       name: name.trim(),
       code: code.trim().toUpperCase(),
-      minSalary: minSalary || 0,
-      maxSalary: maxSalary || 0,
+      department,
+      designation,
       active: true,
     });
 

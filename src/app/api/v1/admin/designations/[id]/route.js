@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Designation from "@/models/Designation";
+import { getCurrentUserRequireManagement } from "@/lib/apiAuth";
 
 export async function GET(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     await connectDB();
     const designation = await Designation.findById(id)
@@ -23,6 +27,9 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     const body = await request.json();
     const { name, code, department, level, active } = body;
@@ -66,6 +73,9 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    const auth = await getCurrentUserRequireManagement(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     await connectDB();
     const designation = await Designation.findById(id);
@@ -75,9 +85,9 @@ export async function DELETE(request, { params }) {
         { status: 404 },
       );
     }
-    designation.active = false;
-    await designation.save();
-    return NextResponse.json({ message: "Designation deactivated" });
+    // Permanently delete designation
+    await Designation.findByIdAndDelete(id);
+    return NextResponse.json({ message: "Designation deleted successfully" });
   } catch (err) {
     return NextResponse.json({ message: err.message }, { status: 500 });
   }

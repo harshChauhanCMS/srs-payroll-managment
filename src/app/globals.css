@@ -24,12 +24,12 @@ body {
   color: var(--foreground);
 }
 
-.custom-blue {
-  color: #1e3a5f;
+.custom-color {
+  color: #f39035;
 }
 
 .custom-table .ant-table-thead > tr > th {
-  background-color: #1e3a5f !important;
+  background-color: #f39035 !important;
   color: white !important;
   text-align: center;
 }
@@ -40,8 +40,8 @@ body {
 
 /* Purple Button */
 .simple-button {
-  background-color: #1e3a5f !important;
-  border: 1px solid #1e3a5f !important;
+  background-color: #f39035 !important;
+  border: 1px solid #f39035 !important;
   color: white !important;
   padding: 4px 15px;
   border-radius: 2px;
@@ -52,8 +52,8 @@ body {
 .simple-button:hover,
 .simple-button:focus {
   background-color: white !important;
-  color: #1e3a5f !important;
-  border: 1px solid #1e3a5f !important;
+  color: #f39035 !important;
+  border: 1px solid #f39035 !important;
   cursor: pointer;
 }
 .simple-button:disabled {
@@ -64,8 +64,8 @@ body {
 /* White Button */
 .white-button {
   background-color: white !important;
-  border: 1px solid #1e3a5f !important;
-  color: #1e3a5f !important;
+  border: 1px solid #f39035 !important;
+  color: #f39035 !important;
   padding: 4px 15px;
   border-radius: 2px;
   align-items: center;
@@ -74,9 +74,9 @@ body {
 }
 .white-button:hover,
 .white-button:focus {
-  background-color: #1e3a5f !important;
+  background-color: #f39035 !important;
   color: white !important;
-  border: 1px solid #1e3a5f !important;
+  border: 1px solid #f39035 !important;
   cursor: pointer;
 }
 .white-button:disabled {
@@ -103,6 +103,29 @@ body {
   cursor: pointer;
 }
 .red-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Green Button */
+.green-button {
+  background-color: #28a745 !important;
+  border: 1px solid #28a745 !important;
+  color: white !important;
+  padding: 4px 15px;
+  border-radius: 2px;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+.green-button:hover,
+.green-button:focus {
+  background-color: white !important;
+  color: #28a745 !important;
+  border: 1px solid #28a745 !important;
+  cursor: pointer;
+}
+.green-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -167,19 +190,19 @@ body {
 }
 
 .breadcrumb-link {
-  color: #1e3a5f;
+  color: #f39035;
   cursor: pointer;
 }
 
 .breadcrumb-link:hover {
-  color: #1e3a5f;
+  color: #f39035;
 }
 
 .breadcrumb-separator {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
   font-size: 16px;
-  color: #1e3a5f;
+  color: #f39035;
 }
 
 @keyframes fadeIn {

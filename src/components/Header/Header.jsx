@@ -19,7 +19,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full">
+    <header className="sticky top-0 z-10 w-full">
       {/* Glassmorphism container */}
       <div className="my-2 px-4 py-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
         <div className="flex items-center justify-between gap-4">
@@ -28,7 +28,7 @@ const Header = () => {
             <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
               Welcome back
             </span>
-            <h1 className="text-lg lg:text-xl font-bold bg-linear-to-r from-[#C2A368] to-[#E8D5B0] bg-clip-text text-transparent">
+            <h1 className="text-lg lg:text-xl font-bold bg-linear-to-r from-[#F39035] to-[#E8D5B0] bg-clip-text text-transparent">
               {user?.name || "Guest"}
             </h1>
           </div>
@@ -47,7 +47,7 @@ const Header = () => {
 
                 <div className="flex items-center gap-3 pl-2 pr-4 py-1.5 rounded-full bg-linear-to-r from-slate-50 to-slate-100/50 hover:from-slate-100 hover:to-slate-50 transition-all duration-300 cursor-pointer group">
                   <div className="relative">
-                    <div className="h-9 w-9 rounded-full overflow-hidden ring-2 ring-[#C2A368]/30 group-hover:ring-[#C2A368]/60 transition-all duration-300">
+                    <div className="h-9 w-9 rounded-full overflow-hidden ring-2 ring-[#F39035]/30 group-hover:ring-[#F39035] transition-all duration-300">
                       <Image
                         src={user?.profilePicture || images.userProfile}
                         alt="Profile"

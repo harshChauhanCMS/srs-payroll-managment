@@ -10,6 +10,7 @@ import usePutQuery from "@/hooks/putQuery.hook";
 import useDeleteQuery from "@/hooks/deleteQuery.hook";
 import EnhancedTable from "@/components/Table/EnhancedTable";
 
+import { usePermissions } from "@/hooks/usePermissions";
 import { useEffect, useState, useCallback } from "react";
 import {
   Tabs,
@@ -20,6 +21,10 @@ import {
   Button,
   InputNumber,
   Select,
+  Typography,
+  Row,
+  Col,
+  Switch,
 } from "antd";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
@@ -29,6 +34,7 @@ const DepartmentMastersPage = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { canView, canEdit, canDelete, canCreate } = usePermissions();
 
   const [activeTab, setActiveTab] = useState("departments");
 
@@ -52,7 +58,11 @@ const DepartmentMastersPage = () => {
   const [companyOptions, setCompanyOptions] = useState([]);
   const [siteOptions, setSiteOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
+  const [designationOptions, setDesignationOptions] = useState([]);
+  const [gradeOptions, setGradeOptions] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [selectedDepartmentForForm, setSelectedDepartmentForForm] = useState(null);
+  const [selectedDesignationForForm, setSelectedDesignationForForm] = useState(null);
 
   // Modal states
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -85,10 +95,10 @@ const DepartmentMastersPage = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    []
   );
 
-  // Fetch departments for designation dropdown
+  // Fetch departments for designation/grade/skill dropdown
   const fetchDepartmentOptions = useCallback(() => {
     getQuery({
       url: "/api/v1/admin/departments?active=true&limit=100",
@@ -97,6 +107,40 @@ const DepartmentMastersPage = () => {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fetch designations for grade/skill dropdown
+  const fetchDesignationOptions = useCallback(
+    (departmentId) => {
+      if (!departmentId) {
+        setDesignationOptions([]);
+        return;
+      }
+      getQuery({
+        url: `/api/v1/admin/designations?department=${departmentId}&active=true&limit=100`,
+        onSuccess: (res) => setDesignationOptions(res.designations || []),
+        onFail: () => {},
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  // Fetch grades for skill dropdown
+  const fetchGradeOptions = useCallback(
+    (designationId) => {
+      if (!designationId) {
+        setGradeOptions([]);
+        return;
+      }
+      getQuery({
+        url: `/api/v1/admin/grades?designation=${designationId}&active=true&limit=100`,
+        onSuccess: (res) => setGradeOptions(res.grades || []),
+        onFail: () => {},
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   // Fetch data based on active tab
   const fetchData = useCallback(() => {
@@ -153,7 +197,7 @@ const DepartmentMastersPage = () => {
 
   useEffect(() => {
     fetchData();
-    if (activeTab === "designations") {
+    if (activeTab === "designations" || activeTab === "grades" || activeTab === "skills") {
       fetchDepartmentOptions();
     }
   }, [fetchData, fetchDepartmentOptions, activeTab]);
@@ -188,17 +232,43 @@ const DepartmentMastersPage = () => {
     }
   };
 
+  // Form cascading handlers for grade/skill tabs
+  const handleFormDepartmentChange = (departmentId) => {
+    setSelectedDepartmentForForm(departmentId);
+    setSelectedDesignationForForm(null);
+    form.setFieldValue("designation", undefined);
+    form.setFieldValue("grade", undefined);
+    setDesignationOptions([]);
+    setGradeOptions([]);
+    if (departmentId) {
+      fetchDesignationOptions(departmentId);
+    }
+  };
+
+  const handleFormDesignationChange = (designationId) => {
+    setSelectedDesignationForForm(designationId);
+    form.setFieldValue("grade", undefined);
+    setGradeOptions([]);
+    if (designationId) {
+      fetchGradeOptions(designationId);
+    }
+  };
+
   // Add handlers
   const handleAddClick = () => {
     form.resetFields();
     setSelectedCompany(null);
+    setSelectedDepartmentForForm(null);
+    setSelectedDesignationForForm(null);
     setSiteOptions([]);
+    setDesignationOptions([]);
+    setGradeOptions([]);
     setAddModalOpen(true);
 
     if (activeTab === "departments") {
       fetchCompanies();
     }
-    if (activeTab === "designations") {
+    if (activeTab === "designations" || activeTab === "grades" || activeTab === "skills") {
       fetchDepartmentOptions();
     }
   };
@@ -231,7 +301,7 @@ const DepartmentMastersPage = () => {
       },
       onFail: (err) => {
         toast.error(
-          err?.message || `Failed to create ${activeTab.slice(0, -1)}`,
+          err?.message || `Failed to create ${activeTab.slice(0, -1)}`
         );
       },
     });
@@ -260,8 +330,33 @@ const DepartmentMastersPage = () => {
         ...row,
         department: row.department?._id || row.department,
       });
-    } else {
-      form.setFieldsValue(row);
+    } else if (activeTab === "grades") {
+      fetchDepartmentOptions();
+      const departmentId = row.department?._id || row.department;
+      const designationId = row.designation?._id || row.designation;
+      setSelectedDepartmentForForm(departmentId);
+      setSelectedDesignationForForm(designationId);
+      if (departmentId) fetchDesignationOptions(departmentId);
+      form.setFieldsValue({
+        ...row,
+        department: departmentId,
+        designation: designationId,
+      });
+    } else if (activeTab === "skills") {
+      fetchDepartmentOptions();
+      const departmentId = row.department?._id || row.department;
+      const designationId = row.designation?._id || row.designation;
+      const gradeId = row.grade?._id || row.grade;
+      setSelectedDepartmentForForm(departmentId);
+      setSelectedDesignationForForm(designationId);
+      if (departmentId) fetchDesignationOptions(departmentId);
+      if (designationId) fetchGradeOptions(designationId);
+      form.setFieldsValue({
+        ...row,
+        department: departmentId,
+        designation: designationId,
+        grade: gradeId,
+      });
     }
   };
 
@@ -294,7 +389,7 @@ const DepartmentMastersPage = () => {
       },
       onFail: (err) => {
         toast.error(
-          err?.message || `Failed to update ${activeTab.slice(0, -1)}`,
+          err?.message || `Failed to update ${activeTab.slice(0, -1)}`
         );
       },
     });
@@ -326,14 +421,14 @@ const DepartmentMastersPage = () => {
     deleteQuery({
       url,
       onSuccess: () => {
-        toast.success(`${activeTab.slice(0, -1)} deactivated successfully`);
+        toast.success(`${activeTab.slice(0, -1)} deleted successfully`);
         setDeleteModalOpen(false);
         setSelectedItem(null);
         fetchData();
       },
       onFail: (err) => {
         toast.error(
-          err?.message || `Failed to deactivate ${activeTab.slice(0, -1)}`,
+          err?.message || `Failed to delete ${activeTab.slice(0, -1)}`
         );
       },
     });
@@ -399,16 +494,16 @@ const DepartmentMastersPage = () => {
     { Header: "Name", accessor: "name", width: 200 },
     { Header: "Code", accessor: "code", width: 120 },
     {
-      Header: "Min Salary",
-      accessor: "minSalary",
-      width: 120,
-      Cell: (value) => `₹${value?.toLocaleString() || 0}`,
+      Header: "Department",
+      accessor: "department",
+      width: 150,
+      Cell: (value) => value?.name || "N/A",
     },
     {
-      Header: "Max Salary",
-      accessor: "maxSalary",
-      width: 120,
-      Cell: (value) => `₹${value?.toLocaleString() || 0}`,
+      Header: "Designation",
+      accessor: "designation",
+      width: 150,
+      Cell: (value) => value?.name || "N/A",
     },
     {
       Header: "Status",
@@ -423,23 +518,43 @@ const DepartmentMastersPage = () => {
   ];
 
   const skillColumns = [
-    { Header: "Name", accessor: "name", width: 200 },
-    { Header: "Category", accessor: "category", width: 150 },
+    { Header: "Name", accessor: "name", width: 150 },
+    { Header: "Skill Code", accessor: "skillCode", width: 120 },
+    { Header: "Category", accessor: "category", width: 120 },
+    {
+      Header: "Department",
+      accessor: "department",
+      width: 130,
+      Cell: (value) => value?.name || "N/A",
+    },
+    {
+      Header: "Designation",
+      accessor: "designation",
+      width: 130,
+      Cell: (value) => value?.name || "N/A",
+    },
+    {
+      Header: "Grade",
+      accessor: "grade",
+      width: 120,
+      Cell: (value) => value?.name || "N/A",
+    },
+    {
+      Header: "Basic (₹)",
+      accessor: "basic",
+      width: 100,
+      Cell: (value) =>
+        value != null ? `₹${Number(value).toLocaleString()}` : "—",
+    },
     {
       Header: "Status",
       accessor: "active",
-      width: 100,
+      width: 80,
       Cell: (value) => (
         <Tag color={value ? "green" : "red"}>
           {value ? "Active" : "Inactive"}
         </Tag>
       ),
-    },
-    {
-      Header: "Created",
-      accessor: "createdAt",
-      width: 120,
-      Cell: (value) => moment(value).format("DD-MM-YYYY"),
     },
   ];
 
@@ -603,23 +718,43 @@ const DepartmentMastersPage = () => {
             >
               <Input placeholder="e.g., GB" size="large" />
             </Form.Item>
-            <Form.Item name="minSalary" label="Minimum Salary">
-              <InputNumber
-                min={0}
-                placeholder="0"
+            <Form.Item
+              name="department"
+              label="Department"
+              rules={[{ required: true, message: "Please select department" }]}
+            >
+              <Select
+                placeholder="Select department"
                 size="large"
-                style={{ width: "100%" }}
-                prefix="₹"
-              />
+                showSearch
+                optionFilterProp="children"
+                onChange={handleFormDepartmentChange}
+              >
+                {departmentOptions.map((d) => (
+                  <Option key={d._id} value={d._id}>
+                    {d.name} ({d.code})
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
-            <Form.Item name="maxSalary" label="Maximum Salary">
-              <InputNumber
-                min={0}
-                placeholder="0"
+            <Form.Item
+              name="designation"
+              label="Designation"
+              rules={[{ required: true, message: "Please select designation" }]}
+            >
+              <Select
+                placeholder={selectedDepartmentForForm ? "Select designation" : "Select department first"}
                 size="large"
-                style={{ width: "100%" }}
-                prefix="₹"
-              />
+                showSearch
+                optionFilterProp="children"
+                disabled={!selectedDepartmentForForm}
+              >
+                {designationOptions.map((d) => (
+                  <Option key={d._id} value={d._id}>
+                    {d.name} ({d.code})
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
           </>
         );
@@ -627,16 +762,110 @@ const DepartmentMastersPage = () => {
       case "skills":
         return (
           <>
-            <Form.Item
-              name="name"
-              label="Skill Name"
-              rules={[{ required: true, message: "Please enter name" }]}
-            >
-              <Input placeholder="e.g., Welding" size="large" />
-            </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="name"
+                  label="Skill Name"
+                  rules={[{ required: true, message: "Please enter name" }]}
+                >
+                  <Input placeholder="e.g., Welding" size="large" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="skillCode"
+                  label="Skill Code"
+                  rules={[{ required: true, message: "Please enter skill code" }]}
+                >
+                  <Input placeholder="e.g., WLD" size="large" />
+                </Form.Item>
+              </Col>
+            </Row>
             <Form.Item name="category" label="Category">
               <Input placeholder="e.g., Technical" size="large" />
             </Form.Item>
+            <Form.Item
+              name="department"
+              label="Department"
+              rules={[{ required: true, message: "Please select department" }]}
+            >
+              <Select
+                placeholder="Select department"
+                size="large"
+                showSearch
+                optionFilterProp="children"
+                onChange={handleFormDepartmentChange}
+              >
+                {departmentOptions.map((d) => (
+                  <Option key={d._id} value={d._id}>
+                    {d.name} ({d.code})
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item
+              name="designation"
+              label="Designation"
+              rules={[{ required: true, message: "Please select designation" }]}
+            >
+              <Select
+                placeholder={selectedDepartmentForForm ? "Select designation" : "Select department first"}
+                size="large"
+                showSearch
+                optionFilterProp="children"
+                disabled={!selectedDepartmentForForm}
+                onChange={handleFormDesignationChange}
+              >
+                {designationOptions.map((d) => (
+                  <Option key={d._id} value={d._id}>
+                    {d.name} ({d.code})
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item
+              name="grade"
+              label="Grade"
+              rules={[{ required: true, message: "Please select grade" }]}
+            >
+              <Select
+                placeholder={selectedDesignationForForm ? "Select grade" : "Select designation first"}
+                size="large"
+                showSearch
+                optionFilterProp="children"
+                disabled={!selectedDesignationForForm}
+              >
+                {gradeOptions.map((g) => (
+                  <Option key={g._id} value={g._id}>
+                    {g.name} ({g.code})
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="basic" label="Basic (₹)" initialValue={0}>
+                  <InputNumber
+                    min={0}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: "100%" }}
+                    prefix="₹"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="active"
+                  label="Active"
+                  valuePropName="checked"
+                  initialValue={true}
+                >
+                  <Switch checkedChildren="Yes" unCheckedChildren="No" />
+                </Form.Item>
+              </Col>
+            </Row>
           </>
         );
 
@@ -671,7 +900,7 @@ const DepartmentMastersPage = () => {
     <>
       <Title
         title="Department & Masters"
-        showButton={true}
+        showButton={canCreate()}
         buttonText={`Add ${getTabTitle()}`}
         onButtonClick={handleAddClick}
       />
@@ -693,8 +922,9 @@ const DepartmentMastersPage = () => {
             columns={getColumns()}
             data={getData()}
             showActions={true}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
+            // onView={canView() ? (row) => `#` : undefined}
+            onEdit={canEdit() ? handleEditClick : undefined}
+            onDelete={canDelete() ? handleDeleteClick : undefined}
             entryText={`Total: ${totalDocuments}`}
             currentPage={page}
             totalPages={Math.ceil(totalDocuments / limit)}
@@ -717,8 +947,20 @@ const DepartmentMastersPage = () => {
         <Form form={form} layout="vertical" onFinish={handleAddSubmit}>
           {renderFormFields()}
           <div className="flex justify-end gap-3 mt-4">
-            <Button onClick={() => setAddModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={createLoading}>
+            <Button
+              onClick={() => setAddModalOpen(false)}
+              className="red-button"
+              style={{ borderRadius: "8px" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="simple-button"
+              style={{ borderRadius: "8px" }}
+              loading={createLoading}
+            >
               Create
             </Button>
           </div>
@@ -736,8 +978,20 @@ const DepartmentMastersPage = () => {
         <Form form={form} layout="vertical" onFinish={handleEditSubmit}>
           {renderFormFields()}
           <div className="flex justify-end gap-3 mt-4">
-            <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={updateLoading}>
+            <Button
+              onClick={() => setEditModalOpen(false)}
+              className="red-button"
+              style={{ borderRadius: "8px" }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="simple-button"
+              style={{ borderRadius: "8px" }}
+              loading={updateLoading}
+            >
               Update
             </Button>
           </div>
@@ -746,15 +1000,30 @@ const DepartmentMastersPage = () => {
 
       {/* Delete Modal */}
       <Modal
-        title={`Deactivate ${getTabTitle()}`}
+        title={`Delete ${getTabTitle()}`}
         open={deleteModalOpen}
         onOk={handleDeleteConfirm}
         onCancel={() => setDeleteModalOpen(false)}
         confirmLoading={deleteLoading}
-        okText="Deactivate"
-        okButtonProps={{ danger: true }}
+        okButtonProps={{
+          danger: true,
+          loading: deleteLoading,
+          className: "red-button",
+          style: { borderRadius: "8px" },
+        }}
+        cancelButtonProps={{
+          className: "white-button",
+          style: { borderRadius: "8px" },
+        }}
+        okText="Delete"
       >
-        <p>Are you sure you want to deactivate `{selectedItem?.name}`?</p>
+        <p className="text-red-600 font-semibold mb-2">
+          ⚠️ Warning: This action cannot be undone!
+        </p>
+        <p>
+          Are you sure you want to <strong>delete</strong> `{selectedItem?.name}
+          `?
+        </p>
       </Modal>
     </>
   );

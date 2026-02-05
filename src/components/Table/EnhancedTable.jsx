@@ -214,7 +214,7 @@ const EnhancedTable = ({
           style={{
             fontSize: "16px",
             fontWeight: "bold",
-            color: "#1E3A5F",
+            color: "#F39035",
             float: "right",
           }}
         >
@@ -228,7 +228,7 @@ const EnhancedTable = ({
               prefix={<SearchOutlined />}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ borderColor: "#1E3A5F", borderWidth: 1 }}
+              style={{ borderColor: "#F39035", borderWidth: 1 }}
             />
           </Col>
           <Col xs={24} md={12}>
@@ -237,7 +237,7 @@ const EnhancedTable = ({
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates || [])}
                 format="DD-MM-YYYY"
-                style={{ width: "100%", borderColor: "#1E3A5F" }}
+                style={{ width: "100%", borderColor: "#F39035" }}
                 allowClear
               />
             )}
@@ -266,7 +266,7 @@ const EnhancedTable = ({
               className="pt-2"
             />
             <p
-              style={{ color: "#1E3A5F", fontWeight: "bold", marginTop: "6px" }}
+              style={{ color: "#F39035", fontWeight: "bold", marginTop: "6px" }}
             >
               Page {currentPage} of {totalPages}
             </p>
@@ -284,7 +284,7 @@ const EnhancedTable = ({
               <Select
                 value={pageLimit}
                 onChange={onLimitChange}
-                style={{ width: 80, borderColor: "#1E3A5F" }}
+                style={{ width: 80, borderColor: "#F39035" }}
               >
                 <Option value={10}>10</Option>
                 <Option value={20}>20</Option>
