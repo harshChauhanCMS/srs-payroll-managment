@@ -13,7 +13,7 @@ const BulkUploadPage = () => {
     multiple: false,
     maxCount: 1,
     accept: ".xlsx, .xls",
-    action: "https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload", // Placeholder URL, replace with actual API endpoint later
+    action: "https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload",
     onChange(info) {
       const { status } = info.file;
       if (status !== "uploading") {
@@ -33,7 +33,11 @@ const BulkUploadPage = () => {
   return (
     <>
       <BackHeader label="User Management" />
-      <Title title="Bulk Upload Users" showButton={false} />
+      <Title
+        title="Bulk Upload Users"
+        showButton={true}
+        buttonText={"Download Sample Sheet"}
+      />
 
       <div className="rounded-lg shadow-md" style={{ marginTop: "16px" }}>
         <Dragger {...props} style={{ padding: "40px 0" }}>
