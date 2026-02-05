@@ -91,7 +91,8 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { name, siteCode, company, address } = body;
+    const { name, siteCode, company, address, geofencingRadius, fenceType } =
+      body;
 
     if (!name) {
       return NextResponse.json(
@@ -142,6 +143,9 @@ export async function POST(request) {
       siteCode: siteCode.trim().toUpperCase(),
       company,
       address: (address || "").trim(),
+      geofencingRadius:
+        geofencingRadius !== undefined ? geofencingRadius : 100,
+      fenceType: fenceType || "circular",
       active: true,
     });
 

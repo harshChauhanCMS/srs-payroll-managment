@@ -23,6 +23,18 @@ const siteSchema = new mongoose.Schema(
       ref: "Company",
       required: [true, "Parent company is required"],
     },
+    geofencingRadius: {
+      type: Number,
+      default: 100,
+      min: [0, "Geofencing radius must be a positive number"],
+      comment: "Geofencing radius in meters",
+    },
+    fenceType: {
+      type: String,
+      enum: ["circular", "rectangle", "polygon"],
+      default: "circular",
+      trim: true,
+    },
     active: {
       type: Boolean,
       default: true,

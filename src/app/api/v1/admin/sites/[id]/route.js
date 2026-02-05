@@ -65,7 +65,8 @@ export async function PUT(request, { params }) {
     const { id } = await params;
     const body = await request.json();
 
-    const { name, siteCode, company, address, active } = body;
+    const { name, siteCode, company, address, active, geofencingRadius, fenceType } =
+      body;
 
     await connectDB();
 
@@ -115,6 +116,8 @@ export async function PUT(request, { params }) {
     if (siteCode !== undefined) site.siteCode = siteCode.trim().toUpperCase();
     if (company !== undefined) site.company = company;
     if (address !== undefined) site.address = address.trim();
+    if (geofencingRadius !== undefined) site.geofencingRadius = geofencingRadius;
+    if (fenceType !== undefined) site.fenceType = fenceType;
     if (active !== undefined) site.active = active;
 
     await site.save();

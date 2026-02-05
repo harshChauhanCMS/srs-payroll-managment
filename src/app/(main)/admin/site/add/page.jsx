@@ -8,11 +8,13 @@ import BackHeader from "@/components/BackHeader/BackHeader";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Form, Input, Button, Card, Row, Col, Select } from "antd";
+import { Form, Input, Button, Card, Row, Col, Select, InputNumber } from "antd";
 import {
   BankOutlined,
   EnvironmentOutlined,
   NumberOutlined,
+  RadiusSettingOutlined,
+  BorderOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -124,6 +126,53 @@ const AddSite = () => {
                   style={{ resize: "none" }}
                   autoSize={{ minRows: 1, maxRows: 3 }}
                 />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="geofencingRadius"
+                label="Geofencing Radius (meters)"
+                initialValue={100}
+                rules={[
+                  {
+                    required: false,
+                    message: "Please enter geofencing radius",
+                  },
+                  {
+                    type: "number",
+                    min: 0,
+                    message: "Radius must be a positive number",
+                  },
+                ]}
+              >
+                <InputNumber
+                  prefix={<RadiusSettingOutlined className="text-gray-400" />}
+                  placeholder="100"
+                  size="large"
+                  min={0}
+                  style={{ width: "100%" }}
+                  addonAfter="meters"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="fenceType"
+                label="Fence Type"
+                initialValue="circular"
+              >
+                <Select
+                  placeholder="Select fence type"
+                  suffixIcon={<BorderOutlined className="text-gray-400" />}
+                  size="large"
+                >
+                  <Option value="circular">Circular</Option>
+                  <Option value="rectangle">Rectangle</Option>
+                  <Option value="polygon">Polygon</Option>
+                </Select>
               </Form.Item>
             </Col>
           </Row>

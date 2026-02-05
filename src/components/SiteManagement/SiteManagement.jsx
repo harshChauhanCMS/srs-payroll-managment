@@ -63,6 +63,9 @@ export default function SiteManagement({
           siteCode: item?.siteCode || "N/A",
           company: item?.company?.name || "N/A",
           address: item?.address || "N/A",
+          address: item?.address || "N/A",
+          geofencingRadius: item?.geofencingRadius || "N/A",
+          fenceType: item?.fenceType || "N/A",
           status: item?.active ? "Active" : "Inactive",
           active: item?.active,
           createdAt: moment(item?.createdAt).format("DD-MM-YYYY"),
@@ -116,6 +119,8 @@ export default function SiteManagement({
     { Header: "Site Code", accessor: "siteCode", width: 120 },
     { Header: "Company", accessor: "company", width: 200 },
     { Header: "Address", accessor: "address", width: 200 },
+    { Header: "Geofencing Radius", accessor: "geofencingRadius", width: 200 },
+    { Header: "Fence Type", accessor: "fenceType", width: 200 },
     {
       Header: "Status",
       accessor: "status",
