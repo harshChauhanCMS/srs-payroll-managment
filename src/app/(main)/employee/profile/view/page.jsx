@@ -1,9 +1,13 @@
 "use client";
 
-import { useSelector } from "react-redux";
 import Title from "@/components/Title/Title";
-import BackHeader from "@/components/BackHeader/BackHeader";
+import Loader from "@/components/Loader/Loader";
+import useGetQuery from "@/hooks/getQuery.hook";
+
+import { useSelector } from "react-redux";
 import { Card, Descriptions, Tag } from "antd";
+import { useEffect, useState, useCallback } from "react";
+import BackHeader from "@/components/BackHeader/BackHeader";
 import {
   UserOutlined,
   MailOutlined,
@@ -12,10 +16,45 @@ import {
   ClusterOutlined,
   IdcardOutlined,
   HomeOutlined,
+  PhoneOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 
 export default function EmployeeProfileViewPage() {
-  const user = useSelector((state) => state.user?.user);
+  const reduxUser = useSelector((state) => state.user?.user);
+  const [user, setUser] = useState(null);
+  const { getQuery, loading } = useGetQuery();
+
+  const fetchUserProfile = useCallback(() => {
+    if (!reduxUser?._id) return;
+
+    getQuery({
+      url: `/api/v1/admin/users/${reduxUser._id}`,
+      onSuccess: (response) => {
+        setUser(response?.user || null);
+      },
+      onFail: () => {
+        // Fallback to Redux user if API fetch fails
+        setUser(reduxUser);
+      },
+    });
+  }, [reduxUser, getQuery]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
+  if (loading && !user) {
+    return (
+      <div className="text-slate-950">
+        <BackHeader label="Back" href="/employee/dashboard" />
+        <Title title="My Profile" />
+        <div className="flex justify-center items-center h-64">
+          <Loader />
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -64,8 +103,44 @@ export default function EmployeeProfileViewPage() {
           >
             {user.email || "N/A"}
           </Descriptions.Item>
+          <Descriptions.Item label="Employee Code">
+            {user.employeeCode || "N/A"}
+          </Descriptions.Item>
           <Descriptions.Item label="Role">
             <Tag color="blue">{user.role?.toUpperCase() || "N/A"}</Tag>
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <PhoneOutlined /> Mobile
+              </span>
+            }
+          >
+            {user.mobile || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Gender">
+            {user.gender || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <CalendarOutlined /> Date of Birth
+              </span>
+            }
+          >
+            {user.dob ? new Date(user.dob).toLocaleDateString() : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <CalendarOutlined /> Date of Joining
+              </span>
+            }
+          >
+            {user.doj ? new Date(user.doj).toLocaleDateString() : "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Father's Name">
+            {user.fatherName || "N/A"}
           </Descriptions.Item>
           <Descriptions.Item
             label={
@@ -120,6 +195,24 @@ export default function EmployeeProfileViewPage() {
             }
           >
             {user.department?.name || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Designation">
+            {user.designation?.name || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item
+            label={
+              <span className="flex items-center gap-1">
+                <BankOutlined /> Bank Name
+              </span>
+            }
+          >
+            {user.bankName || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Account Number">
+            {user.accountNumber || "N/A"}
+          </Descriptions.Item>
+          <Descriptions.Item label="IFSC Code">
+            {user.ifscCode || "N/A"}
           </Descriptions.Item>
         </Descriptions>
       </Card>

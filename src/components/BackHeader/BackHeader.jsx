@@ -19,7 +19,7 @@ export default function BackHeader({ label, href, rightContent }) {
       <button
         type="button"
         onClick={handleBack}
-        className="flex items-center gap-2 text-[#121212] hover:text-[#366598] transition-colors cursor-pointer"
+        className="flex items-center gap-2 text-[#121212] hover:text-[#F39035] hover:underline transition-colors cursor-pointer"
       >
         <ArrowLeftOutlined />
         <span className="font-medium">{label}</span>

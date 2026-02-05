@@ -69,9 +69,9 @@ const EmployeeDashboard = () => {
           <Loader />
         </div>
       ) : (
-        <>
+        <div className="mt-8">
           {/* Welcome Card */}
-          <Card className="mb-6 shadow-md bg-linear-to-r from-blue-50 to-blue-100">
+          {/* <Card className="mb-6 shadow-md bg-linear-to-r from-blue-50 to-blue-100">
             <div className="flex items-center gap-4">
               <div className="bg-blue-500 text-white p-4 rounded-full">
                 <UserOutlined className="text-3xl" />
@@ -85,7 +85,7 @@ const EmployeeDashboard = () => {
                 </p>
               </div>
             </div>
-          </Card>
+          </Card> */}
 
           {/* Personal Information */}
           <Row gutter={[16, 16]}>
@@ -198,7 +198,7 @@ const EmployeeDashboard = () => {
               </Col>
             </Row>
           )}
-        </>
+        </div>
       )}
     </div>
   );
